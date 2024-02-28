@@ -126,3 +126,4 @@ webexteamsbot/__pycache__/models.cpython-311.pyc
 webexteamsbot/__pycache__/webexteamsbot.cpython-311.pyc
 *.pyc
 
+src/mc_user_info.py
