@@ -7,6 +7,7 @@ def CheckFeatures(sw_file):
     debug = DEBUG or DEBUG_CHECKER
     
     # ecoen66 added some additional unsupported features
+    '''
     additional_unsupported = {'RIP':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
     'EIGRP':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
     'OSPFv2':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
@@ -24,15 +25,74 @@ def CheckFeatures(sw_file):
     'IS-IS':'Not Supported',\
     'VRF': 'Not Supported'\
     }
-
-    # Connect to the server where we have the list of unsupported features on Meraki MS and the links associated to those features
-    unsupported_features_raw = requests.get('http://msfeatures.netdecorators.com:7900/return_list_unsupported')
-    unsupported_features = json.loads(unsupported_features_raw.text)
-    unsupported_features.update(additional_unsupported)
-    More_info_raw = requests.get('http://msfeatures.netdecorators.com:7900/return_more_info')
-    More_info = json.loads(More_info_raw.text)
-    More_info.update(additional_More_info)
+    '''
     
+    # Connect to the server where we have the list of unsupported features on Meraki MS and the links associated to those features
+    #unsupported_features_raw = requests.get('http://msfeatures.netdecorators.com:7900/return_list_unsupported')
+    #unsupported_features = json.loads(unsupported_features_raw.text)
+    #unsupported_features.update(additional_unsupported)
+
+    unsupported_features = {
+        "AAA":"https://documentation.meraki.com/General_Administration/Managing_Dashboard_Access/Managing_Dashboard_Administrators_and_Permissions",
+        "ARP Access-list":"https://documentation.meraki.com/MS",
+        "DHCP Snooping":"https://documentation.meraki.com/MS",
+        "Directed Broadcast":"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Multicast_Routing_Overview",
+        "IP SLA":"https://documentation.meraki.com/MS",
+        "IPv6":"https://documentation.meraki.com/MS",
+        "Layer 2 VLAN":"https://documentation.meraki.com/MS",
+        "MAB VLAN MAC Auth":"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
+        "NTP":"https://documentation.meraki.com/MS",
+        "NetFlow":"https://documentation.meraki.com/MX/Monitoring_and_Reporting/NetFlow_Overview",
+        "Private VLAN":"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
+        "Protocol Storm Protection":"https://documentation.meraki.com/MS",
+        "Pruning":"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Fundamentals_of_802.1Q_VLAN_Tagging",
+        "STP Backbonefast":"https://documentation.meraki.com/MS",
+        "STP Uplinkfast":"https://documentation.meraki.com/MS",
+        "Spanning Tree":"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Configuring_Spanning_Tree_on_Meraki_Switches_(MS)",
+        "VPMS":"https://documentation.meraki.com/MS",
+        "VTP":"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Integrating_the_MS_Access_Switch_into_a_Cisco_VTP_domain",
+        "banner":"https://documentation.meraki.com/MS",
+        "http server":"https://documentation.meraki.com/MS",
+        "RIP":"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
+        "EIGRP":"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
+        "OSPFv2":"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
+        "OSPFv3":"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
+        "BGP":"https://documentation.meraki.com/MX/Networks_and_Routing/Border_Gateway_Protocol_(BGP)",
+        "IS-IS":"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
+        "VRF": "https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing"
+    }
+    #More_info_raw = requests.get('http://msfeatures.netdecorators.com:7900/return_more_info')
+    #More_info = json.loads(More_info_raw.text)
+    #More_info.update(additional_More_info)
+    More_info = {
+          "AAA":"Built in Meraki dashboard",
+          "ARP Access-list":"Not Supported",
+          "DHCP Snooping":"Not Supported",
+          "Directed Broadcast":"Not Supported",
+          "IP SLA":"Not Supported",
+          "IPv6":"Not Supported",
+          "Layer 2 VLAN":"Configured by default",
+          "MAB VLAN MAC Auth":"MAB with RADIUS is supported",
+          "NTP":"NTP is configured by default",
+          "NetFlow":"Currently supported on MX only",
+          "Private VLAN":"Port Isolation can be used",
+          "Protocol Storm Protection":"Not Supported",
+          "Pruning":"Not required",
+          "STP Backbonefast":"Not Supported",
+          "STP Uplinkfast":"Not Supported",
+          "Spanning Tree":"Only Supports RSTP",
+          "VPMS":"Not Supported as its dated technology",
+          "VTP":"Not required",
+          "banner":"Not required",
+          "http server":"Not required",
+          "RIP":"Not Supported",
+          "EIGRP":"Not Supported",
+          "OSPFv2":"Supported on MS250 and above",
+          "OSPFv3":"Not Supported",
+          "BGP":"Currently supported on MX only",
+          "IS-IS":"Not Supported",
+          "VRF": "Not Supported"
+    }
     
     Features_configured =list()
     aux_features_config =list()

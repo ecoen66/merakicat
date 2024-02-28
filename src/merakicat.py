@@ -47,6 +47,7 @@ if BOT:
     # Retrieve required details from environment variables
     bot_email = "merakicat@webex.bot"
     bot_app_name = "Meraki Cat"
+    bot_fname = bot_app_name.split()[0].strip()
     teams_token = os.getenv("TEAMS_BOT_TOKEN")
     if not os.getenv("TEAMS_EMAILS") is None:
         teams_emails.append(os.getenv("TEAMS_EMAILS"))
@@ -169,10 +170,17 @@ def greeting(incoming_msg):
     # Create a Response object to later craft a reply in Markdown.
     response = Response()
     
-    # Grab the first word from the user's input.
+    # This will be our copy of the user input to work with
     user_text = incoming_msg.text
+
+    # If first word from the user's input was Bot's first name, remove it
+    if BOT:
+        if user_text.split()[0] == bot_fname:
+            user_text = user_text.split(bot_fname + ' ', 1)[1]
+
+    # Grab the first word from the user's input.
     command = user_text.split()[0].lower()
-    
+
     serials = list()
     
     # Test if it is equivalent to a /command.
@@ -430,12 +438,25 @@ def greeting(incoming_msg):
                       # All good, let's go claim the serial numbers to the network
                       r = claim_switch(incoming_msg,dest_net=dest_net,serials=serials)
                       response.markdown = r
-                  
+        
+        case "help":
+            if BOT:
+                # Lookup details about sender for our default response
+                sender = bot.teams.people.get(incoming_msg.personId)
+                response.markdown = "Hello {}, I'm really just a glorified chat bot. ".format(sender.firstName)
+                response.markdown += "See what I can do by asking for **/help**."
+            else:
+                response.markdown = "\n\n" + tabulate(command_list,headers=["Command Format","Function"]) + "\n"
+        
         case _:
-            # Lookup details about sender for our default response
-            sender = bot.teams.people.get(incoming_msg.personId)
-            response.markdown = "Hello {}, I'm really just a glorified chat bot. ".format(sender.firstName)
-            response.markdown += "See what I can do by asking for **/help**."
+            if BOT:
+                # Lookup details about sender for our default response
+                sender = bot.teams.people.get(incoming_msg.personId)
+                response.markdown = "Hello {}, I'm really just a glorified chat bot. ".format(sender.firstName)
+                response.markdown += "See what I can do by asking for **/help**."
+            else:
+                response.markdown = "Hello, I'm really just a glorified chat bot. "
+                response.markdown += "See what I can do by asking for help."
     
     # Whatever just happened up above, send our response back to the user.
     return response
@@ -1177,10 +1198,9 @@ if BOT:
     # Add new commands to the bot.
     bot.add_command("attachmentActions", "*", handle_cards)
     bot.add_command("/check", "Check a Catalyst switch config for Meraki compatible settings", show_check_card)
-    bot.add_command("check [host _FQDN or IP address_ | file _filespec_]", "Check a Catalyst switch config for both translatable and possible Meraki features", greeting)
     bot.add_command("/translate", "Translate a Catalyst switch config to a Meraki switch with translatable settings", show_translate_card)
+    bot.add_command("check [host _FQDN or IP address_ | file _filespec_]", "Check a Catalyst switch config for both translatable and possible Meraki features", greeting)
     bot.add_command("translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_]", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers", greeting)
-    #bot.add_command("/migrate", "Migrate a Catalyst switch to a Meraki switch with translatable settings", show_migrate_card)
     bot.add_command("migrate [host _FQDN or IP address_] [to _Meraki network name_]", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate", greeting)
     bot.add_command("register [host _FQDN or IP address_]", "Register a Catalyst switch to the Meraki Dashboard", greeting)
     bot.add_command("claim [_Meraki serial numbers_] [to _Meraki network name_]", "Claim Catalyst switches to a Meraki Network", greeting)
@@ -1188,6 +1208,16 @@ if BOT:
     # Every bot includes a default "/echo" command.  You can remove it, or any
     # other command with the remove_command(command) method.
     bot.remove_command("/echo")
+else:
+    command_list = list(list())
+    command_list.extend([
+      ["check host <FQDN or IP address> | file <filespec>", "Check a Catalyst switch config for both translatable and possible Meraki features"],
+      ["register host <FQDN or IP address>", "Register a Catalyst switch to the Meraki Dashboard"],
+      ["claim <Meraki serial numbers> to <Meraki network name>", "Claim Catalyst switches to a Meraki Network"],
+      ["translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers"],
+      ["migrate host <FQDN or IP address> to <Meraki network name>", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]
+    ])
+
 
 ## BOT or not?
 if __name__ == "__main__":
