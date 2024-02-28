@@ -1,5 +1,7 @@
 # merakicat
 
+You will need to copy src/user_sample.py to serc/mc_user_info.py in order to use this app.
+
 # The rest of this file needs to be replaced!
 
 
