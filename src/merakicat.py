@@ -17,7 +17,7 @@ from pyadaptivecards.options import Colors, FontSize, HorizontalAlignment
 from collections import defaultdict
 from functools import reduce
 from mc_cfg_check import CheckFeatures
-from mc_translate import Evaluate, Meraki_config
+from mc_translate import Evaluate, Meraki_config_down, Meraki_config_up
 from mc_claim import Claim
 from mc_register import Register
 from mc_splitcheck_serials import Split_check_serials
@@ -72,6 +72,7 @@ configured_ports = defaultdict(list)
 unconfigured_ports = defaultdict(list)
 config_file = ""
 host_id = ""
+nm_list = list()
 meraki_serials = list()
 meraki_orgs = list()
 meraki_networks = list()
@@ -466,436 +467,6 @@ def greeting(incoming_msg):
 # Create functions that will be linked to bot commands to add capabilities
 # ------------------------------------------------------------------------
 
-def claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called=""):
-    """
-    This function will Claim newly Registered Catalyst switch in the Meraki Dashboard.
-    :param incoming_msg: The incoming message object from Teams
-    :param dest_net: The incoming Meraki destination Network to claim devices to
-    :param serials:The incoming list of Meraki serial numbers to claim
-    :return: A text or markdown based reply
-    """
-    global host_id, meraki_net, meraki_serials, meraki_net_name
-    issues = ""
-    if debug:
-        print(f"At start of claim_switch, serials = {serials}")
-    claimed_switches = serials
-    ac_switches = list()
-    bad_switches = list()
-    
-    if dest_net == "":
-        return (f"claim_switch was called with no dest_net!")
-    if debug:
-        print(f"len([d['name'] for d in meraki_networks if d['id']=={dest_net}]) = {len([d['name'] for d in meraki_networks if d['id']==dest_net])}")
-    if (not dest_net == meraki_net) and (not len([d['name'] for d in meraki_networks if d['id']==dest_net]) == 1):
-        return (f"claim_switch was called with a dest_net that doesn't match any of your Meraki Network IDs!")
-    if len(serials) == 0:
-        return (f"claim_switch was called with no serials!")
-    
-    issues,bad_switches,ac_switches,claimed_switches = Claim(dashboard,dest_net,serials)
-    
-    # If the claim went fine, update the global stateful variables for later
-    if len(bad_switches) == 0:
-        meraki_net = dest_net
-        meraki_serials = serials
-        test_net = [d['name'] for d in meraki_networks if d['id']==meraki_net]
-        if not len(test_net) == 0:
-            meraki_net_name = test_net[0]
-    
-    # Report back on what happened
-    
-    # If we were not called from another function,
-    # if there were no Bad_switches, return a nice message
-    # otherwise return the list of issues
-    if called == "":
-        if len(bad_switches) == 0:
-            return (f"I was able to claim those switches to your Network.")
-        else:
-            return(issues)
-    # If we WERE called from another function,
-    # return the list of issues, lists of claimed & already claimed switches
-    # and a status of "OK" if no bad switches, or a status of "Issues"
-    else:
-        status = "Ok" if len(bad_switches) == 0 else "Issues"
-        if debug:
-            print(f"At the end of our claim_switch call:")
-            print(f"status = {status}")
-            print(f"issues = {issues}")
-            print(f"ac_switches = {ac_switches}")
-            print(f"claimed_switches = {claimed_switches}")
-        return (status, issues, ac_switches, claimed_switches)
-
-
-def register_switch(incoming_msg,host="",called=""):
-    """
-    This function will register a Catalyst switch to the Meraki Dashboard.
-    :param incoming_msg: The incoming message object from Teams
-    :param host:The incoming hostname or IP address from the translate_card Teams card
-    :return: A text or markdown based reply
-    """
-    
-    # Import the global stateful variables
-    global host_id, meraki_serials
-    
-    # Clear some variables for the next step
-    switch_name = ""
-    
-#    if config == "":
-    
-    # Since we weren't passed a config filespec, check for a hostname or IP address
-    if host == "":
-        return("You need to enter a host FQDN or IP address.")
-    else:
-    # We were passed a hostname or IP address...
-    # Update the global stateful variable for later
-        host_id = host
-    
-    # SSH to the switch with netmiko, read the config, grab the hostname,
-    # write the config out to a file using the hostname as part of the filespec
-    status, issues, registered_switches, registered_serials = Register(host,USERNAME,PASSWORD,PORT,SECRET)
-    if debug:
-        print(f"In register_switch, status = {status}")
-    if status == "successfully":
-        meraki_serials = registered_serials
-        if debug:
-            for switch in registered_switches:
-                print(f"In register_switch status = {status}")
-                print(f"switch = {switch}")
-                print(f"switch['Migration Status'] = {switch['Migration Status']}")
-    if debug:
-        print(f"After registering switches, meraki_serials = {meraki_serials}")
-    # Report back on what happened
-    if called == "":
-        vals=reduce(lambda x,y:x+y,[list(dic.values()) for dic in registered_switches])
-        header = registered_switches[0].keys()
-        rows = [x.values() for x in registered_switches]
-        thing = tabulate(rows, header)
-        payload = "```\n%s"%thing
-        return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
-    else:
-        return (status, issues, registered_switches)
-
-
-def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
-    """
-    This function will register a Catalyst switch stack to the Meraki Dashboard, claim
-    the stack to a Meraki Network, then translate the switch stack config to Meraki.
-    Once finished, the user can edit the Meraki stack config before manually initiating
-    migration to Cloud Management via "service meraki start" CLI command on the stack.
-    :param incoming_msg: The incoming message object from Teams
-    :param host:The incoming hostname or IP address
-    :return: A text or markdown based reply
-    """
-    
-    # Import the global stateful variables
-    global config_file, host_id, meraki_net, meraki_net_name, meraki_serials, meraki_urls
-    
-    # Clear some variables for the next step
-    switch_name = ""
-    status = ""
-    issues = ""
-    ac_switches = list()
-    claimed_switches = list()
-    
-    if debug:
-        print(f"At the start of migrate_switch:")
-        print(f"host = {host}")
-        print(f"dest_net = {dest_net}")
-    # Were we passed a hostname or IP address?
-    if host == "":
-        return "You need to provide a host."
-    else:
-    # We were passed a hostname or IP address...
-        host_id = host
-    
-    # Were we passed a Meraki Network?
-    if dest_net == "":
-        return "You need to provide a Meraki network."
-    else:
-        if debug:
-            print(f"")
-    # We were passed a hostname or IP address...
-        # Is it in the list of the user's Meraki networks?
-        if debug:
-            print(f"meraki_networks = {meraki_networks}")
-        if (not dest_net == meraki_net):
-            if debug:
-                print(f"In migrate_switch, {dest_net} != {meraki_net}")
-            if (not len([d['name'] for d in meraki_networks if d['id']==dest_net]) == 1):
-                if debug:
-                    print(f"In migrate_switch, {dest_net} != {[d['id'] for d in meraki_networks]}")
-                return "You need to provide a Meraki network."
-        # It was in the list of the user's Meraki networks, so save it
-        meraki_net = dest_net
-        test_net = [d['name'] for d in meraki_networks if d['id']==meraki_net]
-        if not len(test_net) == 0:
-            meraki_net_name = test_net[0]
-
-    # SSH to the switch with netmiko, read the config, grab the switch name,
-    # write the config out to a file using the switch name as part of the filespec
-    session_info = {
-        'device_type': 'cisco_xe',
-        'host': host_id,
-        'username': USERNAME,
-        'password': PASSWORD,
-        'port' : PORT,          # optional, defaults to 22
-        'secret': SECRET,     # optional, defaults to ''
-    }
-    net_connect = ConnectHandler(**session_info)
-    switch_name = net_connect.find_prompt()
-    net_connect.enable()
-    switch_name = net_connect.find_prompt()
-    switch_name = switch_name[:len(switch_name) - 1]
-    net_connect.send_command('term len 0')
-    config = net_connect.send_command('show running-config')
-    net_connect.send_command('term len 24')
-    net_connect.disconnect()
-    dir = os.path.join(os.getcwd(),"../files")
-    file = open(os.path.join(dir,switch_name+".cfg"), "w")
-    file.writelines(config)
-    file.close()
-    config = os.path.join(dir,switch_name+".cfg")
-    blurb = "Logged in to " + host_id + " to grab a copy of the running config and save it as " + switch_name+".cfg."
-    if BOT:
-        c = create_message(incoming_msg.roomId, blurb)
-    else:
-        print(blurb)
-    
-    # Update the global stateful variable for later
-    config_file = config
-    
-    # Register the switch stack to the Meraki dashboard
-    if debug:
-        print(f"in migrate before register_switch, meraki_serials = {meraki_serials}")    
-    status, issues, registered_switches = register_switch(incoming_msg,host=host_id,called='yes')
-
-    if debug:
-        print(f"in migrate after register_switch, meraki_serials = {meraki_serials}")    
-    
-    # If we were not fully successful, just return with the report
-    if not status == "successfully":
-        vals=reduce(lambda x,y:x+y,[list(dic.values()) for dic in registered_switches])
-        header = registered_switches[0].keys()
-        rows = [x.values() for x in registered_switches]
-        thing = tabulate(rows, header)
-        payload = "```\n%s"%thing
-        return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
-    string_serials = ', '.join(meraki_serials)
-    blurb = "Registered " + host_id + " to Dashboard as " + string_serials + "."
-    if BOT:
-        c = create_message(incoming_msg.roomId, blurb)
-    else:
-        print(blurb)
-    if debug:
-        print(f"in migrate before claim_switch, meraki_serials = {meraki_serials}")    
-    # Claim the switch stack to a Network in the Meraki dashboard
-    status, issues, ac_switches, claimed_switches = claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called='yes')
-    if debug:
-        print(f"in migrate after claim_switch, meraki_serials = {meraki_serials}")    
-
-    # If the attempt to claim the switch stack had issues, return them
-    if not status == "Ok":
-        return(issues)
-    blurb = "Claimed " + string_serials + " to Meraki network " + meraki_net_name + "."
-    if BOT:
-        c = create_message(incoming_msg.roomId, blurb)
-    else:
-        print(blurb)
-    if debug:
-        print(f"in migrate before translate, meraki_serials = {meraki_serials}")
-    # Translate the switch stack to the Meraki switches we just claimed
-    r = "\n\n" + translate_switch(incoming_msg,config="",host=host_id,serials=meraki_serials,verb="migrate")
-    blurb = "Translated " + switch_name+".cfg to Meraki switches " + string_serials + "."
-    if BOT:
-        c = create_message(incoming_msg.roomId, blurb)
-    else:
-        print(blurb)
-    r += "\nPlease review the configuration in Dashboard and add/modify what you want prior to converting the switch to Meraki Cloud Management."
-    if BOT:
-        r += "\n**Converting the switch will _remove all configuration_, so you do so at your own risk!**"
-    else:
-        r += "\nCONVERTING THE SWITCH WILL REMOVE ALL CONFIGURATION, SO YOU DO SO AT YOUR OWN RISK!"
-    r += "\n To convert the switch, enter the following:\n"
-    if BOT:
-        r += "```\nenable\nservice meraki start"
-    else:
-        r += "\n    enable\n    service meraki start"
-    return (r)
-
-
-def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki_serials,verb="translate"):
-    """
-    This function will translate a Catalyst switch stack config to features in an existing
-    set of Meraki switches.
-    :param incoming_msg: The incoming message object from Teams
-    :param config: The incoming config filespec from the translate_card Teams card
-    :param host:The incoming hostname or IP address from the translate_card Teams card
-    :param serials:The incoming list of Meraki serials from the translate_card Teams card
-    :return: A text or markdown based reply
-    """
-      
-    # Import the global stateful variables
-    global config_file, host_id, meraki_serials, meraki_urls
-        
-    if debug:
-        print(f"In translate, config_file = {config_file}")
-    # Clear some variables for the next step
-    switch_name = ""
-    # Check whether or not we were passed a list of up to 8 Meraki serial numbers
-    try:
-        m = get_attachment_actions(incoming_msg["id"])
-        if debug:
-            print(f"m['inputs']['sw_list'] = {m['inputs']['sw_list']}")
-        if m["inputs"]["sw_list"] == []:
-            if len(serials) == 0:
-                return "You need to enter a list of Meraki switch serial numbers 1."
-        else:
-            serials = re.split(',',m["inputs"]["sw_list"])
-    except:
-        if len(serials) == 0:
-            return "You need to enter a list of Meraki switch serial numbers 2."
-    if len(serials) > 8:
-        return "A switch stack can contain a maximum of 8 switches."
-    # Update the global stateful variable for later
-    meraki_serials = serials
-    if debug:
-        print(f"meraki_serials = {meraki_serials}")
-    # Check whether or not we were passed a config filespec
-    
-    try:
-        # Since we weren't passed a a hostname or IP address,
-        # maybe we came here from a card? check the card params
-        m = get_attachment_actions(incoming_msg["id"])
-        
-        # If there is nothing in the card either, than BUMP the user
-        try:
-            if not m["inputs"]["file"] == "":
-                config = m["inputs"]["file"]
-                config, exists = File_exists(config)
-                if not exists:
-                    return("I'm sorry, but I could not find that file.")
-        except:
-            pass
-        try:
-            if not m["inputs"]["host"] == "":
-                host = m["inputs"]["host"]
-                if not Ping(host):
-                    return("I was unable to ping that host.")
-        except:
-            pass
-    except:
-        pass
-    if config == "" and config_file == "":
-        if host == "" and host_id == "":
-            return "You need to enter either a host or a config filespec."
-        else:
-            if host == "":
-                host = host_id
-            host_id = host
-            # SSH to the switch with netmiko, read the config, grab the switch name,
-            # write the config out to a file using the switch name as part of the filespec
-            if debug:
-                print(f"meraki_serials = {meraki_serials}")
-            session_info = {
-                'device_type': 'cisco_xe',
-                'host': host_id,
-                'username': USERNAME,
-                'password': PASSWORD,
-                'port' : PORT,          # optional, defaults to 22
-                'secret': SECRET,     # optional, defaults to ''
-            }
-            if debug:
-                print(f"session_info = {session_info}")
-            net_connect = ConnectHandler(**session_info)
-            switch_name = net_connect.find_prompt()
-            net_connect.enable()
-            switch_name = net_connect.find_prompt()
-            switch_name = switch_name[:len(switch_name) - 1]
-            net_connect.send_command('term len 0')
-            config = net_connect.send_command('show running-config')
-            net_connect.send_command('term len 24')
-            net_connect.disconnect()
-            dir = os.path.join(os.getcwd(),"../files")
-            file = open(os.path.join(dir,switch_name+".cfg"), "w")
-            file.writelines(config)
-            file.close()
-            config = os.path.join(dir,switch_name+".cfg")
-    else:
-        if config == "":
-            config = config_file
-                
-    # Update the global stateful variable for later
-    config_file = config
-    
-    # Evaluate the Catalyst config and break it into lists we can work with
-    blurb = "Evaluating the switch config."
-    if BOT:
-        c = create_message(incoming_msg.roomId, blurb)
-    else:
-        print(blurb)
-    Uplink_list, Downlink_list, Other_list, port_dict, switch_name = Evaluate(serials,config_file)
-    
-    ## Creating a list of the port configurations to push to Meraki
-    ToBeConfigured = {}
-    z = 0
-    while z < len(Downlink_list):
-        interface = Downlink_list[z]
-        ToBeConfigured[interface] = port_dict[interface]
-        z +=1
-    
-    ##
-    ## Start the meraki config migration after confirmation from the user
-    ##
-    if BOT:
-        c = create_message(incoming_msg.roomId, "Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
-    else:
-        print("Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
-    configured_ports,unconfigured_ports,meraki_urls = Meraki_config(dashboard,meraki_serials,ToBeConfigured,Downlink_list,switch_name)
-    if debug:
-        print(f"configured_ports = {configured_ports}")
-        print(f"unconfigured_ports = {unconfigured_ports}")
-    
-    switch = 0
-    response = ""
-    if debug:
-        print(f"meraki_serials = {meraki_serials}")
-    while switch <= len(meraki_serials)-1:
-        if len(meraki_serials) == 1:
-            response += "For the switch (" + meraki_serials[switch] + "):\n"
-        else:
-            response += "For switch "+ str(switch+1) + " (" + meraki_serials[switch] + "):\n"
-        if debug:
-            print(f"\nswitch={switch}, and response = {response}")
-        if len(configured_ports[switch]) > 0:
-            if BOT:
-                response += "We were able to **successfully** " + verb + " ports: "
-            else:
-                response += "We were able to successfully " + verb + " ports: "
-            c_port = 0
-            while c_port <= len(configured_ports[switch])-2:
-                response += configured_ports[switch][c_port] + ", "
-                if debug:
-                    print(f"\nc_port={c_port}, and response = {response}")
-                c_port+=1
-            response += configured_ports[switch][c_port] + "\n\n"
-            if debug:
-                print(f"\nc_port={c_port}, and response = {response}")
-        if len(unconfigured_ports[switch]) > 0:
-            if BOT:
-                response += "We were **unable** to " + verb + " ports: "
-            else:
-                response += "We were unable to " + verb + " ports: "
-            u_port = 0
-            while u_port <= len(unconfigured_ports[switch])-2:
-                response += unconfigured_ports[switch][u_port] + ", "
-                if debug:
-                    print(f"\nu_port={u_port}, and response = {response}")
-                u_port+=1
-            response += unconfigured_ports[switch][u_port] + "\n\n"
-            if debug:
-                print(f"\nu_port={u_port}, and response = {response}")
-        switch+=1
-    return (response)
-
 
 # This function will check a Catalyst switch config to Meraki
 #
@@ -1076,6 +647,438 @@ If you prefer, I can prepare for the switch to become a Meraki managed switch, k
             print(f"all_list = {all_list}")
         report=tabulate(all_list,headers=["Feature","Available","Translatable","Notes","For more info, see this URL"])
         return(report + "\n\nPlease review the results above.\nIf you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.")
+
+
+def register_switch(incoming_msg,host="",called=""):
+    """
+    This function will register a Catalyst switch to the Meraki Dashboard.
+    :param incoming_msg: The incoming message object from Teams
+    :param host:The incoming hostname or IP address from the translate_card Teams card
+    :return: A text or markdown based reply
+    """
+    
+    # Import the global stateful variables
+    global host_id, meraki_serials, nm_list
+    
+    # Clear some variables for the next step
+    switch_name = ""
+    
+#    if config == "":
+    
+    # Since we weren't passed a config filespec, check for a hostname or IP address
+    if host == "":
+        return("You need to enter a host FQDN or IP address.")
+    else:
+    # We were passed a hostname or IP address...
+    # Update the global stateful variable for later
+        host_id = host
+    
+    # SSH to the switch with netmiko, read the config, grab the hostname,
+    # write the config out to a file using the hostname as part of the filespec
+    status, issues, registered_switches, registered_serials, nm_list = Register(host,USERNAME,PASSWORD,PORT,SECRET)
+    if debug:
+        print(f"In register_switch, status = {status}")
+    if status == "successfully":
+        meraki_serials = registered_serials
+        if debug:
+            for switch in registered_switches:
+                print(f"In register_switch status = {status}")
+                print(f"switch = {switch}")
+                print(f"switch['Migration Status'] = {switch['Migration Status']}")
+    if debug:
+        print(f"After registering switches, meraki_serials = {meraki_serials}")
+    # Report back on what happened
+    if called == "":
+        vals=reduce(lambda x,y:x+y,[list(dic.values()) for dic in registered_switches])
+        header = registered_switches[0].keys()
+        rows = [x.values() for x in registered_switches]
+        thing = tabulate(rows, header)
+        payload = "```\n%s"%thing
+        return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
+    else:
+        return (status, issues, registered_switches)
+
+
+def claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called=""):
+    """
+    This function will Claim newly Registered Catalyst switch in the Meraki Dashboard.
+    :param incoming_msg: The incoming message object from Teams
+    :param dest_net: The incoming Meraki destination Network to claim devices to
+    :param serials:The incoming list of Meraki serial numbers to claim
+    :return: A text or markdown based reply
+    """
+    global host_id, meraki_net, meraki_serials, meraki_net_name
+    issues = ""
+    if debug:
+        print(f"At start of claim_switch, serials = {serials}")
+    claimed_switches = serials
+    ac_switches = list()
+    bad_switches = list()
+    
+    if dest_net == "":
+        return (f"claim_switch was called with no dest_net!")
+    if debug:
+        print(f"len([d['name'] for d in meraki_networks if d['id']=={dest_net}]) = {len([d['name'] for d in meraki_networks if d['id']==dest_net])}")
+    if (not dest_net == meraki_net) and (not len([d['name'] for d in meraki_networks if d['id']==dest_net]) == 1):
+        return (f"claim_switch was called with a dest_net that doesn't match any of your Meraki Network IDs!")
+    if len(serials) == 0:
+        return (f"claim_switch was called with no serials!")
+    
+    issues,bad_switches,ac_switches,claimed_switches = Claim(dashboard,dest_net,serials)
+    
+    # If the claim went fine, update the global stateful variables for later
+    if len(bad_switches) == 0:
+        meraki_net = dest_net
+        meraki_serials = serials
+        test_net = [d['name'] for d in meraki_networks if d['id']==meraki_net]
+        if not len(test_net) == 0:
+            meraki_net_name = test_net[0]
+    
+    # Report back on what happened
+    
+    # If we were not called from another function,
+    # if there were no Bad_switches, return a nice message
+    # otherwise return the list of issues
+    if called == "":
+        if len(bad_switches) == 0:
+            return (f"I was able to claim those switches to your Network.")
+        else:
+            return(issues)
+    # If we WERE called from another function,
+    # return the list of issues, lists of claimed & already claimed switches
+    # and a status of "OK" if no bad switches, or a status of "Issues"
+    else:
+        status = "Ok" if len(bad_switches) == 0 else "Issues"
+        if debug:
+            print(f"At the end of our claim_switch call:")
+            print(f"status = {status}")
+            print(f"issues = {issues}")
+            print(f"ac_switches = {ac_switches}")
+            print(f"claimed_switches = {claimed_switches}")
+        return (status, issues, ac_switches, claimed_switches)
+
+
+def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki_serials,verb="translate"):
+    """
+    This function will translate a Catalyst switch stack config to features in an existing
+    set of Meraki switches.
+    :param incoming_msg: The incoming message object from Teams
+    :param config: The incoming config filespec from the translate_card Teams card
+    :param host:The incoming hostname or IP address from the translate_card Teams card
+    :param serials:The incoming list of Meraki serials from the translate_card Teams card
+    :return: A text or markdown based reply
+    """
+      
+    # Import the global stateful variables
+    global config_file, host_id, meraki_serials, meraki_urls, nm_list
+        
+    if debug:
+        print(f"In translate, config_file = {config_file}")
+    # Clear some variables for the next step
+    switch_name = ""
+    # Check whether or not we were passed a list of up to 8 Meraki serial numbers
+    try:
+        m = get_attachment_actions(incoming_msg["id"])
+        if debug:
+            print(f"m['inputs']['sw_list'] = {m['inputs']['sw_list']}")
+        if m["inputs"]["sw_list"] == []:
+            if len(serials) == 0:
+                return "You need to enter a list of Meraki switch serial numbers 1."
+        else:
+            serials = re.split(',',m["inputs"]["sw_list"])
+    except:
+        if len(serials) == 0:
+            return "You need to enter a list of Meraki switch serial numbers 2."
+    if len(serials) > 8:
+        return "A switch stack can contain a maximum of 8 switches."
+    # Update the global stateful variable for later
+    meraki_serials = serials
+    if debug:
+        print(f"meraki_serials = {meraki_serials}")
+    # Check whether or not we were passed a config filespec
+    
+    try:
+        # Since we weren't passed a a hostname or IP address,
+        # maybe we came here from a card? check the card params
+        m = get_attachment_actions(incoming_msg["id"])
+        
+        # If there is nothing in the card either, than BUMP the user
+        try:
+            if not m["inputs"]["file"] == "":
+                config = m["inputs"]["file"]
+                config, exists = File_exists(config)
+                if not exists:
+                    return("I'm sorry, but I could not find that file.")
+        except:
+            pass
+        try:
+            if not m["inputs"]["host"] == "":
+                host = m["inputs"]["host"]
+                if not Ping(host):
+                    return("I was unable to ping that host.")
+        except:
+            pass
+    except:
+        pass
+    if config == "" and config_file == "":
+        if host == "" and host_id == "":
+            return "You need to enter either a host or a config filespec."
+        else:
+            if host == "":
+                host = host_id
+            host_id = host
+            # SSH to the switch with netmiko, read the config, grab the switch name,
+            # write the config out to a file using the switch name as part of the filespec
+            if debug:
+                print(f"meraki_serials = {meraki_serials}")
+            session_info = {
+                'device_type': 'cisco_xe',
+                'host': host_id,
+                'username': USERNAME,
+                'password': PASSWORD,
+                'port' : PORT,          # optional, defaults to 22
+                'secret': SECRET,     # optional, defaults to ''
+            }
+            if debug:
+                print(f"session_info = {session_info}")
+            net_connect = ConnectHandler(**session_info)
+            switch_name = net_connect.find_prompt()
+            net_connect.enable()
+            switch_name = net_connect.find_prompt()
+            switch_name = switch_name[:len(switch_name) - 1]
+            net_connect.send_command('term len 0')
+            config = net_connect.send_command('show running-config')
+            net_connect.send_command('term len 24')
+            net_connect.disconnect()
+            dir = os.path.join(os.getcwd(),"../files")
+            file = open(os.path.join(dir,switch_name+".cfg"), "w")
+            file.writelines(config)
+            file.close()
+            config = os.path.join(dir,switch_name+".cfg")
+    else:
+        if config == "":
+            config = config_file
+                
+    # Update the global stateful variable for later
+    config_file = config
+    
+    # Evaluate the Catalyst config and break it into lists we can work with
+    blurb = "Evaluating the switch config."
+    if BOT:
+        c = create_message(incoming_msg.roomId, blurb)
+    else:
+        print(blurb)
+    Uplink_list, Downlink_list, Other_list, port_dict, switch_name = Evaluate(serials,config_file)
+    
+    ## Creating a list of the port configurations to push to Meraki
+    ToBeConfigured = {}
+    z = 0
+    while z < len(Downlink_list):
+        interface = Downlink_list[z]
+        ToBeConfigured[interface] = port_dict[interface]
+        z +=1
+    
+    ##
+    ## Start the meraki config migration after confirmation from the user
+    ##
+    if BOT:
+        c = create_message(incoming_msg.roomId, "Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
+    else:
+        print("Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
+    configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_serials,ToBeConfigured,Downlink_list,switch_name)
+    if debug:
+        print(f"configured_ports = {configured_ports}")
+        print(f"unconfigured_ports = {unconfigured_ports}")
+    
+    switch = 0
+    response = ""
+    if debug:
+        print(f"meraki_serials = {meraki_serials}")
+    while switch <= len(meraki_serials)-1:
+        if len(meraki_serials) == 1:
+            response += "For the switch (" + meraki_serials[switch] + "):\n"
+        else:
+            response += "For switch "+ str(switch+1) + " (" + meraki_serials[switch] + "):\n"
+        if debug:
+            print(f"\nswitch={switch}, and response = {response}")
+        if len(configured_ports[switch]) > 0:
+            if BOT:
+                response += "We were able to **successfully** " + verb + " ports: "
+            else:
+                response += "We were able to successfully " + verb + " ports: "
+            c_port = 0
+            while c_port <= len(configured_ports[switch])-2:
+                response += configured_ports[switch][c_port] + ", "
+                if debug:
+                    print(f"\nc_port={c_port}, and response = {response}")
+                c_port+=1
+            response += configured_ports[switch][c_port] + "\n\n"
+            if debug:
+                print(f"\nc_port={c_port}, and response = {response}")
+        if len(unconfigured_ports[switch]) > 0:
+            if BOT:
+                response += "We were **unable** to " + verb + " ports: "
+            else:
+                response += "We were unable to " + verb + " ports: "
+            u_port = 0
+            while u_port <= len(unconfigured_ports[switch])-2:
+                response += unconfigured_ports[switch][u_port] + ", "
+                if debug:
+                    print(f"\nu_port={u_port}, and response = {response}")
+                u_port+=1
+            response += unconfigured_ports[switch][u_port] + "\n\n"
+            if debug:
+                print(f"\nu_port={u_port}, and response = {response}")
+        switch+=1
+    return (response)
+
+
+def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
+    """
+    This function will register a Catalyst switch stack to the Meraki Dashboard, claim
+    the stack to a Meraki Network, then translate the switch stack config to Meraki.
+    Once finished, the user can edit the Meraki stack config before manually initiating
+    migration to Cloud Management via "service meraki start" CLI command on the stack.
+    :param incoming_msg: The incoming message object from Teams
+    :param host:The incoming hostname or IP address
+    :return: A text or markdown based reply
+    """
+    
+    # Import the global stateful variables
+    global config_file, host_id, nm_list
+    global meraki_net, meraki_net_name, meraki_serials, meraki_urls
+    
+    # Clear some variables for the next step
+    switch_name = ""
+    status = ""
+    issues = ""
+    ac_switches = list()
+    claimed_switches = list()
+    
+    if debug:
+        print(f"At the start of migrate_switch:")
+        print(f"host = {host}")
+        print(f"dest_net = {dest_net}")
+    # Were we passed a hostname or IP address?
+    if host == "":
+        return "You need to provide a host."
+    else:
+    # We were passed a hostname or IP address...
+        host_id = host
+    
+    # Were we passed a Meraki Network?
+    if dest_net == "":
+        return "You need to provide a Meraki network."
+    else:
+        if debug:
+            print(f"")
+    # We were passed a hostname or IP address...
+        # Is it in the list of the user's Meraki networks?
+        if debug:
+            print(f"meraki_networks = {meraki_networks}")
+        if (not dest_net == meraki_net):
+            if debug:
+                print(f"In migrate_switch, {dest_net} != {meraki_net}")
+            if (not len([d['name'] for d in meraki_networks if d['id']==dest_net]) == 1):
+                if debug:
+                    print(f"In migrate_switch, {dest_net} != {[d['id'] for d in meraki_networks]}")
+                return "You need to provide a Meraki network."
+        # It was in the list of the user's Meraki networks, so save it
+        meraki_net = dest_net
+        test_net = [d['name'] for d in meraki_networks if d['id']==meraki_net]
+        if not len(test_net) == 0:
+            meraki_net_name = test_net[0]
+
+    # SSH to the switch with netmiko, read the config, grab the switch name,
+    # write the config out to a file using the switch name as part of the filespec
+    session_info = {
+        'device_type': 'cisco_xe',
+        'host': host_id,
+        'username': USERNAME,
+        'password': PASSWORD,
+        'port' : PORT,          # optional, defaults to 22
+        'secret': SECRET,     # optional, defaults to ''
+    }
+    net_connect = ConnectHandler(**session_info)
+    switch_name = net_connect.find_prompt()
+    net_connect.enable()
+    switch_name = net_connect.find_prompt()
+    switch_name = switch_name[:len(switch_name) - 1]
+    net_connect.send_command('term len 0')
+    config = net_connect.send_command('show running-config')
+    net_connect.send_command('term len 24')
+    net_connect.disconnect()
+    dir = os.path.join(os.getcwd(),"../files")
+    file = open(os.path.join(dir,switch_name+".cfg"), "w")
+    file.writelines(config)
+    file.close()
+    config = os.path.join(dir,switch_name+".cfg")
+    blurb = "Logged in to " + host_id + " to grab a copy of the running config and save it as " + switch_name+".cfg."
+    if BOT:
+        c = create_message(incoming_msg.roomId, blurb)
+    else:
+        print(blurb)
+    
+    # Update the global stateful variable for later
+    config_file = config
+    
+    # Register the switch stack to the Meraki dashboard
+    if debug:
+        print(f"in migrate before register_switch, meraki_serials = {meraki_serials}")    
+    status, issues, registered_switches = register_switch(incoming_msg,host=host_id,called='yes')
+
+    if debug:
+        print(f"in migrate after register_switch, meraki_serials = {meraki_serials}")    
+    
+    # If we were not fully successful, just return with the report
+    if not status == "successfully":
+        vals=reduce(lambda x,y:x+y,[list(dic.values()) for dic in registered_switches])
+        header = registered_switches[0].keys()
+        rows = [x.values() for x in registered_switches]
+        thing = tabulate(rows, header)
+        payload = "```\n%s"%thing
+        return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
+    string_serials = ', '.join(meraki_serials)
+    blurb = "Registered " + host_id + " to Dashboard as " + string_serials + "."
+    if BOT:
+        c = create_message(incoming_msg.roomId, blurb)
+    else:
+        print(blurb)
+    if debug:
+        print(f"in migrate before claim_switch, meraki_serials = {meraki_serials}")    
+    # Claim the switch stack to a Network in the Meraki dashboard
+    status, issues, ac_switches, claimed_switches = claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called='yes')
+    if debug:
+        print(f"in migrate after claim_switch, meraki_serials = {meraki_serials}")    
+
+    # If the attempt to claim the switch stack had issues, return them
+    if not status == "Ok":
+        return(issues)
+    blurb = "Claimed " + string_serials + " to Meraki network " + meraki_net_name + "."
+    if BOT:
+        c = create_message(incoming_msg.roomId, blurb)
+    else:
+        print(blurb)
+    if debug:
+        print(f"in migrate before translate, meraki_serials = {meraki_serials}")
+    # Translate the switch stack to the Meraki switches we just claimed
+    r = "\n\n" + translate_switch(incoming_msg,config="",host=host_id,serials=meraki_serials,verb="migrate")
+    blurb = "Translated " + switch_name+".cfg to Meraki switches " + string_serials + "."
+    if BOT:
+        c = create_message(incoming_msg.roomId, blurb)
+    else:
+        print(blurb)
+    r += "\nPlease review the configuration in Dashboard and add/modify what you want prior to converting the switch to Meraki Cloud Management."
+    if BOT:
+        r += "\n**Converting the switch will _remove all configuration_, so you do so at your own risk!**"
+    else:
+        r += "\nCONVERTING THE SWITCH WILL REMOVE ALL CONFIGURATION, SO YOU DO SO AT YOUR OWN RISK!"
+    r += "\n To convert the switch, enter the following:\n"
+    if BOT:
+        r += "```\nenable\nservice meraki start"
+    else:
+        r += "\n    enable\n    service meraki start"
+    return (r)
 
 
 

@@ -9,6 +9,7 @@ def Register(host,username,password,port,secret):
     issues = list()
     registered_switches = list()
     registered_serials = list()
+    nm_list = list()
     
     # We were passed a hostname or IP address...
     host_id = host
@@ -27,6 +28,27 @@ def Register(host,username,password,port,secret):
     net_connect.enable()
     switch_name = net_connect.find_prompt()
     switch_name = switch_name[:len(switch_name) - 1]
+    
+    ## Grab the switches in the stack
+    r = net_connect.send_command('show switch')
+    qty_switches = len(r.split("\n"))-8
+    ## Grab the uplink module in each switch
+    x = 1
+    while x <= qty_switches:
+        if debug:
+            print(f"For switch {x}, cmd = {'show inventory Switch ' + str(x) + ' FRU Uplink Module 1'}")
+        r = net_connect.send_command('show inventory "Switch ' + str(x) + ' FRU Uplink Module 1"')
+        if debug:
+            print(f"For switch {x}, r = {r}")
+        if debug:
+            print(f"For switch {x}, len(r) = {len(r)}")
+        if not r[0] == "%":
+            nm_list.append(r.split("\n")[1].split()[1])
+        else:
+            nm_list.append("")
+        x += 1
+    if debug:
+        print(f"For the {qty_switches} switches in the stack, the NM modules are {nm_list}")
     
     r = net_connect.send_command('show version').split("\n")
     version = r[0].split("Version")[1].strip()
@@ -54,7 +76,7 @@ def Register(host,username,password,port,secret):
         regex = re.compile("^1  C9")
         x = int([i for i, item in enumerate(r_more) if re.search(regex, item)][0])
         if x == -1:
-            return "unsuccessfully", ["No registration status returned."], registered_switches
+            return "unsuccessfully", ["No registration status returned."], registered_switches, nm_list
         y = len(r_more)-x
         z = 0
         while z <= y-1:
@@ -70,7 +92,7 @@ def Register(host,username,password,port,secret):
                 'Mode': switch_result[6]
             })
             z += 1
-        return "successfully", issues, registered_switches, registered_serials
+        return "successfully", issues, registered_switches, registered_serials, nm_list
    
    
    
@@ -103,15 +125,14 @@ def Register(host,username,password,port,secret):
 
     ## If we had issues with the "Before you Begin" features, return with issues
     if not len(issues) == 0:
-        return "unsuccessfully", issues, registered_switches
+        return "unsuccessfully", issues, registered_switches, nm_list
     
     
     ## With that out of the way, we can check meraki compatibility
     r = net_connect.send_command('show meraki compatibility')
     #### Add logic to parse for compatibility issues
-
-
-
+    
+    
     ## Register all switches in the stack to the Meraki Dashboard
     r = net_connect.send_command('service meraki register switch all')
     #### Add logic to parse for issues in Conversion Status column
@@ -131,7 +152,7 @@ def Register(host,username,password,port,secret):
     y -= 2
     # If there were no lines in the results, then we've got a problem...
     if x == -1:
-        return "unsuccessfully", ["No registration status returned."], registered_switches
+        return "unsuccessfully", ["No registration status returned."], registered_switches, nm_list
     # Otherwise, translate the results table into a list of dictionaries - 
     # (one dict per switch) and return that with a success flag
     z = x
@@ -148,4 +169,4 @@ def Register(host,username,password,port,secret):
             'mode': switch_result[6]
         })
         z += 1
-    return "successfully", issues, registered_switches, registered_serials
+    return "successfully", issues, registered_switches, registered_serials, nm_list
