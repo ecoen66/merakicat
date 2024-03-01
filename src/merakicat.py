@@ -83,9 +83,16 @@ meraki_net_name=""
 meraki_urls = list()
 command_line_msg = Response()
 
+if debug:
+    print(f"Meraki ")
+
 # Request the lists of Organizations and their Networks from Dashboard
 if not meraki_api_key == "":
+    if debug:
+        print(f"Trying to setup a dashboard instance")
     dashboard = meraki.DashboardAPI(api_key=meraki_api_key,output_log=False,suppress_logging=True)
+    if debug:
+        print(f"Got one, now trying to get the list of Orgs")
     meraki_orgs = dashboard.organizations.getOrganizations()
     if debug:
         print(f"meraki_orgs = {meraki_orgs}")
@@ -101,16 +108,18 @@ if not meraki_api_key == "":
         x+=1
     if debug:
         print(f"meraki_networks = {meraki_networks}")
-    if len(meraki_orgs) == 1 and len(meraki_networks) == 1:
+    if len(meraki_orgs) == 1:
         meraki_org = meraki_orgs[0]['id']
         meraki_org_name = meraki_orgs[0]['name']
-        meraki_net = meraki_networks[0]['id']
-        meraki_net_name = meraki_networks[0]['name']
         if debug:
             print(f"meraki_org = {meraki_org}")
             print(f"meraki_org_name = {meraki_org_name}")
-            print(f"meraki_net = {meraki_net}")
-            print(f"meraki_net_name = {meraki_net_name}")
+        if len(meraki_orgs) == 1 and len(meraki_networks) == 1:
+            meraki_net = meraki_networks[0]['id']
+            meraki_net_name = meraki_networks[0]['name']
+            if debug:
+                print(f"meraki_net = {meraki_net}")
+                print(f"meraki_net_name = {meraki_net_name}")
 
 
 if BOT:
@@ -770,7 +779,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     """
       
     # Import the global stateful variables
-    global config_file, host_id, meraki_serials, meraki_urls, nm_list
+    global config_file, host_id, meraki_org, meraki_serials, meraki_urls, nm_list
         
     if debug:
         print(f"In translate, config_file = {config_file}")
@@ -885,7 +894,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         c = create_message(incoming_msg.roomId, "Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
     else:
         print("Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
-    configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_serials,ToBeConfigured,Downlink_list,switch_name)
+    configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_org,meraki_serials,ToBeConfigured,Downlink_list,switch_name)
     if debug:
         print(f"configured_ports = {configured_ports}")
         print(f"unconfigured_ports = {unconfigured_ports}")

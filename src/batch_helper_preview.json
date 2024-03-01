@@ -1,0 +1,1736 @@
+[
+  {
+    "organizationId": "128613",
+    "actions": [
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/1",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/2",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/3",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/4",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/5",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/6",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/7",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/8",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/9",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/10",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/11",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/12",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/13",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/14",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/15",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/16",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/17",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/18",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/19",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/20",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/21",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/22",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/23",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/24",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/25",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/26",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/27",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/28",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/29",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/30",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/31",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/32",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/33",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/34",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/35",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/36",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/37",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/38",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/39",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/40",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/41",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/42",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/43",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/44",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/45",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/46",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/47",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-CQ2L-8C6Y/switch/ports/48",
+        "operation": "update",
+        "body": {
+          "name": "The mothership connection",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "access",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/1",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/2",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/3",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/4",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/5",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/6",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/7",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/8",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/9",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/10",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/11",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/12",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/13",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/14",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/15",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/16",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/17",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/18",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/19",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/20",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/21",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/22",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/23",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/24",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/25",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/26",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/27",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/28",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/29",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/30",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/31",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/32",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/33",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/34",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/35",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/36",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/37",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/38",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/39",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/40",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/41",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/42",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/43",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/44",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/45",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/46",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/47",
+        "operation": "update",
+        "body": {
+          "name": "",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      },
+      {
+        "resource": "/devices/Q5TG-JDJT-ATUA/switch/ports/48",
+        "operation": "update",
+        "body": {
+          "name": "This is not the uplink",
+          "voiceVlan": null,
+          "enabled": true,
+          "type": "trunk",
+          "tags": [],
+          "poeEnabled": true,
+          "rstpEnabled": true,
+          "stpGuard": "disabled",
+          "linkNegotiation": "Auto negotiate",
+          "accessPolicyType": "Open",
+          "vlan": 1,
+          "allowedVlans": "1-1000"
+        }
+      }
+    ],
+    "synchronous": false,
+    "confirmed": true
+  }
+]

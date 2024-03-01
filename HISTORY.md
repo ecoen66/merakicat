@@ -1,10 +1,14 @@
 # History
 
+## 0.0.7 (03-01-2024)
+
+  - Now using batch port updates to Meraki dashboard
+  - Still not yet released on PyPI.
+  
 ## 0.0.6 (03-01-2024)
 
   - Some light refactoring of mc_translate module
   - More prep work for Uplink config.
-  - Still not yet released on PyPI.
 
 ## 0.0.5 (02-29-2024)
 

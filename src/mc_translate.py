@@ -1,5 +1,5 @@
 import meraki
-#import batch_helper
+import batch_helper
 from meraki.config import SUPPRESS_LOGGING
 from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
@@ -190,7 +190,6 @@ def Evaluate(sw_list, config_file):
                     if not max_mac == "":
                         port_dict[intf_name]['Port_Sec'] = max_mac
                     else:
-                        print(port_dict[intf_name]['desc'])
                         pass
             
             except:
@@ -293,20 +292,24 @@ def Evaluate(sw_list, config_file):
     return Uplink_list, Downlink_list, Other_list, port_dict, switch_name
 
 
-def Meraki_config_down(dashboard,sw_list,port_dict,Downlink_list,switch_name):
+def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list,switch_name):
     
     debug = DEBUG or DEBUG_TRANSLATOR
     
-    # create some action lists
-    action_list_1 = list()
-    action_list_2 = list()
-    action_list_3 = list()
+    # create a batch action lists
+    action_list = list()
     all_actions = list()
     
+    # create good and bad port lists 
     configured_ports = defaultdict(list)
     unconfigured_ports = defaultdict(list)
+
+    # create a place to hold the Dashboard URL for each switch
     urls = list()
-    
+
+    # create a place to hold all of the arguments to send to Dashboard
+    # to update a switch port
+    args = list(dict())
     
     ## Loop to go through all the ports of the switches
     def loop_configure_meraki(port_dict,Downlink_list,switch_name):
@@ -343,8 +346,26 @@ def Meraki_config_down(dashboard,sw_list,port_dict,Downlink_list,switch_name):
                 print("\n----------- "+x+" -----------")
                 pprint.pprint(m)
             
-            args={}
-            args={'name':'',
+            ## Check the switch that mapped to those catalyst ports
+            try:
+                sw = int(m['sw_module'])
+            except:
+                sw = 1
+            if not sw == 0:
+                sw -=1
+            if debug:
+                print("Switch Serial Number "+sw_list[sw])
+                print(f"args = {args}")
+                print(f"y = {y}")
+            
+            args.append([sw_list[sw],m['port'],{}])
+            if debug:
+                print(f"args = {args}")
+                print(f"args[{y}] = {args[y]}")
+                print(f"args[{y}][0] = {args[y][0]}")
+                print(f"args[{y}][1] = {args[y][1]}")
+                print(f"args[{y}][2] = {args[y][2]}")
+            args[y][2].update({'name':'',
                 'voiceVlan':None,
                 'enabled':True,
                 'type':'trunk',
@@ -354,30 +375,24 @@ def Meraki_config_down(dashboard,sw_list,port_dict,Downlink_list,switch_name):
                 'rstpEnabled':True,
                 'stpGuard':'disabled',
                 'linkNegotiation':'Auto negotiate',
-                'accessPolicyType':'Open'}
-            ## Check the switch that mapped to those catalyst ports
-            sw = int(m['sw_module'])
-            if not sw == 0:
-                sw -=1
+                'accessPolicyType':'Open'})
             if debug:
-                print("Switch Serial Number "+sw_list[sw])
-            
+                print(f"args = {args}")
             ## Setup the items common to all port types
             try:
-                args.update({'type':m['mode'] if not m['mode'] == "" else "trunk"})
+                args[y][2].update({'type':m['mode'] if not m['mode'] == "" else "trunk"})
             except:
                 pass
             try:
-                Voice_vlan = 0
-                args.update({'voiceVlan':None if m['voice_Vlan'] == "" else int(m['voice_Vlan'])})
+                args[y][2].update({'voiceVlan':None if m['voice_Vlan'] == "" else int(m['voice_Vlan'])})
             except:
                 pass
             try:
-                args.update({'name':m['desc']})
+                args[y][2].update({'name':m['desc']})
             except:
                 m["desc"] = args['name']
             try:
-                args.update({'enabled':False if m["active"] == "false" else True})
+                args[y][2].update({'enabled':False if m["active"] == "false" else True})
             except:
                 pass            
             ## Check if the interface mode is configured as Access
@@ -388,7 +403,7 @@ def Meraki_config_down(dashboard,sw_list,port_dict,Downlink_list,switch_name):
                 except:
                     pass
                 try:
-                    args.update({'vlan':int(m['data_Vlan']) if not m['data_Vlan'] == "" else 1})
+                    args[y][2].update({'vlan':int(m['data_Vlan']) if not m['data_Vlan'] == "" else 1})
                 except:
                     pass
                 try:
@@ -397,35 +412,83 @@ def Meraki_config_down(dashboard,sw_list,port_dict,Downlink_list,switch_name):
                 except:
                     m['Port_Sec'] = ""
                 if not m['Port_Sec'] == "":
-                    args.update({'accessPolicyType':'Sticky MAC allow list',
+                    args[y][2].update({'accessPolicyType':'Sticky MAC allow list',
                         'stickyMacAllowList':json.dumps(m['mac']),
                         'stickyMacAllowListLimit':mac_limit})
             
             ## The interface mode is configured as Trunk
             else:
                 try:
-                    args.update({'vlan':m['native'] if not m['native'] == '' else 1})
+                    args[y][2].update({'vlan':m['native'] if not m['native'] == '' else 1})
                 except:
-                    args.update({'vlan':1})
+                    args[y][2].update({'vlan':1})
                     m['native'] = "1"
                 try:
-                    args.update({'allowedVlans':m['trunk_allowed'] if not m['trunk_allowed'] == '' else '1-1000'})
+                    args[y][2].update({'allowedVlans':m['trunk_allowed'] if not m['trunk_allowed'] == '' else '1-1000'})
                 except:
-                    args.update({'allowedVlans':'1-1000'})
+                    args[y][2].update({'allowedVlans':'1-1000'})
                     m['trunk_allowed'] = "1-1000"
             
-            #try:
-            response = dashboard.switch.updateDeviceSwitchPort(
-                sw_list[sw],
-                m['port'],
-                **args
-            )
-            configured_ports[sw].append(m['port'])
+            ## Append the port update call to Dashboard to the batch list
             if debug:
-                print(f"Dashboard response was: {response}")
+                print(f"Number of sub lists in action_list is {len(action_list)}")
+                try:
+                    print(f"Number of batch actions in action_list[{sw}] is {len(action_list[sw])}")
+                except:
+                    pass
+                print(f"About to append action for port {m['port']}")
+            
+            if not len(action_list) == sw+1:
+                # We are on to the next switch, so I want a new sublist
+                action_list.append([])
+            # Add this action to the action_list sublist for the switch
+            try:
+                action_list[sw].append(dashboard.batch.switch.updateDeviceSwitchPort(
+                args[y][0],
+                args[y][1],
+                **args[y][2]
+                ))
+            except:
+                unconfigured_ports[sw].append(m['port'])
+            if not m['port'] in unconfigured_ports[sw]:
+                configured_ports[sw].append(m['port'])
+            if debug:
+                print(f"Another entry in the action list[{sw}]")
+                print(f"  {action_list[sw]}")
+            if debug:
+                  print(f"Number of batch actions after attempted append is {len(action_list)}")
             y +=1
     
     loop_configure_meraki(port_dict,Downlink_list,switch_name)
+    
+    # Combine all of the action_list sublists into a larger set for batching
+    x = 0
+    while x <= len(action_list)-1:
+        all_actions.extend(action_list[x])
+        x += 1
+    
+    if debug:
+        print(f"Number of batch actions for Dashboard: {len(all_actions)}\n")
+        print(f"Args listdict is: {args}\n")
+    
+    test_helper = batch_helper.BatchHelper(dashboard, organization_id, all_actions, linear_new_batches=False, actions_per_new_batch=100)
+    test_helper.prepare()
+    test_helper.generate_preview()
+    test_helper.execute()
+    if debug:
+        print(f'helper status is {test_helper.status}')
+    
+    #try:
+    batches_report = dashboard.organizations.getOrganizationActionBatches(organization_id)
+    #except:
+    #    pass
+    new_batches_statuses = [{'id': batch['id'], 'status': batch['status']} for batch in batches_report if batch['id'] in test_helper.submitted_new_batches_ids]
+    if debug:
+        print(f'Batch status returned is: {new_batches_statuses}')
+    failed_batch_ids = [batch['id'] for batch in new_batches_statuses if batch['status']['failed']]
+    if debug:
+        print(f'Failed batch IDs are as follows: {failed_batch_ids}')
+
     return configured_ports,unconfigured_ports,urls
 '''
 def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
