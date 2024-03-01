@@ -1,12 +1,12 @@
 # Do you want a ton of debug output on the console?
-DEBUG = True # ALL DEBUGS
-DEBUG_MAIN = True
+DEBUG = False # ALL DEBUGS
+DEBUG_MAIN = False
 DEBUG_TRANSLATOR = False
-DEBUG_CHECKER = True
-DEBUG_REGISTER = True
+DEBUG_CHECKER = False
+DEBUG_REGISTER = False
 DEBUG_CLAIM = False
 DEBUG_SPLIT = False
-DEBUG_FILE = True
+DEBUG_FILE = False
 
 # This switch toggles BOT mode vs. command line
 # BOT = True

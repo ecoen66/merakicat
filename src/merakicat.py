@@ -17,7 +17,7 @@ from pyadaptivecards.options import Colors, FontSize, HorizontalAlignment
 from collections import defaultdict
 from functools import reduce
 from mc_cfg_check import CheckFeatures
-from mc_translate import Evaluate, Meraki_config_down, Meraki_config_up
+from mc_translate import Evaluate, Meraki_config_down#, Meraki_config_up
 from mc_claim import Claim
 from mc_register import Register
 from mc_splitcheck_serials import Split_check_serials
@@ -870,7 +870,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         print(blurb)
     Uplink_list, Downlink_list, Other_list, port_dict, switch_name = Evaluate(serials,config_file)
     
-    ## Creating a list of the port configurations to push to Meraki
+    ## Creating a list of the downlink port configurations to push to Meraki
     ToBeConfigured = {}
     z = 0
     while z < len(Downlink_list):
@@ -889,7 +889,28 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     if debug:
         print(f"configured_ports = {configured_ports}")
         print(f"unconfigured_ports = {unconfigured_ports}")
+    '''
+    ## Creating a list of the uplink port configurations to push to Meraki
+    ToBeConfigured = {}
+    z = 0
+    while z < len(Uplink_list):
+        interface = Uplink_list[z]
+        ToBeConfigured[interface] = port_dict[interface]
+        z +=1
     
+    ##
+    ## Start the meraki config migration after confirmation from the user
+    ##
+    if BOT:
+        c = create_message(incoming_msg.roomId, "Pushing the translated uplinks to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
+    else:
+        print("Pushing the translated uplinks to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
+    configured_up_ports,unconfigured_up_ports = Meraki_config_up(dashboard,meraki_serials,ToBeConfigured,Uplink_list,nm_list)
+    
+    if debug:
+        print(f"configured_up_ports = {configured_up_ports}")
+        print(f"unconfigured_up_ports = {unconfigured_up_ports}")
+    '''
     switch = 0
     response = ""
     if debug:
@@ -1063,7 +1084,7 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
         print(f"in migrate before translate, meraki_serials = {meraki_serials}")
     # Translate the switch stack to the Meraki switches we just claimed
     r = "\n\n" + translate_switch(incoming_msg,config="",host=host_id,serials=meraki_serials,verb="migrate")
-    blurb = "Translated " + switch_name+".cfg to Meraki switches " + string_serials + "."
+    blurb = "\nTranslated " + switch_name+".cfg to Meraki switches " + string_serials + "."
     if BOT:
         c = create_message(incoming_msg.roomId, blurb)
     else:

@@ -1,4 +1,5 @@
 import meraki
+#import batch_helper
 from meraki.config import SUPPRESS_LOGGING
 from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
@@ -115,113 +116,82 @@ def Evaluate(sw_list, config_file):
                 if debug:
                     print(f"Children are: {int_fx}")
                 ## Capture the configuration of the interface
-                desc = ""
-                port_mode = ""
-                Vlan = ""
-                Vlanv = ""
-                port_sec_raw = ""
-                trunk_native = ""
-                trunk_v_allowed = ""
-                speed = ""
-                duplex = ""
-                port_channel = ""
-                max_mac = ""
+                desc = port_mode = Vlan = Vlanv = port_sec_raw = trunk_native = ""
+                trunk_v_allowed = speed = duplex = port_channel = max_mac = ""
                 for child in int_fx:
                     try:
-                        temp = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')
-                        if not temp == "":
-                            desc = temp
+                        desc = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')
-                        if not temp == "":
-                            Vlanv = temp
+                        Vlanv = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')
-                        if not temp == "":
-                            port_mode = temp
+                        port_mode = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sswitchport\saccess\svlan\s+(\S.*)')
-                        if not temp == "":
-                            Vlan = temp
+                        Vlan = child.re_match_typed(regex=r'\sswitchport\saccess\svlan\s+(\S.*)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)')
-                        if not temp == "":
-                            port_sec_raw = temp
+                        port_sec_raw = child.re_match_typed(regex=r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')
-                        if not temp == "":
-                            trunk_native = temp
+                        trunk_native = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')
-                        if not temp == "":
-                            trunk_v_allowed = temp
+                        trunk_v_allowed = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')
-                        if not temp == "":
-                            speed = temp
+                        speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')
-                        if not temp == "":
-                            duplex = temp
+                        duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
-                        if not temp == "":
-                            port_channel = temp
+                        port_channel = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
                     except:
                         pass
                     try:
-                        temp = child.re_match_typed(regex=r'\sswitchport\sport-security\smaximum\s+(\d)')
-                        if not temp == "":
-                            max_mac = temp
+                        max_mac = child.re_match_typed(regex=r'\sswitchport\sport-security\smaximum\s+(\d)')
                     except:
                         pass
-                
-                if not desc == "":
-                    port_dict[intf_name]['desc'] = desc
-                port_dict[intf_name]['mode'] = "trunk"
-                if not port_mode == "":
-                    port_dict[intf_name]['mode'] = port_mode
-                if not Vlan == "":
-                    port_dict[intf_name]['data_Vlan'] = Vlan
-                else:
-                    if port_dict[intf_name]['mode'] == "access":
-                        port_dict[intf_name]['data_Vlan'] = 1
-                if not Vlanv == "":
-                    port_dict[intf_name]['voice_Vlan'] = Vlanv
-                if not port_sec_raw == "":
-                    port_dict[intf_name]['mac'].append(mac_build(port_sec_raw))
-                if not trunk_native == "":
-                    port_dict[intf_name]['native'] = trunk_native
-                if not trunk_v_allowed == "":
-                    port_dict[intf_name]['trunk_allowed'] = trunk_v_allowed
-                if not speed == "":
-                    port_dict[intf_name]['speed'] = speed
-                if not duplex == "":
-                    port_dict[intf_name]['duplex'] = duplex
-                if not port_channel == "":
-                    port_dict[intf_name]['LACP_Group'] = port_channel
-                if not max_mac == "":
-                    port_dict[intf_name]['Port_Sec'] = max_mac
-                else:
-                    pass
+                    if not desc == "":
+                        port_dict[intf_name]['desc'] = desc
+                    port_dict[intf_name]['mode'] = "trunk"
+                    if not port_mode == "":
+                        port_dict[intf_name]['mode'] = port_mode
+                    if not Vlan == "":
+                        port_dict[intf_name]['data_Vlan'] = Vlan
+                    else:
+                        if port_dict[intf_name]['mode'] == "access":
+                            port_dict[intf_name]['data_Vlan'] = 1
+                    if not Vlanv == "":
+                        port_dict[intf_name]['voice_Vlan'] = Vlanv
+                    if not port_sec_raw == "":
+                        port_dict[intf_name]['mac'].append(mac_build(port_sec_raw))
+                    if not trunk_native == "":
+                        port_dict[intf_name]['native'] = trunk_native
+                    if not trunk_v_allowed == "":
+                        port_dict[intf_name]['trunk_allowed'] = trunk_v_allowed
+                    if not speed == "":
+                        port_dict[intf_name]['speed'] = speed
+                    if not duplex == "":
+                        port_dict[intf_name]['duplex'] = duplex
+                    if not port_channel == "":
+                        port_dict[intf_name]['LACP_Group'] = port_channel
+                    if not max_mac == "":
+                        port_dict[intf_name]['Port_Sec'] = max_mac
+                    else:
+                        print(port_dict[intf_name]['desc'])
+                        pass
             
             except:
                 print(f"Error in ready interface {intf_name}")
@@ -327,6 +297,12 @@ def Meraki_config_down(dashboard,sw_list,port_dict,Downlink_list,switch_name):
     
     debug = DEBUG or DEBUG_TRANSLATOR
     
+    # create some action lists
+    action_list_1 = list()
+    action_list_2 = list()
+    action_list_3 = list()
+    all_actions = list()
+    
     configured_ports = defaultdict(list)
     unconfigured_ports = defaultdict(list)
     urls = list()
@@ -367,247 +343,108 @@ def Meraki_config_down(dashboard,sw_list,port_dict,Downlink_list,switch_name):
                 print("\n----------- "+x+" -----------")
                 pprint.pprint(m)
             
+            args={}
+            args={'name':'',
+                'voiceVlan':None,
+                'enabled':True,
+                'type':'trunk',
+                'tags':[],
+                'poeEnabled':True,
+                'isolationEnable':False,
+                'rstpEnabled':True,
+                'stpGuard':'disabled',
+                'linkNegotiation':'Auto negotiate',
+                'accessPolicyType':'Open'}
+            ## Check the switch that mapped to those catalyst ports
+            sw = int(m['sw_module'])
+            if not sw == 0:
+                sw -=1
+            if debug:
+                print("Switch Serial Number "+sw_list[sw])
+            
+            ## Setup the items common to all port types
+            try:
+                args.update({'type':m['mode'] if not m['mode'] == "" else "trunk"})
+            except:
+                pass
+            try:
+                Voice_vlan = 0
+                args.update({'voiceVlan':None if m['voice_Vlan'] == "" else int(m['voice_Vlan'])})
+            except:
+                pass
+            try:
+                args.update({'name':m['desc']})
+            except:
+                m["desc"] = args['name']
+            try:
+                args.update({'enabled':False if m["active"] == "false" else True})
+            except:
+                pass            
             ## Check if the interface mode is configured as Access
             if m['mode'] == "access":
-                try:
-                    Voice_vlan = 0
-                    if not m['voice_Vlan'] == "":
-                        Voice_vlan = int(m['voice_Vlan'])
-                except:
-                    pass
-                try:
-                    if not m['desc'] == "":
-                        description = m["desc"]
-                except:
-                    m["desc"] = ""
                 try:
                     if not m['mac'] == []:
                         pass
                 except:
                     pass
                 try:
-                    if not m['data_Vlan'] == "":
-                        data_vlan = int(m['data_Vlan'])
+                    args.update({'vlan':int(m['data_Vlan']) if not m['data_Vlan'] == "" else 1})
                 except:
-                    data_vlan = 1
+                    pass
                 try:
                     if not m['Port_Sec'] == "":
                         mac_limit = m['Port_Sec']
                 except:
                     m['Port_Sec'] = ""
+                if not m['Port_Sec'] == "":
+                    args.update({'accessPolicyType':'Sticky MAC allow list',
+                        'stickyMacAllowList':json.dumps(m['mac']),
+                        'stickyMacAllowListLimit':mac_limit})
             
-            ## Check the switch that mapped to those catalyst ports
-                sw = int(m['sw_module'])
-                if not sw == 0:
-                    sw -=1
-                if debug:
-                    print("Switch Serial Number "+sw_list[sw])
-            
-            ## Test if the interface has Port security configured or not then apply the right Meraki configuration
-                if debug:
-                    print(f"Port_Sec = {m['Port_Sec']}")
-                if m['Port_Sec'] == "":
-                    if debug:
-                        print(f"sw = {sw}")
-                        print(f"sw_list[sw] = {sw_list[sw]}")
-                        print(f"port = {m['port']}")
-                        print(f"name = {description}")
-                        print(f"enabled = True")
-                        print(f"type = access")
-                        print(f"vlan = {data_vlan}")
-                        print(f"tags = []")
-                        print(f"poeEnabled = True")
-                        print(f"isolationEnabled = False")
-                        print(f"rstpEnabled = True")
-                        print(f"stpGuard = disabled")
-                        print(f"linkNegotiation = Auto negotiate")
-                        print(f"accessPolicyType = Open")
-                    try:
-                        response = dashboard.switch.updateDeviceSwitchPort(
-                            sw_list[sw],
-                            m['port'],
-                            name=description,
-                            enabled=True,
-                            type='access',
-                            vlan=data_vlan,
-                            tags=[],
-                            poeEnabled=True,
-                            isolationEnabled=False,
-                            rstpEnabled=True,
-                            stpGuard='disabled',
-                            linkNegotiation='Auto negotiate',
-                            accessPolicyType='Open'
-                        )
-                        configured_ports[sw].append(m['port'])
-                        if debug:
-                            print(f"Dashboard response was: {response}")
-                        if not Voice_vlan == 0:
-                            if debug:
-                                print(f"Setting voice vlan to {Voice_vlan}")
-                            try:
-                                response = dashboard.switch.updateDeviceSwitchPort(
-                                    sw_list[sw],
-                                    m['port'],
-                                    voiceVlan=Voice_vlan
-                                )
-                                if debug:
-                                    print(f"Dashboard response was: {response}")
-                            except:
-                                pass
-                    except:
-                        unconfigured_ports[sw].append(m['port'])
-                else:
-                    if debug:
-                        print(f"sw = {sw}")
-                        print(f"sw_list[sw] = {sw_list[sw]}")
-                        print(f"port = {m['port']}")
-                        print(f"name = {description}")
-                        print(f"type = access")
-                        print(f"vlan = {data_vlan}")
-                        print(f"stickyMacAllowList = {json.dumps(m['mac'])}"),
-                        print(f"stickyMacAllowListLimit = {mac_limit}"),
-                        print(f"tags = []")
-                        print(f"poeEnabled = True")
-                        print(f"isolationEnabled = False")
-                        print(f"rstpEnabled = True")
-                        print(f"stpGuard = disabled")
-                        print(f"linkNegotiation = Auto negotiate")
-                        print(f"accessPolicyType = Open")
-                    try:                       
-                        response = dashboard.switch.updateDeviceSwitchPort(
-                            sw_list[sw],
-                            m['port'],
-                            name=description,
-                            enabled=True,
-                            type='access',
-                            vlan=data_vlan,
-                            stickyMacAllowList=json.dumps(m['mac']),
-                            stickyMacAllowListLimit=mac_limit,
-                            tags=[],
-                            poeEnabled=True,
-                            isolationEnabled=False,
-                            rstpEnabled=True,
-                            stpGuard='disabled',
-                            linkNegotiation='Auto negotiate',
-                            accessPolicyType='Open'
-                        )
-                        configured_ports[sw].append(m['port'])
-                        if debug:
-                            print(f"Dashboard response was: {response}")
-                        if not Voice_vlan == 0:
-                            if debug:
-                                print(f"Setting voice vlan to {Voice_vlan}")
-                            try:
-                                response = dashboard.switch.updateDeviceSwitchPort(
-                                    sw_list[sw],
-                                    m['port'],
-                                    voiceVlan=Voice_vlan
-                                )
-                                if debug:
-                                    print(f"Dashboard response was: {response}")
-                            except:
-                                pass
-                    except:
-                        unconfigured_ports[sw].append(m['port'])
-            ## Check if the interface mode is configured as Trunk
+            ## The interface mode is configured as Trunk
             else:
-                description = ""
                 try:
-                    if not m['desc'] == "":
-                        description = m["desc"]
+                    args.update({'vlan':m['native'] if not m['native'] == '' else 1})
                 except:
-                    m["desc"] = ""
-                    description = m["desc"]
-                try:
-                    if not m['native'] == "":
-                        native_vlan = int(m['native'])
-                    else:
-                        native_vlan = 1
-                except:
-                    native_vlan = 1
+                    args.update({'vlan':1})
                     m['native'] = "1"
                 try:
-                    if not m['trunk_allowed'] == "":
-                        trunk_allow = m['trunk_allowed']
-                    else:
-                        trunk_allow = "1-1000"
+                    args.update({'allowedVlans':m['trunk_allowed'] if not m['trunk_allowed'] == '' else '1-1000'})
                 except:
+                    args.update({'allowedVlans':'1-1000'})
                     m['trunk_allowed'] = "1-1000"
-                    trunk_allow = "1-1000"
             
-            ## Check the switch that mapped to those catalyst ports
-                sw = int(m['sw_module'])
-                if not sw == 0:
-                    sw -=1
-                if debug:
-                    print("Switch Serial Number "+sw_list[sw])
-                    print(f"sw = {sw}")
-                    print(f"sw_list[{sw}] = {sw_list[sw]}")
-                    print(f"port = {m['port']}")
-                    print(f"name = {description}")
-                    print(f"type = trunk")
-                    print(f"vlan = {native_vlan}")
-                    print(f"allowedVlans= {trunk_allow}")
-                    print(f"tags = []")
-                    print(f"poeEnabled = True")
-                    print(f"isolationEnabled = False")
-                    print(f"rstpEnabled = True")
-                    print(f"stpGuard = disabled")
-                    print(f"linkNegotiation = Auto negotiate")
-                    print(f"accessPolicyType = Open")
-                try:
-                    response = dashboard.switch.updateDeviceSwitchPort(
-                        sw_list[sw],
-                        m['port'],
-                        name=description,
-                        enabled=True,
-                        type='trunk',
-                        vlan=native_vlan,
-                        allowedVlans=trunk_allow,
-                        tags=[],
-                        isolationEnabled=False,
-                        rstpEnabled=True,
-                        stpGuard='disabled',
-                        linkNegotiation='Auto negotiate',
-                        accessPolicyType='Open'
-                    )
-                    configured_ports[sw].append(m['port'])
-                    if debug:
-                        print(f"Dashboard response was: {response}")
-                except:
-                    unconfigured_ports[sw].append(m['port'])
-                    print("Error in configuring Trunk port "+x)
-            if m["active"] == "false":
-                try:
-                    response = dashboard.switch.updateDeviceSwitchPort(
-                        sw_list[sw],
-                        m['port'],
-                        enabled=False
-                    )
-                    configured_ports[sw].append(m['port'])
-                    if debug:
-                        print(f"Dashboard response was: {response}")
-                except:
-                    unconfigured_ports[sw].append(m['port'])                            
-                    print("Error in configuring disabled port "+m)
-            else:
-                pass
+            #try:
+            response = dashboard.switch.updateDeviceSwitchPort(
+                sw_list[sw],
+                m['port'],
+                **args
+            )
+            configured_ports[sw].append(m['port'])
+            if debug:
+                print(f"Dashboard response was: {response}")
             y +=1
     
     loop_configure_meraki(port_dict,Downlink_list,switch_name)
     return configured_ports,unconfigured_ports,urls
-
+'''
 def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
     
     debug = DEBUG or DEBUG_TRANSLATOR
     
     configured_ports = defaultdict(list)
     unconfigured_ports = defaultdict(list)
-    urls = list()
     
+    ## Grab the switch port list from dashboard
+    try:
+        plist = dashboard.switch.getDeviceSwitchPorts(
+            sw_list[sw]
+        )
+    except:
+        return configured_ports,unconfigured_ports
     
     ## Loop to go through all the ports of the switches
-    def loop_configure_meraki(port_dict,Uplink_list,switch_name):
+    def loop_configure_meraki_up(port_dict,Uplink_list):
         
         ## Loop to get all the interfaces in the port_dict
         y = 0
@@ -653,7 +490,19 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                     sw -=1
                 if debug:
                     print("Switch Serial Number "+sw_list[sw])
-            
+                nm_model = nm_list[sw]
+                if debug:
+                    print("Switch NM module model is "+nm_model)
+                nm_port = "1_" + nm_model + "_" + m['port']
+                ## Find the list of portIds for the NM module
+                #
+                #
+                #
+                #
+                nm_ports = [d['portId'] for i,d in enumerate(plist) if d['portId'].startswith("1_C3850-NM-4-10G")]
+                if debug:
+                    print(f"nm_ports for {}")
+                
             ## Test if the interface has Port security configured or not then apply the right Meraki configuration
                 if debug:
                     print(f"Port_Sec = {m['Port_Sec']}")
@@ -661,7 +510,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                     if debug:
                         print(f"sw = {sw}")
                         print(f"sw_list[sw] = {sw_list[sw]}")
-                        print(f"port = {m['port']}")
+                        print(f"port = {nm_port}")
                         print(f"name = {description}")
                         print(f"enabled = True")
                         print(f"type = access")
@@ -676,7 +525,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                     try:
                         response = dashboard.switch.updateDeviceSwitchPort(
                             sw_list[sw],
-                            m['port'],
+                            nm_port,
                             name=description,
                             enabled=True,
                             type='access',
@@ -689,7 +538,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                             linkNegotiation='Auto negotiate',
                             accessPolicyType='Open'
                         )
-                        configured_ports[sw].append(m['port'])
+                        configured_ports[sw].append(nm_port)
                         if debug:
                             print(f"Dashboard response was: {response}")
                         if not Voice_vlan == 0:
@@ -698,7 +547,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                             try:
                                 response = dashboard.switch.updateDeviceSwitchPort(
                                     sw_list[sw],
-                                    m['port'],
+                                    nm_port,
                                     voiceVlan=Voice_vlan
                                 )
                                 if debug:
@@ -706,12 +555,12 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                             except:
                                 pass
                     except:
-                        unconfigured_ports[sw].append(m['port'])
+                        unconfigured_ports[sw].append(nm_port)
                 else:
                     if debug:
                         print(f"sw = {sw}")
                         print(f"sw_list[sw] = {sw_list[sw]}")
-                        print(f"port = {m['port']}")
+                        print(f"port = {nm_port}")
                         print(f"name = {description}")
                         print(f"type = access")
                         print(f"vlan = {data_vlan}")
@@ -727,7 +576,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                     try:                       
                         response = dashboard.switch.updateDeviceSwitchPort(
                             sw_list[sw],
-                            m['port'],
+                            nm_port,
                             name=description,
                             enabled=True,
                             type='access',
@@ -742,7 +591,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                             linkNegotiation='Auto negotiate',
                             accessPolicyType='Open'
                         )
-                        configured_ports[sw].append(m['port'])
+                        configured_ports[sw].append(nm_port)
                         if debug:
                             print(f"Dashboard response was: {response}")
                         if not Voice_vlan == 0:
@@ -751,7 +600,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                             try:
                                 response = dashboard.switch.updateDeviceSwitchPort(
                                     sw_list[sw],
-                                    m['port'],
+                                    nm_port,
                                     voiceVlan=Voice_vlan
                                 )
                                 if debug:
@@ -759,7 +608,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                             except:
                                 pass
                     except:
-                        unconfigured_ports[sw].append(m['port'])
+                        unconfigured_ports[sw].append(nm_port)
             ## Check if the interface mode is configured as Trunk
             else:
                 description = ""
@@ -794,7 +643,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                     print("Switch Serial Number "+sw_list[sw])
                     print(f"sw = {sw}")
                     print(f"sw_list[{sw}] = {sw_list[sw]}")
-                    print(f"port = {m['port']}")
+                    print(f"port = {nm_port}")
                     print(f"name = {description}")
                     print(f"type = trunk")
                     print(f"vlan = {native_vlan}")
@@ -809,7 +658,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                 try:
                     response = dashboard.switch.updateDeviceSwitchPort(
                         sw_list[sw],
-                        m['port'],
+                        nm_port,
                         name=description,
                         enabled=True,
                         type='trunk',
@@ -822,28 +671,29 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                         linkNegotiation='Auto negotiate',
                         accessPolicyType='Open'
                     )
-                    configured_ports[sw].append(m['port'])
+                    configured_ports[sw].append(nm_port)
                     if debug:
                         print(f"Dashboard response was: {response}")
                 except:
-                    unconfigured_ports[sw].append(m['port'])
-                    print("Error in configuring Trunk port "+x)
+                    unconfigured_ports[sw].append(nm_port)
+                    print("Error in configuring Trunk port "+nm_port)
             if m["active"] == "false":
                 try:
                     response = dashboard.switch.updateDeviceSwitchPort(
                         sw_list[sw],
-                        m['port'],
+                        nm_port,
                         enabled=False
                     )
-                    configured_ports[sw].append(m['port'])
+                    configured_ports[sw].append(nm_port)
                     if debug:
                         print(f"Dashboard response was: {response}")
                 except:
-                    unconfigured_ports[sw].append(m['port'])                            
-                    print("Error in configuring disabled port "+m)
+                    unconfigured_ports[sw].append(nm_port)
+                    print("Error in configuring disabled port "+nm_port)
             else:
                 pass
             y +=1
     
-    loop_configure_meraki(port_dict,Uplink_list,switch_name)
-    return configured_ports,unconfigured_ports,urls
+    loop_configure_meraki_up(port_dict,Uplink_list)
+    return configured_ports,unconfigured_ports
+'''

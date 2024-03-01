@@ -1,9 +1,14 @@
 # History
 
+## 0.0.6 (03-01-2024)
+
+  - Some light refactoring of mc_translate module
+  - More prep work for Uplink config.
+  - Still not yet released on PyPI.
+
 ## 0.0.5 (02-29-2024)
 
   - Added Catalyst NM module recognition and prep work for Uplink config.
-  - Still not yet released on PyPI.
 
 ## 0.0.4 (02-28-2024)
 
