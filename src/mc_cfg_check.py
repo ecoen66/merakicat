@@ -3,6 +3,11 @@ import os,requests,json,pprint,re
 from mc_user_info import *
 
 def CheckFeatures(sw_file):
+    """
+    This function will check a Catalyst switch config file for feature mapping to Meraki.
+    :param sw_file: The incoming config filespec
+    :return: The hostname, supportable features, unsupported features with more info.
+    """
     
     debug = DEBUG or DEBUG_CHECKER
     
@@ -238,7 +243,12 @@ def CheckFeatures(sw_file):
     return host_name,aux_features_config, unsupported_features,More_info
 
 def Interface_detail(interface_value):
-    # This function is used to read the interface configuration
+     """
+    This sub-function is used to read the interface configuration.
+    :param interface_value: An interface object from CiscoConfParse.
+    :return: A combined list of  all the features on the interface.
+    """
+
     feature_list_on_interface=list()
     PAgP=["auto","desirable"]
     LACP =["active", "passive"]

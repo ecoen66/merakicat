@@ -3,11 +3,22 @@ import re
 from mc_user_info import *
 
 def Claim(dashboard,dest_net,serials):
+    """
+    This function will claim a set of Meraki network device serial numbers to Meraki
+    network.
+    :param dashboard: The active Meraki dashboard API session to use
+    :param dest_net: The destination Meraki network to claim the devices to
+    :param serials: The serial number of the Meraki network devices to claim
+    :return: A string with any issues encountered, and lists of devices that could not be
+    :      :  claimed, claimed devices, already claimed devices
+    """
+    
+    debug = DEBUG or DEBUG_CLAIM
+    
     issues = ""
     claimed_switches = serials
     ac_switches =list()
     bad_switches =list()
-    debug = DEBUG or DEBUG_CLAIM
     
     '''
     Some example meraki.APIError responses in meraki.APIError.message:

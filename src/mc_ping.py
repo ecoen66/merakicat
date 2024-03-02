@@ -4,6 +4,8 @@ def Ping(host):
     """
     Returns True if host (str) responds to a ping request.
     Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.
+    :param host: The host name, FQDN or IP address to ping
+    :return: True if reachable, False if not
     """
 
     # Option for the number of packets as a function of

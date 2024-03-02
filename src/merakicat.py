@@ -83,9 +83,6 @@ meraki_net_name=""
 meraki_urls = list()
 command_line_msg = Response()
 
-if debug:
-    print(f"Meraki ")
-
 # Request the lists of Organizations and their Networks from Dashboard
 if not meraki_api_key == "":
     if debug:
@@ -93,14 +90,15 @@ if not meraki_api_key == "":
     dashboard = meraki.DashboardAPI(api_key=meraki_api_key,output_log=False,suppress_logging=True)
     if debug:
         print(f"Got one, now trying to get the list of Orgs")
+    # Even though, right now this app only supports a single Org...
     meraki_orgs = dashboard.organizations.getOrganizations()
     if debug:
         print(f"meraki_orgs = {meraki_orgs}")
     x = 0
     while x <= len(meraki_orgs)-1:
-        if debug:
-            print(dashboard.organizations.getOrganizationNetworks(organizationId=meraki_orgs[x]['id']))
         raw_nets = dashboard.organizations.getOrganizationNetworks(organizationId=meraki_orgs[x]['id'])
+        if debug:
+            print(raw_nets)
         y = 0
         while y <= len(raw_nets)-1:
             meraki_networks.append(raw_nets[y])
@@ -126,7 +124,7 @@ if BOT:
     # If any of the bot environment variables are missing, terminate the app
     if not bot_email or not teams_token or not bot_url or not bot_app_name:
         print(
-            "sample.py - Missing Environment Variable. Please see the 'Usage'"
+            "merakicat.py - Missing Environment Variable. Please see the 'Usage'"
             " section in the README."
         )
         if not bot_email:
@@ -150,7 +148,8 @@ if BOT:
     #     "josmith@demo.local",
     # ]
     
-    print(f"teams_emails = {teams_emails}")
+    if debug:
+        print(f"teams_emails = {teams_emails}")
     bot = TeamsBot(
         bot_app_name,
         teams_bot_token=teams_token,
@@ -477,14 +476,14 @@ def greeting(incoming_msg):
 # ------------------------------------------------------------------------
 
 
-# This function will check a Catalyst switch config to Meraki
+# This function will check a Catalyst switch config for compatible Meraki features
 #
 def check_switch(incoming_msg,config="",host=""):
     """
     This function will check a Catalyst switch config for feature mapping to Meraki.
     :param incoming_msg: The incoming message object from Teams
     :param config: The incoming config filespec from the check_card Teams card
-    :param host:The incoming hostname or IP address from the check_card Teams card
+    :param host: The incoming hostname or IP address from the check_card Teams card
     :return: A text or markdown based reply
     """
     
@@ -662,8 +661,10 @@ def register_switch(incoming_msg,host="",called=""):
     """
     This function will register a Catalyst switch to the Meraki Dashboard.
     :param incoming_msg: The incoming message object from Teams
-    :param host:The incoming hostname or IP address from the translate_card Teams card
-    :return: A text or markdown based reply
+    :param host: The incoming hostname or IP address from the translate_card Teams card
+    :param called: Indicates if the function was called from another function vs greeting
+    :return: A text or markdown based reply if called from greeting (called="")
+    :      : Or, status, issues & registered switch list otherwise
     """
     
     # Import the global stateful variables
@@ -713,8 +714,10 @@ def claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called=
     This function will Claim newly Registered Catalyst switch in the Meraki Dashboard.
     :param incoming_msg: The incoming message object from Teams
     :param dest_net: The incoming Meraki destination Network to claim devices to
-    :param serials:The incoming list of Meraki serial numbers to claim
-    :return: A text or markdown based reply
+    :param serials: The incoming list of Meraki serial numbers to claim
+    :param called: Indicates if the function was called from another function vs greeting
+    :return: A text or markdown based reply if called from greeting (called="")
+    :      : Or, status, issues, already claimed & claimed switch lists otherwise
     """
     global host_id, meraki_net, meraki_serials, meraki_net_name
     issues = ""
@@ -773,8 +776,9 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     set of Meraki switches.
     :param incoming_msg: The incoming message object from Teams
     :param config: The incoming config filespec from the translate_card Teams card
-    :param host:The incoming hostname or IP address from the translate_card Teams card
-    :param serials:The incoming list of Meraki serials from the translate_card Teams card
+    :param host: The incoming hostname or IP address from the translate_card Teams card
+    :param serials: The incoming list of Meraki serials from the translate_card Teams card
+    :param verb: Either 'translate' or 'migrate' depending on how the function is called
     :return: A text or markdown based reply
     """
       
@@ -908,7 +912,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         z +=1
     
     ##
-    ## Start the meraki config migration after confirmation from the user
+    ## Start the meraki uplink config migration after confirmation from the user
     ##
     if BOT:
         c = create_message(incoming_msg.roomId, "Pushing the translated uplinks to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
@@ -970,7 +974,8 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     Once finished, the user can edit the Meraki stack config before manually initiating
     migration to Cloud Management via "service meraki start" CLI command on the stack.
     :param incoming_msg: The incoming message object from Teams
-    :param host:The incoming hostname or IP address
+    :param host: The incoming hostname or IP address
+    :param dest_net: The incoming Meraki destination Network to claim devices to
     :return: A text or markdown based reply
     """
     
@@ -1131,7 +1136,7 @@ def show_check_card(incoming_msg):
 def show_translate_card(incoming_msg):
     backupmessage = "Adaptive Card to translate a switch."
     
-    # Display the report card    
+    # Display the translate card    
     c = create_message_with_attachment(
         incoming_msg.roomId, msgtxt=backupmessage, attachment=json.loads(TRANSLATE_CARD)
     )
@@ -1264,8 +1269,6 @@ if __name__ == "__main__":
         del args[0]
         if debug:
             print(f"The args are: {str(args)}")
-        #
-        #    user_text = incoming_msg.text
         text = " ".join(args)
         if debug:
             print(f"The user input was: {text}")

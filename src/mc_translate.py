@@ -6,7 +6,14 @@ from collections import defaultdict
 import os, requests, json, pprint, re
 from mc_user_info import *
 
-def Evaluate(sw_list, config_file):
+def Evaluate(config_file):
+    """
+    This parent function will evaluate a Catalyst switch config file and reports on
+    which features that are being used can and cannot be mapped to Meraki features.
+    :param config_file: The catalyst IOSXE config file to parse through
+    :return: Lists of uplinks, downlinks and other ports as well as 
+    :      : a dictionary with all of the ports and their settings, and the hostname
+    """
 
     debug = DEBUG or DEBUG_TRANSLATOR
     
@@ -15,6 +22,13 @@ def Evaluate(sw_list, config_file):
     shut_interfaces = list()
     
     def read_Cisco_SW():
+        """
+        This sub-function parses the Catalyst switch config file and report on which
+        features that are being used can and cannot be mapped to Meraki features.
+        :param NONE: Using global variables in the parent function
+        :return: Lists of uplinks, downlinks and other ports as well as 
+        :      : a dictionary with all of the ports and their settings, and the hostname
+        """
         ##Parsing the Cisco Catalyst configuration (focused on the interface config)
         if debug:
             print("-------- Reading <"+config_file+"> Configuration --------")
@@ -209,6 +223,13 @@ def Evaluate(sw_list, config_file):
         return Uplink_list, Downlink_list, Other_list, port_dict, switch_name
     
     def split_down_up_link(interfaces_list, Gig_uplink):
+        """
+        This sub-function takes a list of interfaces and sorts them into uplinks,
+        downlinks and others.
+        :param interfaces_list: The dictlist of interfaces categorized by type (GigabitEthernet) 
+        :param Gig_uplink: 
+        :return: Lists of uplinks, downlinks and other ports
+        """
         Uplink_list=list()
         Downlink_list=list()
         Other_list =list()
@@ -264,6 +285,14 @@ def Evaluate(sw_list, config_file):
     
     ## rebuild the mac address to match Meraki format
     def mac_build(my_str, group=2, char=':'):
+        """
+        This sub-function takes an IOSXE MAC address and reformats it into the Meraki
+        format.
+        :param my_str: The MAC address from IOSXE 
+        :param group: How many digits to group between delimiters (2 = :00:)
+        :param char: The delimiter to use between digit groupings
+        :return: A string containing the translate MAC address
+        """
         port_sec = re.findall(re.compile(r'[a-fA-F0-9.]{14}'), my_str)[0]
         p = re.compile(r'^[a-fA-F0-9.]{14}')
         new_p = re.sub("\.","",port_sec)
@@ -274,6 +303,12 @@ def Evaluate(sw_list, config_file):
     
     ## Extract out the details of the switch module and the port number
     def check(intf):
+        """
+        This sub-function takes an IOSXE long interface name and splits it into
+        a submodule and a port.
+        :param intf: An IOSXE long interface name
+        :return: A string with the submodule number and one with the port number
+        """
         if debug:
             print(f"Checking interface {intf}.")
        # intf_rgx = re.compile(r'^interface GigabitEthernet(\d+)\/(\d+)\/(\d+)$')
@@ -293,6 +328,18 @@ def Evaluate(sw_list, config_file):
 
 
 def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list,switch_name):
+    """
+    This parent function will convert Catalyst switch config features to Meraki features
+    and send them to Dashboard to program Meraki switches.
+    :param dashboard: The active Meraki dashboard API session to use
+    :param organization_id: The Meraki Organization ID used in batch configuration
+    :param sw_list: The list of Meraki switch serial numbers to configure
+    :param port_dict: The dictionary of IOSXE ports and features from the Evaluate function
+    :param Downlink_list: The list of ports to configure
+    :param switch_name: The catalyst IOSXE hostname 
+    :return: Lists of configured and unconfigured ports, and a list with a URL to each
+    :      : of the Meraki switches that we configured or modified
+    """
     
     debug = DEBUG or DEBUG_TRANSLATOR
     
@@ -313,6 +360,14 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
     
     ## Loop to go through all the ports of the switches
     def loop_configure_meraki(port_dict,Downlink_list,switch_name):
+    """
+    This sub-function does the actual work of setting the meraki functions based on the
+    dictionary of IOSXE ports and features from the Evaluate function.
+    :param port_dict: The dictionary of IOSXE ports and features from the Evaluate function
+    :param Downlink_list: The list of ports to configure
+    :param switch_name: The catalyst IOSXE hostname 
+    :return: NONE - modifies global variables in the parent function
+    """
         
         ## Configure the switch_name in the Dashboard
         blurb = "This was a conversion from a Catalyst IOSXE config."
@@ -492,6 +547,17 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
     return configured_ports,unconfigured_ports,urls
 '''
 def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
+    """
+    This parent function will convert Catalyst switch uplink port config features to
+    Meraki features and send them to Dashboard to program Meraki switches.
+    :param dashboard: The active Meraki dashboard API session to use
+    :param organization_id: The Meraki Organization ID used in batch configuration
+    :param sw_list: The list of Meraki switch serial numbers to configure
+    :param port_dict: The dictionary of IOSXE ports and features from the Evaluate function
+    :param Uplink_list: The list of ports to configure
+    :param nm_list: The list of nm_modules installed per switch
+    :return: Lists of configured and unconfigured ports
+    """
     
     debug = DEBUG or DEBUG_TRANSLATOR
     

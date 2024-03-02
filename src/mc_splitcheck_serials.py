@@ -3,6 +3,13 @@ from mc_user_info import *
 
 
 def Split_check_serials(user_text,search_type):
+    """
+    This function will accept of user's input or command line parms and find the serial
+    numbers and split them out to a list to return.
+    :param user_text: The incoming user text from Teams or the command line
+    :param search_type: 'Claim' or 'Translate' based on the command line type to parse
+    :return: A list of Meraki serial numbers and a string if there was an issue
+    """
     debug = DEBUG or DEBUG_SPLIT
     maybe_serials = list()
     regex = re.compile(r"\s*to\s *", flags=re.I)

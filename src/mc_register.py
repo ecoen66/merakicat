@@ -3,6 +3,26 @@ from mc_user_info import *
 import re
 
 def Register(host,username,password,port,secret):
+    """
+    This function will check a Catalyst IOSXE switch for compatibility with Meraki
+    management prior to registering the switch (or stack) with to Dashboard.
+    Items checked include:
+        - A stack of 1-8 switches
+        - The version of IOSXE
+        - An ip name-server
+        - A layer-3 interface that is operational
+        - A default route
+        - Succesful results of Meraki registration
+    ** Need to add show meraki compatibility check. **
+    :param host: The switch or stack to SSH into
+    :param username: Username for SSH
+    :param password: Password for SSH
+    :param port: Port number for SSH
+    :param secret: IOSXE secret password for CLI escalation
+    :return: A string indicating succes or failure to be used in reporting, a string
+    :      : with any issues encountered, and lists of registered switches, the Meraki
+    :      : serial numbers assigned, and a list of the NM modules per switch for later.
+    """"
     
     debug = DEBUG or DEBUG_REGISTER
     
