@@ -93,9 +93,6 @@ def Evaluate(config_file):
             Switch_module = intf_obj.re_match_typed('^interface\s\S+?thernet+(\d)')
             if Switch_module == "":
                 Switch_module = intf_obj.re_match_typed('^interface\s\S+?GigE+(\d)')
-            test_port_number = intf_obj.re_match_typed('^interface\s\S+?thernet+(\S+?)')
-            if test_port_number == "":
-                test_port_number = intf_obj.re_match_typed('^interface\s\S+?GigE+(\S+?)')
             
             All_interfaces[only_intf_name].append(intf_name)
             
@@ -148,8 +145,7 @@ def Evaluate(config_file):
             #for key,val in config_pedia['downlink'].items():
             #    port_dict[intf_name][key] = ""
             
-            port_sec_raw = ""
-            speed = duplex = port_channel = max_mac = ""
+            port_sec_raw = port_channel = max_mac = ""
             for child in int_fx:
                 ### Try out our config_pedia for the port description & mode
                 if debug:
@@ -158,13 +154,14 @@ def Evaluate(config_file):
                     newvals = {}
                     if debug:
                         print(f"key,val = {key},{val}")
-                    if not child.re_match_typed(regex=val['regex']) == "":
-                        #print(f"val.get('iosxe') = {val.get('iosxe')}")
-                        exec(val.get('iosxe'),locals(),newvals)
-                        if debug:
-                            print(f"newvals[{key}] = {newvals[key]}")
-                        if not newvals[key] == "":
-                            port_dict[intf_name][key] = newvals[key]
+                    if not val['regex'] == "":
+                        if not child.re_match_typed(regex=val['regex']) == "":
+                            #print(f"val.get('iosxe') = {val.get('iosxe')}")
+                            exec(val.get('iosxe'),locals(),newvals)
+                            if debug:
+                                print(f"newvals[{key}] = {newvals[key]}")
+                            if not newvals[key] == "":
+                                port_dict[intf_name][key] = newvals[key]
                 #try:
                 #    desc = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')
                 #except:
@@ -193,14 +190,14 @@ def Evaluate(config_file):
                 #    trunk_v_allowed = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')
                 #except:
                 #    pass
-                try:
-                    speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')
-                except:
-                    pass
-                try:
-                    duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')
-                except:
-                    pass
+                #try:
+                #    speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')
+                #except:
+                #    pass
+                #try:
+                #    duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')
+                #except:
+                #    pass
                 try:
                     port_channel = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
                 except:
@@ -227,10 +224,10 @@ def Evaluate(config_file):
                 #    port_dict[intf_name]['native'] = trunk_native
                 #if not trunk_v_allowed == "":
                 #    port_dict[intf_name]['trunk_allowed'] = trunk_v_allowed
-                if not speed == "":
-                    port_dict[intf_name]['speed'] = speed
-                if not duplex == "":
-                    port_dict[intf_name]['duplex'] = duplex
+                #if not speed == "":
+                #    port_dict[intf_name]['speed'] = speed
+                #if not duplex == "":
+                #    port_dict[intf_name]['duplex'] = duplex
                 if not port_channel == "":
                     port_dict[intf_name]['LACP_Group'] = port_channel
                 if not max_mac == "":
@@ -405,7 +402,7 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
             print(f"switch_dict = {switch_dict}")
         for key,val in config_pedia['switch'].items():
             newvals = {}
-            exec(val.get('meraki'),{'debug': debug, 'sw_list': sw_list, 'switch_dict': switch_dict, 'dashboard': dashboard},newvals)
+            exec(val.get('meraki'),locals(),newvals)
             if debug:
                 print(f"newvals = {newvals}")
             return_vals = newvals['return_vals']
@@ -441,14 +438,20 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                 'isolationEnable':False,
                 'rstpEnabled':True,
                 'stpGuard':'disabled',
-                'linkNegotiation':'Auto negotiate',
                 'accessPolicyType':'Open'})
             for key,val in config_pedia['downlink'].items():
-                try:
-                    args[y][2].update({key: m[key]})
-                except:
-                    m[key] = val['meraki']['default']
-                    args[y][2].update({key: m[key]})
+                if not val['meraki']['skip'] == True:
+                    if val['meraki']['skip'] == 'post-process':
+                        exec(val['meraki'].get('post-process'),locals(),newvals)
+                        if debug:
+                            print(f"newvals[{key}] = {newvals[key]}")
+                        if not newvals[key] == "":
+                            m[key] = newvals[key]
+                    try:
+                        args[y][2].update({key: m[key]})
+                    except:
+                        m[key] = val['meraki']['default']
+                        args[y][2].update({key: m[key]})
             #try:
             #    args[y][2].update({'name':m['desc']})
             #except:

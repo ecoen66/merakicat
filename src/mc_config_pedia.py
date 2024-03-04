@@ -60,9 +60,76 @@ except:\n\
             'regex': r'\sdescription\s+(\S.+)',
             
             'meraki': {
+                'skip': False,
                 'default': ''
             }
         },
+        
+        'speed': {
+            'iosxe': "\
+\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')\n\
+except:\n\
+    pass\n",
+            
+            'regex': r'\sspeed\s+(\S.*)',
+            
+            'meraki': {
+                'skip': True,
+                'default': ''
+            }
+        },
+        
+        'duplex': {
+            'iosxe': "\
+\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')\n\
+except:\n\
+    pass\n",
+            
+            'regex': r'\sduplex\s+(\S.+)',
+            
+            'meraki': {
+                'skip': True,
+                'default': ''
+            }
+        },
+        
+        'linkNegotiation': {
+            'iosxe': "",
+            'regex': '',
+            'meraki': {
+                'skip': 'post-process',
+                'post-process': "\
+\
+linkNegotiation = ''\n\
+try:\n\
+    speed = int(m['speed'])\n\
+    if speed < 1000:\n\
+        linkNegotiation += str(speed)+' Megabit '\n\
+    else:\n\
+        linkNegotiation += str(int(speed/1000))+' Gigabit '\n\
+    try:\n\
+        duplex = m['duplex']\n\
+        match duplex:\n\
+            case 'half':\n\
+                linkNegotiation += 'half duplex (forced)'\n\
+            case 'full':\n\
+                linkNegotiation += 'full duplex (forced)'\n\
+    except KeyError:\n\
+        linkNegotiation += '(auto)'\n\
+except:\n\
+    linkNegotiation = 'Auto negotiate'\n",
+                'default': 'Auto negotiate'
+            }
+        },
+        
         'type': {
             'iosxe': "\
 \
@@ -76,7 +143,26 @@ except:\n\
             'regex': r'\sswitchport\smode\s+(\S.+)',
             
             'meraki': {
+                'skip': False,
                 'default': 'trunk'
+            }
+        },
+        
+        'poeEnabled': {
+            'iosxe': "\
+\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    poeEnabled = not child.re_match_typed(regex=r'\spower\sinline\s+(\S.+)')=='never'\n\
+except:\n\
+    pass\n",
+            
+            'regex': r'\spower\sinline\s+(\S.+)',
+            
+            'meraki': {
+                'skip': False,
+                'default': True
             }
         },
         
@@ -95,6 +181,7 @@ except:\n\
             'regex': r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)',
             
             'meraki': {
+                'skip': False,
                 'default': '1-1000'
             }
         },
@@ -117,6 +204,7 @@ except:\n\
             'regex': r'\sswitchport\svlan\s+(\S.*)',
             
             'meraki': {
+                'skip': False,
                 'default': '1'
             }
         },
@@ -135,6 +223,7 @@ except:\n\
             'regex': r'\sswitchport\strunk\snative\svlan\s+(\S.*)',
             
             'meraki': {
+                'skip': False,
                 'default': '1'
             }
         },
@@ -150,6 +239,7 @@ voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n"
             'regex': r'\sswitchport\svoice\svlan\s+(\S.*)',
             
             'meraki': {
+                'skip': False,
                 'default': None
             }
         }
