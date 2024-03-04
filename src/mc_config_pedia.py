@@ -1,3 +1,50 @@
+'''
+#####################################################################################
+
+This dictionary contains many Meraki switch & port configuration elements,
+along with their CiscoConfParse IOSXE parsing matches, and the values to
+pass back for the element.
+
+Each element is the name of a switch_dict or port_dict key.
+
+There are currently three sub-dictionaries: 'switch', 'downlink' & 'uplink'.
+
+#####################################################################################
+
+Elements in the 'switch' sub-dictionary have two keys within them: 'iosxe' & 'meraki'.
+The 'iosxe' value is the python code to extract information from the switch config
+and set a value based on that information.
+The 'meraki' value is the python code to do something with that value, and return
+one or more key:value pairs to add to a returns_dict in the translate module.
+
+#####################################################################################
+
+Elements in the 'downlink' & 'uplink' sub-dictionaries have three keys within them:
+'iosxe', 'regex' & 'meraki'.
+
+The 'regex' value is the CiscoConfParse IOSXE parsing match for this element.
+
+The 'iosxe' value is the python code to extract information from the switch config
+and set a value based on that information.
+
+The 'meraki' value is a sub-dictionary that contains up to 3 entries:
+'skip', 'default' and OPTIONALLY 'post-process'.
+
+The 'skip' value indicates whether or not to add this element to the meraki config,
+or to do some post-processing for the meraki config.
+    Examples include 'speed' & 'duplex', which have no direct
+    relation to meraki config elements.
+
+The 'default' value indicates the value to set for this port if there was no match
+in the IOSXE config for the port.
+
+The 'post-process' value is the python code to execute to provide a generated value
+for the element in the meraki config loop.
+    An example would be 'linkNegotiation' which must be
+    determined based on a combination of 'speed' & 'duplex'.
+
+#####################################################################################
+'''
 config_pedia = {
     
     'switch': {
