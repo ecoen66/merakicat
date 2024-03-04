@@ -5,6 +5,7 @@ from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
 import os, requests, json, pprint, re
 from mc_user_info import *
+from mc_config_pedia import *
 
 def Evaluate(config_file):
     """
@@ -18,9 +19,10 @@ def Evaluate(config_file):
     debug = DEBUG or DEBUG_TRANSLATOR
     
     port_dict = {}
+    switch_dict = {}
     ## List of interfaces that are shut
     shut_interfaces = list()
-    
+    exec("print(dir())")
     def read_Cisco_SW():
         """
         This sub-function parses the Catalyst switch config file and report on which
@@ -29,16 +31,27 @@ def Evaluate(config_file):
         :return: Lists of uplinks, downlinks and other ports as well as 
         :      : a dictionary with all of the ports and their settings, and the hostname
         """
+        for key,val in config_pedia['switch'].items():
+            switch_dict[key] = ""
+        if debug:
+            print(f"switch_dict = {switch_dict}")
         ##Parsing the Cisco Catalyst configuration (focused on the interface config)
         if debug:
             print("-------- Reading <"+config_file+"> Configuration --------")
         parse = CiscoConfParse(config_file, syntax='ios', factory=True)
-        
-        switch_name = ""
+        exec("print(dir())")
+        ### Try out our config_pedia for the switch name
+        for key,val in config_pedia['switch'].items():
+            newvals = {}
+            exec(val.get('iosxe'),locals(),newvals)
+            switch_dict[key] = newvals[key]
+            if debug:
+                print(f"switch_dict['{key}'] = {switch_dict[key]}")
+        '''
         switch_name_obj = parse.find_objects('^hostname')
         if not switch_name_obj == []:
-          switch_name = switch_name_obj[0].re_match_typed('^hostname\s(\S+)')
-        
+            switch_name = switch_name_obj[0].re_match_typed('^hostname\s(\S+)')
+        '''
         Gig_uplink= list()
         Ten_Gig_uplink= list()
         Twenty_Five_Gig_uplink= list()
@@ -219,8 +232,8 @@ def Evaluate(config_file):
             print(f"Downlink_list = {Downlink_list}\n")
             print(f"Other_list = {Other_list}\n")
             print(f"port_dict = {port_dict}\n")
-            print(f"switch_name = {switch_name}\n")
-        return Uplink_list, Downlink_list, Other_list, port_dict, switch_name
+            print(f"switch_dict = {switch_dict}\n")
+        return Uplink_list, Downlink_list, Other_list, port_dict, switch_dict
     
     def split_down_up_link(interfaces_list, Gig_uplink):
         """
@@ -324,10 +337,10 @@ def Evaluate(config_file):
         return port,Sub_module
     
     Uplink_list, Downlink_list, Other_list, port_dict, switch_name  = read_Cisco_SW()
-    return Uplink_list, Downlink_list, Other_list, port_dict, switch_name
+    return Uplink_list, Downlink_list, Other_list, port_dict, switch_dict
 
 
-def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list,switch_name):
+def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list,switch_dict):
     """
     This parent function will convert Catalyst switch config features to Meraki features
     and send them to Dashboard to program Meraki switches.
@@ -346,52 +359,53 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
     # create a batch action lists
     action_list = list()
     all_actions = list()
-    
+    urls = list()
+    returns_dict = {}
     # create good and bad port lists 
     configured_ports = defaultdict(list)
     unconfigured_ports = defaultdict(list)
 
-    # create a place to hold the Dashboard URL for each switch
-    urls = list()
 
     # create a place to hold all of the arguments to send to Dashboard
     # to update a switch port
     args = list(dict())
     
     ## Loop to go through all the ports of the switches
-    def loop_configure_meraki(port_dict,Downlink_list,switch_name):
-    """
-    This sub-function does the actual work of setting the meraki functions based on the
-    dictionary of IOSXE ports and features from the Evaluate function.
-    :param port_dict: The dictionary of IOSXE ports and features from the Evaluate function
-    :param Downlink_list: The list of ports to configure
-    :param switch_name: The catalyst IOSXE hostname 
-    :return: NONE - modifies global variables in the parent function
-    """
+    def loop_configure_meraki(port_dict,Downlink_list,switch_dict):
+        """
+        This sub-function does the actual work of setting the meraki functions based on the
+        dictionary of IOSXE ports and features from the Evaluate function.
+        :param port_dict: The dictionary of IOSXE ports and features from the Evaluate function
+        :param Downlink_list: The list of ports to configure
+        :param switch_name: The catalyst IOSXE hostname 
+        :return: NONE - modifies global variables in the parent function
+        """
         
+        # create a place to hold the Dashboard URL for each switch
         ## Configure the switch_name in the Dashboard
-        blurb = "This was a conversion from a Catalyst IOSXE config."
-        n = 0
-        if switch_name == "":
-            switch_name = "Switch"
-        if len(sw_list) == 1:
-            try:
-                response = dashboard.devices.updateDevice(sw_list[n], name=switch_name, notes=blurb)
-                urls.append(response['url'])
+        
+        if debug:
+            print(f"switch_dict = {switch_dict}")
+        for key,val in config_pedia['switch'].items():
+            newvals = {}
+            exec(val.get('meraki'),{'debug': debug, 'sw_list': sw_list, 'switch_dict': switch_dict, 'dashboard': dashboard},newvals)
+            if debug:
+                print(f"newvals = {newvals}")
+            return_vals = newvals['return_vals']
+            if debug:
+                print(f"newvals['return_vals'] = {newvals['return_vals']}")
+            n = 0
+            while n < len(return_vals):
                 if debug:
-                    print(f"Dashboard response was: {response}")
-            except:
-                print(f"Unable to configure name on switch.")
-        else:
-            while n <= len(sw_list)-1:
-                try:
-                    response = dashboard.devices.updateDevice(sw_list[n], name=switch_name+'-'+str(n+1), notes=blurb)
-                    urls.append(response['url'])
-                    if debug:
-                        print(f"Dashboard response was: {response}")
-                except:
-                    print("Can't set the switch name for switch " + switch_name+'-'+str(n+1))
-                n +=1
+                    print(f"returns_dict = {returns_dict}")
+                    print(f"return_vals[{n}] = {return_vals[n]}")
+                    print(dir())
+                returns_dict[return_vals[n]] = newvals[return_vals[n]]
+                if debug:
+                    print(f"returns_dict = {returns_dict}")
+                n += 1
+            #for k,v in newvals.items():
+            #    exec(k + '=v')
         y = 0
         ## Loop to get all the interfaces in the port_dict
         while y <= len(Downlink_list)-1:
@@ -514,7 +528,7 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                   print(f"Number of batch actions after attempted append is {len(action_list)}")
             y +=1
     
-    loop_configure_meraki(port_dict,Downlink_list,switch_name)
+    loop_configure_meraki(port_dict,Downlink_list,switch_dict)
     
     # Combine all of the action_list sublists into a larger set for batching
     x = 0
@@ -544,7 +558,7 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
     if debug:
         print(f'Failed batch IDs are as follows: {failed_batch_ids}')
 
-    return configured_ports,unconfigured_ports,urls
+    return configured_ports,unconfigured_ports,returns_dict['urls']
 '''
 def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
     """

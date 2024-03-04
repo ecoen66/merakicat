@@ -22,7 +22,7 @@ def Register(host,username,password,port,secret):
     :return: A string indicating succes or failure to be used in reporting, a string
     :      : with any issues encountered, and lists of registered switches, the Meraki
     :      : serial numbers assigned, and a list of the NM modules per switch for later.
-    """"
+    """
     
     debug = DEBUG or DEBUG_REGISTER
     

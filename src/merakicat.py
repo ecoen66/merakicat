@@ -881,7 +881,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         c = create_message(incoming_msg.roomId, blurb)
     else:
         print(blurb)
-    Uplink_list, Downlink_list, Other_list, port_dict, switch_name = Evaluate(serials,config_file)
+    Uplink_list, Downlink_list, Other_list, port_dict, switch_dict = Evaluate(config_file)
     
     ## Creating a list of the downlink port configurations to push to Meraki
     ToBeConfigured = {}
@@ -898,7 +898,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         c = create_message(incoming_msg.roomId, "Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
     else:
         print("Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
-    configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_org,meraki_serials,ToBeConfigured,Downlink_list,switch_name)
+    configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_org,meraki_serials,ToBeConfigured,Downlink_list,switch_dict)
     if debug:
         print(f"configured_ports = {configured_ports}")
         print(f"unconfigured_ports = {unconfigured_ports}")
@@ -925,46 +925,46 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         print(f"unconfigured_up_ports = {unconfigured_up_ports}")
     '''
     switch = 0
-    response = ""
+    r = ""
     if debug:
         print(f"meraki_serials = {meraki_serials}")
     while switch <= len(meraki_serials)-1:
         if len(meraki_serials) == 1:
-            response += "For the switch (" + meraki_serials[switch] + "):\n"
+            r += "For the switch (" + meraki_serials[switch] + "):\n"
         else:
-            response += "For switch "+ str(switch+1) + " (" + meraki_serials[switch] + "):\n"
+            r += "For switch "+str(switch+1)+" ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
         if debug:
-            print(f"\nswitch={switch}, and response = {response}")
+            print(f"\nswitch={switch}, and r = {r}")
         if len(configured_ports[switch]) > 0:
             if BOT:
-                response += "We were able to **successfully** " + verb + " ports: "
+                r += "We were able to **successfully** " + verb + " ports: "
             else:
-                response += "We were able to successfully " + verb + " ports: "
+                r += "We were able to successfully " + verb + " ports: "
             c_port = 0
             while c_port <= len(configured_ports[switch])-2:
-                response += configured_ports[switch][c_port] + ", "
+                r += configured_ports[switch][c_port] + ", "
                 if debug:
-                    print(f"\nc_port={c_port}, and response = {response}")
+                    print(f"\nc_port={c_port}, and r = {r}")
                 c_port+=1
-            response += configured_ports[switch][c_port] + "\n\n"
+            r += configured_ports[switch][c_port] + "\n\n"
             if debug:
-                print(f"\nc_port={c_port}, and response = {response}")
+                print(f"\nc_port={c_port}, and r = {r}")
         if len(unconfigured_ports[switch]) > 0:
             if BOT:
-                response += "We were **unable** to " + verb + " ports: "
+                r += "We were **unable** to " + verb + " ports: "
             else:
-                response += "We were unable to " + verb + " ports: "
+                r += "We were unable to " + verb + " ports: "
             u_port = 0
             while u_port <= len(unconfigured_ports[switch])-2:
-                response += unconfigured_ports[switch][u_port] + ", "
+                r += unconfigured_ports[switch][u_port] + ", "
                 if debug:
-                    print(f"\nu_port={u_port}, and response = {response}")
+                    print(f"\nu_port={u_port}, and r = {r}")
                 u_port+=1
-            response += unconfigured_ports[switch][u_port] + "\n\n"
+            r += unconfigured_ports[switch][u_port] + "\n\n"
             if debug:
-                print(f"\nu_port={u_port}, and response = {response}")
+                print(f"\nu_port={u_port}, and r = {r}")
         switch+=1
-    return (response)
+    return (r)
 
 
 def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):

@@ -36,7 +36,7 @@ def CheckFeatures(sw_file):
     #unsupported_features_raw = requests.get('http://msfeatures.netdecorators.com:7900/return_list_unsupported')
     #unsupported_features = json.loads(unsupported_features_raw.text)
     #unsupported_features.update(additional_unsupported)
-
+    
     unsupported_features = {
         "AAA":"https://documentation.meraki.com/General_Administration/Managing_Dashboard_Access/Managing_Dashboard_Administrators_and_Permissions",
         "ARP Access-list":"https://documentation.meraki.com/MS",
@@ -101,10 +101,10 @@ def CheckFeatures(sw_file):
     
     Features_configured =list()
     aux_features_config =list()
-
+    
     # Here we will go through parsing/reading Cisco Catalyst configuration file and capture specific configuration
     parse =  CiscoConfParse(sw_file, syntax='ios', factory=True)
-
+    
     #FUTURE ENHANCMENT - Add catalyst command then add it to a in dic()
     hostname = parse.find_objects('^hostname')
     host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)', default='')
@@ -151,8 +151,8 @@ def CheckFeatures(sw_file):
     bgp = parse.find_objects('^router bgp')
     isis = parse.find_objects('^router isis')
     vrf = parse.find_objects('^vrf')
-
-
+    
+    
     # Build main dictionary of all the features the script can read
     a = {
     "Hostname": [hostname,"✓"],
@@ -200,11 +200,11 @@ def CheckFeatures(sw_file):
     "IS-IS": [isis,""],     #can't be configured
     "VRF": [vrf,""]
     }
-
+    
     # If there is only one switch in the stack, don't flag it as a stack
     if len(a["Stack"][0]) == 1:
         a["Stack"][0] = []
-
+    
     # Running a loop to take out the unconfigured features and only focus on what is configured
     for key, value in a.items():
         if not value[0]:
@@ -219,7 +219,7 @@ def CheckFeatures(sw_file):
                     if STP_Type=="rapid-pvst":
                         translatable = "✓"
                     Features_configured.append([STP_Type,translatable])
-
+                
                 # As some of the configuration will be nested under the interface config, hence we have this if statement and send the interface name to Interface_detail function to get the subconfig of the interface
                 if key == "Interface":
                     check_features = Interface_detail(detail)
@@ -243,12 +243,12 @@ def CheckFeatures(sw_file):
     return host_name,aux_features_config, unsupported_features,More_info
 
 def Interface_detail(interface_value):
-     """
+    """
     This sub-function is used to read the interface configuration.
     :param interface_value: An interface object from CiscoConfParse.
     :return: A combined list of  all the features on the interface.
     """
-
+    
     feature_list_on_interface=list()
     PAgP=["auto","desirable"]
     LACP =["active", "passive"]
@@ -274,7 +274,7 @@ def Interface_detail(interface_value):
         mode_trunk = config_det.re_match_typed(regex=r'\sswitchport\smode\strunk?(\S.*)')
         directed_broadcast = config_det.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')
         description = config_det.re_match_typed(regex=r'\sdescription?(\S.*)')
-
+        
         if not private_vlan == "":
             feature_list_on_interface.append(["Private_Vlan",""])
         if not pruning == "":
@@ -317,6 +317,6 @@ def Interface_detail(interface_value):
             feature_list_on_interface.append(["Directed Broadcast",""])
         if not description == "":
             feature_list_on_interface.append(["Description","✓"])
-
+    
     #combine all the features on the interface together in a list and send it back
     return(feature_list_on_interface)
