@@ -127,3 +127,4 @@ webexteamsbot/__pycache__/webexteamsbot.cpython-311.pyc
 *.pyc
 
 src/mc_user_info.py
+src/batch_helper_preview.json

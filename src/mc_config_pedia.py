@@ -12,7 +12,9 @@ if switch_name == '':\n\
 if debug:\n\
     print(f'switch_name = {switch_name}')\n",
             
-        'meraki': "urls = list()\n\
+        'meraki': "\
+\
+urls = list()\n\
 blurb = 'This was a conversion from a Catalyst IOSXE config.'\n\
 n = 0\n\
 if debug:\n\
@@ -43,14 +45,78 @@ if debug:\n\
     print(f'dir() = {dir()}')\n"}
     },
     
-    'uplink': {
-        'desc': {
-            'iosxe': "try:\n\
-    child.re_match_typed(regex=r'\sdescription\s+(\S.+)')\n\
+    'downlink': {
+        
+        'name': {
+            'iosxe': "\
+\
+name = ''\n\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    name = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')\n\
 except:\n\
-    pass\n"}
+    pass\n",
+            
+            'meraki': {
+                'default': ''
+            }
+        },
+        'type': {
+            'iosxe': "\
+\
+type = 'trunk'\n\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    type = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')\n\
+except:\n\
+    type = 'trunk'\n",
+            
+            'meraki': {
+                'default': 'trunk'
+            }
+        },
+        
+        'vlan': {
+            
+            'iosxe': "\
+\
+vlan = '1'\n\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    vlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n\
+except:\n\
+    pass\n\
+try:\n\
+    vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')\n\
+except:\n\
+    pass\n",
+            
+            'meraki': {
+                'default': '1'
+            }
+        },
+        
+        'voiceVlan': {
+            
+            'iosxe': "\
+\
+voiceVlan = None\n\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n\
+except:\n\
+    pass\n",
+            
+            'meraki': {
+                'default': None
+            }
+        }
     },
     
-    'downlink': {
+    'uplink': {
     }
 }

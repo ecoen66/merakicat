@@ -40,6 +40,9 @@ def Evaluate(config_file):
             print("-------- Reading <"+config_file+"> Configuration --------")
         parse = CiscoConfParse(config_file, syntax='ios', factory=True)
         exec("print(dir())")
+        
+        ###
+        ###
         ### Try out our config_pedia for the switch name
         for key,val in config_pedia['switch'].items():
             newvals = {}
@@ -101,9 +104,9 @@ def Evaluate(config_file):
             port_dict[intf_name] = {}
             port_dict[intf_name]['sw_module'] = "1"
             port_dict[intf_name]['sub_module'] = "0"
-            port_dict[intf_name]['desc'] = ""
+            #port_dict[intf_name]['desc'] = ""
             port_dict[intf_name]['port'] = ""
-            port_dict[intf_name]['mode'] = ""
+            #[intf_name]['mode'] = ""
             port_dict[intf_name]['mac'] = []
             port_dict[intf_name]['active'] = "true"
             
@@ -143,33 +146,50 @@ def Evaluate(config_file):
                 if debug:
                     print(f"Children are: {int_fx}")
                 ## Capture the configuration of the interface
-                desc = port_mode = Vlan = Vlanv = port_sec_raw = trunk_native = ""
+                
+                ###
+                ###
+                ### Try out our config_pedia for the switch name
+                for key,val in config_pedia['downlink'].items():
+                    port_dict[intf_name][key] = ""
+                
+                port_sec_raw = ""
                 trunk_v_allowed = speed = duplex = port_channel = max_mac = ""
                 for child in int_fx:
-                    try:
-                        desc = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')
-                    except:
-                        pass
-                    try:
-                        Vlanv = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')
-                    except:
-                        pass
-                    try:
-                        port_mode = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')
-                    except:
-                        pass
-                    try:
-                        Vlan = child.re_match_typed(regex=r'\sswitchport\saccess\svlan\s+(\S.*)')
-                    except:
-                        pass
+                    ### Try out our config_pedia for the port description & mode
+                    for key,val in config_pedia['downlink'].items():
+                        newvals = {}
+                        if debug:
+                            print(f"key, val = {key},{val}")
+                        exec(val.get('iosxe'),locals(),newvals)
+                        if debug:
+                            print(f"newvals[{key}] = {newvals[key]}")
+                        if not newvals[key] == "":
+                            port_dict[intf_name][key] = newvals[key]
+                    #try:
+                    #    desc = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')
+                    #except:
+                    #    pass
+                    #try:
+                    #    Vlanv = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')
+                    #except:
+                    #    pass
+                    #try:
+                    #    port_mode = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')
+                    #except:
+                    #    pass
+                    #try:
+                    #    Vlan = child.re_match_typed(regex=r'\sswitchport\saccess\svlan\s+(\S.*)')
+                    #except:
+                    #    pass
                     try:
                         port_sec_raw = child.re_match_typed(regex=r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)')
                     except:
                         pass
-                    try:
-                        trunk_native = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')
-                    except:
-                        pass
+                    #try:
+                    #    trunk_native = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')
+                    #except:
+                    #    pass
                     try:
                         trunk_v_allowed = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')
                     except:
@@ -190,22 +210,22 @@ def Evaluate(config_file):
                         max_mac = child.re_match_typed(regex=r'\sswitchport\sport-security\smaximum\s+(\d)')
                     except:
                         pass
-                    if not desc == "":
-                        port_dict[intf_name]['desc'] = desc
-                    port_dict[intf_name]['mode'] = "trunk"
-                    if not port_mode == "":
-                        port_dict[intf_name]['mode'] = port_mode
-                    if not Vlan == "":
-                        port_dict[intf_name]['data_Vlan'] = Vlan
-                    else:
-                        if port_dict[intf_name]['mode'] == "access":
-                            port_dict[intf_name]['data_Vlan'] = 1
-                    if not Vlanv == "":
-                        port_dict[intf_name]['voice_Vlan'] = Vlanv
+                    #if not desc == "":
+                    #    port_dict[intf_name]['desc'] = desc
+                    #port_dict[intf_name]['mode'] = "trunk"
+                    #if not port_mode == "":
+                    #    port_dict[intf_name]['mode'] = port_mode
+                    #if not Vlan == "":
+                    #    port_dict[intf_name]['data_Vlan'] = Vlan
+                    #else:
+                    #    if port_dict[intf_name]['mode'] == "access":
+                    #        port_dict[intf_name]['data_Vlan'] = 1
+                    #if not Vlanv == "":
+                    #    port_dict[intf_name]['voice_Vlan'] = Vlanv
                     if not port_sec_raw == "":
                         port_dict[intf_name]['mac'].append(mac_build(port_sec_raw))
-                    if not trunk_native == "":
-                        port_dict[intf_name]['native'] = trunk_native
+                    #if not trunk_native == "":
+                    #    port_dict[intf_name]['native'] = trunk_native
                     if not trunk_v_allowed == "":
                         port_dict[intf_name]['trunk_allowed'] = trunk_v_allowed
                     if not speed == "":
@@ -434,10 +454,7 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                 print(f"args[{y}][0] = {args[y][0]}")
                 print(f"args[{y}][1] = {args[y][1]}")
                 print(f"args[{y}][2] = {args[y][2]}")
-            args[y][2].update({'name':'',
-                'voiceVlan':None,
-                'enabled':True,
-                'type':'trunk',
+            args[y][2].update({'enabled':True,
                 'tags':[],
                 'poeEnabled':True,
                 'isolationEnable':False,
@@ -447,34 +464,38 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                 'accessPolicyType':'Open'})
             if debug:
                 print(f"args = {args}")
+            for key,val in config_pedia['downlink'].items():
+                if m[key] == "":
+                    m[key] = val['meraki']['default']
+                args[y][2].update({key: m[key]})
+            #try:
+            #    args[y][2].update({'name':m['desc']})
+            #except:
+            #    m["desc"] = args['name']
             ## Setup the items common to all port types
-            try:
-                args[y][2].update({'type':m['mode'] if not m['mode'] == "" else "trunk"})
-            except:
-                pass
-            try:
-                args[y][2].update({'voiceVlan':None if m['voice_Vlan'] == "" else int(m['voice_Vlan'])})
-            except:
-                pass
-            try:
-                args[y][2].update({'name':m['desc']})
-            except:
-                m["desc"] = args['name']
+            #try:
+            #    args[y][2].update({'type':m['mode'] if not m['mode'] == "" else "trunk"})
+            #except:
+            #    pass
+            #try:
+            #    args[y][2].update({'voiceVlan':None if m['voice_Vlan'] == "" else int(m['voice_Vlan'])})
+            #except:
+            #    pass
             try:
                 args[y][2].update({'enabled':False if m["active"] == "false" else True})
             except:
                 pass            
             ## Check if the interface mode is configured as Access
-            if m['mode'] == "access":
+            if m['type'] == "access":
                 try:
                     if not m['mac'] == []:
                         pass
                 except:
                     pass
-                try:
-                    args[y][2].update({'vlan':int(m['data_Vlan']) if not m['data_Vlan'] == "" else 1})
-                except:
-                    pass
+                #try:
+                #    args[y][2].update({'vlan':int(m['data_Vlan']) if not m['data_Vlan'] == "" else 1})
+                #except:
+                #    pass
                 try:
                     if not m['Port_Sec'] == "":
                         mac_limit = m['Port_Sec']
@@ -487,11 +508,11 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
             
             ## The interface mode is configured as Trunk
             else:
-                try:
-                    args[y][2].update({'vlan':m['native'] if not m['native'] == '' else 1})
-                except:
-                    args[y][2].update({'vlan':1})
-                    m['native'] = "1"
+                #try:
+                #    args[y][2].update({'vlan':m['native'] if not m['native'] == '' else 1})
+                #except:
+                #    args[y][2].update({'vlan':1})
+                #    m['native'] = "1"
                 try:
                     args[y][2].update({'allowedVlans':m['trunk_allowed'] if not m['trunk_allowed'] == '' else '1-1000'})
                 except:
