@@ -930,9 +930,9 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         print(f"meraki_serials = {meraki_serials}")
     while switch <= len(meraki_serials)-1:
         if len(meraki_serials) == 1:
-            r += "For the switch (" + meraki_serials[switch] + "):\n"
+            r += "\nFor the switch ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
         else:
-            r += "For switch "+str(switch+1)+" ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
+            r += "\nFor switch "+str(switch+1)+" ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
         if debug:
             print(f"\nswitch={switch}, and r = {r}")
         if len(configured_ports[switch]) > 0:

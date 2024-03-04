@@ -22,7 +22,6 @@ def Evaluate(config_file):
     switch_dict = {}
     ## List of interfaces that are shut
     shut_interfaces = list()
-    exec("print(dir())")
     def read_Cisco_SW():
         """
         This sub-function parses the Catalyst switch config file and report on which
@@ -39,7 +38,6 @@ def Evaluate(config_file):
         if debug:
             print("-------- Reading <"+config_file+"> Configuration --------")
         parse = CiscoConfParse(config_file, syntax='ios', factory=True)
-        exec("print(dir())")
         
         ###
         ###
@@ -154,7 +152,8 @@ def Evaluate(config_file):
             speed = duplex = port_channel = max_mac = ""
             for child in int_fx:
                 ### Try out our config_pedia for the port description & mode
-                print(f"child = {child}")
+                if debug:
+                    print(f"child = {child}")
                 for key,val in config_pedia['downlink'].items():
                     newvals = {}
                     if debug:
