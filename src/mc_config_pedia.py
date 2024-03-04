@@ -50,13 +50,14 @@ if debug:\n\
         'name': {
             'iosxe': "\
 \
-name = ''\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n\
 try:\n\
     name = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')\n\
 except:\n\
     pass\n",
+            
+            'regex': r'\sdescription\s+(\S.+)',
             
             'meraki': {
                 'default': ''
@@ -65,16 +66,36 @@ except:\n\
         'type': {
             'iosxe': "\
 \
-type = 'trunk'\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n\
 try:\n\
     type = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')\n\
 except:\n\
-    type = 'trunk'\n",
+    pass\n",
+            
+            'regex': r'\sswitchport\smode\s+(\S.+)',
             
             'meraki': {
                 'default': 'trunk'
+            }
+        },
+        
+        'allowedVlans': {
+            'iosxe': "\
+\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    allowedVlans = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')\n\
+    if debug:\n\
+        print(f'allowedVlans = {allowedVlans}')\n\
+except:\n\
+    pass\n",
+            
+            'regex': r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)',
+            
+            'meraki': {
+                'default': '1-1000'
             }
         },
         
@@ -82,17 +103,36 @@ except:\n\
             
             'iosxe': "\
 \
-vlan = '1'\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n\
 try:\n\
-    vlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n\
+    vlan = child.re_match_typed(regex=r'\sswitchport\svlan\s+(\S.*)')\n\
 except:\n\
     pass\n\
 try:\n\
     vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')\n\
 except:\n\
     pass\n",
+            
+            'regex': r'\sswitchport\svlan\s+(\S.*)',
+            
+            'meraki': {
+                'default': '1'
+            }
+        },
+        
+        'vlan': {
+            
+            'iosxe': "\
+\
+if debug:\n\
+    print(f'dir() = {dir()}')\n\
+try:\n\
+    vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')\n\
+except:\n\
+    pass\n",
+            
+            'regex': r'\sswitchport\strunk\snative\svlan\s+(\S.*)',
             
             'meraki': {
                 'default': '1'
@@ -103,13 +143,11 @@ except:\n\
             
             'iosxe': "\
 \
-voiceVlan = None\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n\
-try:\n\
-    voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n\
-except:\n\
-    pass\n",
+voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n",
+            
+            'regex': r'\sswitchport\svoice\svlan\s+(\S.*)',
             
             'meraki': {
                 'default': None
