@@ -370,7 +370,6 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                 'poeEnabled':True,
                 'isolationEnable':False,
                 'rstpEnabled':True,
-                'stpGuard':'disabled',
                 'accessPolicyType':'Open'})
             for key,val in config_pedia['downlink'].items():
                 if not val['meraki']['skip'] == True:

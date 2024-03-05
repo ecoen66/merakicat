@@ -22,7 +22,8 @@ requirements = [
     "tabulate==0.9.0",
     "pyadaptivecards==0.1.1",
     "ciscoconfparse2==0.5",
-    "meraki==1.42.0"
+    "meraki==1.42.0",
+    "fpdf2==2.7.8"
     ]
 
 setup_requirements = [ ]

@@ -1,17 +1,14 @@
 # merakicat
 
-You will need to copy src/user_sample.py to serc/mc_user_info.py in order to use this app.
+You will need to copy src/user_sample.py to src/mc_user_info.py in order to use this app.
 
 # The rest of this file needs to be replaced!
 
 
 
 
-This package makes creating [Webex Teams](https://www.webex.com/products/teams/index.html) bots in Python super simple.  
+This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard super simple.  
 
-[![PyPI version](https://badge.fury.io/py/webexteamsbot.svg)](https://badge.fury.io/py/webexteamsbot) [![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/hpreston/webexteamsbot)
-
-> This package is based on the previous [ciscosparkbot](https://github.com/imapex/ciscosparkbot) project.  This version will both move to new Webex Teams branding as well as add new functionality.  If you've used `ciscosparkbot` you will find this package very similar and familiar.  
 
 # Prerequisites
 
@@ -23,21 +20,21 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
 1. Click **Create a New App**
 
-    ![add-app](https://github.com/hpreston/webexteamsbot/raw/master/images/newapp.jpg)
+    ![add-app](https://github.com/ecoen66/merakicat/raw/master/images/newapp.jpg)
 
 1. Click **Create a Bot**.
 
-    ![create-bot](https://github.com/hpreston/webexteamsbot/raw/master/images/createbot.jpg)
+    ![create-bot](https://github.com/ecoen66/merakicat/raw/master/images/createbot.jpg)
 
 2. Fill out all the details about your bot.  You'll need to set a name, username, icon (either upload one or choose a sample), and provide a description.
 
-    ![add-bot](https://github.com/hpreston/webexteamsbot/raw/master/images/newbot.jpg)
+    ![add-bot](https://github.com/ecoen66/merakicat/raw/master/images/newbot.jpg)
 
 3. Click **Add Bot**.
 
 1. On the Congratulations screen, make sure to copy the *Bot's Access Token*, you will need this in a second.
 
-    ![enter-details](https://github.com/hpreston/webexteamsbot/raw/master/images/botcongrats.jpg)
+    ![enter-details](https://github.com/ecoen66/merakicat/raw/master/images/botcongrats.jpg)
 
 # Installation
 
@@ -62,6 +59,11 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
     export TEAMS_BOT_TOKEN=<your bots token>
     export TEAMS_BOT_EMAIL=<your bots email>
     export TEAMS_BOT_APP_NAME=<your bots name>
+    export TEAMS_EMAILS=<a comma delimited list of email addresses the bot will respond to>
+    export IOS_USERNAME=<the ssh username for the Catalyst switches>
+    export IOS_PASSWORD=<the ssh password for the Catalyst switches>
+    export IOS_SECRET=<the CLI secret password for the Catalyst switches>
+    export IOS_PORT=<the ssh port number for the Catalyst switches - usually 22>
     export MERAKI_API_KEY=<your meraki dashboard API key>
     ```
 

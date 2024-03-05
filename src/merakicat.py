@@ -36,6 +36,24 @@ meraki_api_key = os.getenv("MERAKI_API_KEY")
 if meraki_api_key is None:
     meraki_api_key = MERAKI_API_KEY
 
+# Retrieve required SSH details from environment variables
+ios_username = os.getenv("IOS_USERNAME")
+ios_password = os.getenv("IOS_PASSWORD")
+ios_secret = os.getenv("IOS_SECRET")
+ios_port = os.getenv("IOS_PORT")
+# If the required details were not in the environment variables
+# grab them from the mc_user_info.py file
+if ios_username is None:
+    ios_username = IOS_USERNAME
+if ios_password is None:
+    ios_password = IOS_PASSWORD
+if ios_secret is None:
+    ios_secret = IOS_SECRET
+if ios_port is None:
+    ios_port = IOS_PORT
+    if ios_port is None:
+        ios_port = 22
+
 # If we were run without arguments, run as a BOT
 # Otherwise, we will attempt to use the args in batch mode
 BOT = False
@@ -45,9 +63,8 @@ if len(sys.argv) == 1:
 teams_emails = list()
 if BOT:
     # Retrieve required details from environment variables
-    bot_email = "merakicat@webex.bot"
-    bot_app_name = "Meraki Cat"
-    bot_fname = bot_app_name.split()[0].strip()
+    bot_email = os.getenv("TEAMS_BOT_EMAIL")
+    bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
     teams_token = os.getenv("TEAMS_BOT_TOKEN")
     if not os.getenv("TEAMS_EMAILS") is None:
         teams_emails.append(os.getenv("TEAMS_EMAILS"))
@@ -55,21 +72,33 @@ if BOT:
     
     # If the required details were not in the environment variables
     # grab them from the mc_user_info.py file
+    if bot_email is None:
+        bot_email = TEAMS_BOT_EMAIL
+    if bot_app_name is None:
+        bot_app_name = TEAMS_BOT_APP_NAME
     if teams_token is None:
-        teams_token = TEAMS_TOKEN
+        teams_token = TEAMS_BOT_TOKEN
     if len(teams_emails) == 0:
         teams_emails = TEAMS_EMAILS
     if bot_url is None:
         bot_url = BOT_URL
 
+    # Either way, let's got the Bot's first name in case we are
+    # directly addressed in room with multiple users
+    bot_fname = bot_app_name.split()[0].strip()
+
 debug = DEBUG or DEBUG_MAIN
 
+# Setup some global variables
 payload = {}
 organizations = {}
 api = ""
 payload = None
 configured_ports = defaultdict(list)
 unconfigured_ports = defaultdict(list)
+command_line_msg = Response()
+
+#Setup some global, stateful variables
 config_file = ""
 host_id = ""
 nm_list = list()
@@ -81,22 +110,33 @@ meraki_org_name=""
 meraki_net=""
 meraki_net_name=""
 meraki_urls = list()
-command_line_msg = Response()
 
 # Request the lists of Organizations and their Networks from Dashboard
 if not meraki_api_key == "":
     if debug:
         print(f"Trying to setup a dashboard instance")
-    dashboard = meraki.DashboardAPI(api_key=meraki_api_key,output_log=False,suppress_logging=True)
+    try:
+        dashboard = meraki.DashboardAPI(api_key=meraki_api_key,output_log=False,suppress_logging=True)
+    except:
+        print("We were unable to login to the dashboard.")
+        sys.exit()
     if debug:
         print(f"Got one, now trying to get the list of Orgs")
     # Even though, right now this app only supports a single Org...
-    meraki_orgs = dashboard.organizations.getOrganizations()
+    try:
+        meraki_orgs = dashboard.organizations.getOrganizations()
+    except:
+        print("We were unable to get the list of Orgs.")
+        sys.exit()
     if debug:
         print(f"meraki_orgs = {meraki_orgs}")
     x = 0
     while x <= len(meraki_orgs)-1:
-        raw_nets = dashboard.organizations.getOrganizationNetworks(organizationId=meraki_orgs[x]['id'])
+        try:
+            raw_nets = dashboard.organizations.getOrganizationNetworks(organizationId=meraki_orgs[x]['id'])
+        except:
+            print(f"We were unable to get the list of networks for {meraki_orgs[x]['name']}.")
+            sys.exit()
         if debug:
             print(raw_nets)
         y = 0
@@ -121,7 +161,7 @@ if not meraki_api_key == "":
 
 
 if BOT:
-    # If any of the bot environment variables are missing, terminate the app
+    # If any of the required bot variables are missing, terminate the app
     if not bot_email or not teams_token or not bot_url or not bot_app_name:
         print(
             "merakicat.py - Missing Environment Variable. Please see the 'Usage'"
@@ -131,10 +171,10 @@ if BOT:
             print("TEAMS_BOT_EMAIL")
         if not teams_token:
             print("TEAMS_BOT_TOKEN")
-        if not bot_url:
-            print("TEAMS_BOT_URL")
         if not bot_app_name:
             print("TEAMS_BOT_APP_NAME")
+        if not bot_url:
+            print("TEAMS_BOT_URL")
         sys.exit()
     
     
@@ -457,6 +497,14 @@ def greeting(incoming_msg):
             else:
                 response.markdown = "\n\n" + tabulate(command_list,headers=["Command Format","Function"]) + "\n"
         
+        case "hi" | "hello":
+            if BOT:
+                # Lookup details about sender for our default response
+                sender = bot.teams.people.get(incoming_msg.personId)
+                response.markdown = "Hi, {}! ".format(sender.firstName)
+                response.markdown += "What do you want me to do today?\n"
+                response.markdown += "See what I can do by asking for **/help**."
+        
         case _:
             if BOT:
                 # Lookup details about sender for our default response
@@ -519,10 +567,10 @@ def check_switch(incoming_msg,config="",host=""):
         session_info = {
             'device_type': 'cisco_xe',
             'host': host_id,
-            'username': USERNAME,
-            'password': PASSWORD,
-            'port' : PORT,          # optional, defaults to 22
-            'secret': SECRET,     # optional, defaults to ''
+            'username': ios_username,
+            'password': ios_password,
+            'port' : ios_port,          # optional, defaults to 22
+            'secret': ios_secret,     # optional, defaults to ''
         }
         net_connect = ConnectHandler(**session_info)
         switch_name = net_connect.find_prompt()
@@ -685,7 +733,8 @@ def register_switch(incoming_msg,host="",called=""):
     
     # SSH to the switch with netmiko, read the config, grab the hostname,
     # write the config out to a file using the hostname as part of the filespec
-    status, issues, registered_switches, registered_serials, nm_list = Register(host,USERNAME,PASSWORD,PORT,SECRET)
+    status, issues, registered_switches, registered_serials, nm_list = Register(host,
+        ios_username,ios_password,ios_port,ios_secret)
     if debug:
         print(f"In register_switch, status = {status}")
     if status == "successfully":
@@ -847,10 +896,10 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
             session_info = {
                 'device_type': 'cisco_xe',
                 'host': host_id,
-                'username': USERNAME,
-                'password': PASSWORD,
-                'port' : PORT,          # optional, defaults to 22
-                'secret': SECRET,     # optional, defaults to ''
+                'username': ios_username,
+                'password': ios_password,
+                'port' : ios_password,          # optional, defaults to 22
+                'secret': ios_secret,     # optional, defaults to ''
             }
             if debug:
                 print(f"session_info = {session_info}")
@@ -1029,10 +1078,10 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     session_info = {
         'device_type': 'cisco_xe',
         'host': host_id,
-        'username': USERNAME,
-        'password': PASSWORD,
-        'port' : PORT,          # optional, defaults to 22
-        'secret': SECRET,     # optional, defaults to ''
+        'username': ios_username,
+        'password': ios_password,
+        'port' : ios_port,          # optional, defaults to 22
+        'secret': ios_secret,     # optional, defaults to ''
     }
     net_connect = ConnectHandler(**session_info)
     switch_name = net_connect.find_prompt()

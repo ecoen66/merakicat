@@ -281,7 +281,84 @@ except:\n\
             }
         },
         
-        'vlan': {
+        'root_guard': {
+            
+            'iosxe': "\
+\
+root_guard = 'yes'\n\
+if debug:\n\
+    print(f'root_guard = {root_guard}')\n",
+            
+            'regex': r'\sspanning-tree\sguard\sroot?(\S.*)',
+            
+            'meraki': {
+                'skip': True,
+                'default': ''
+            }
+        },
+        
+        'loop_guard': {
+            
+            'iosxe': "\
+\
+loop_guard = 'yes'\n\
+if debug:\n\
+    print(f'loop_guard = {loop_guard}')\n",
+            
+            'regex': r'\sspanning-tree\sguard\sloop?(\S.*)',
+            
+            'meraki': {
+                'skip': True,
+                'default': ''
+            }
+        },
+        
+        'bpdu_guard': {
+            
+            'iosxe': "\
+\
+bpdu_guard =  'yes'\n\
+if debug:\n\
+    print(f'bpdu_guard = {bpdu_guard}')\n",
+            
+            'regex': r'\sspanning-tree\sbpduguard?(\S.*)',
+            
+            'meraki': {
+                'skip': True,
+                'default': ''
+            }
+        },
+        
+        'stpGuard': {
+            'iosxe': "",
+            'regex': '',
+            'meraki': {
+                'skip': 'post-process',
+                'post-process': "\
+\
+stpGuard = 'disabled'\n\
+try:\n\
+    if m['root_guard'] == 'yes':\n\
+        stpGuard = 'root guard'\n\
+except:\n\
+    pass\n\
+try:\n\
+    if m['loop_guard'] == 'yes':\n\
+        stpGuard = 'loop guard'\n\
+except:\n\
+    pass\n\
+try:\n\
+    if m['bpdu_guard'] == 'yes':\n\
+        stpGuard = 'bpdu guard'\n\
+except:\n\
+    pass\n\
+if debug:\n\
+    print(f'stpGuard = {stpGuard}')\n",
+                'default': 'disabled'
+            }
+        },
+        
+    'vlan': {
             
             'iosxe': "\
 \
