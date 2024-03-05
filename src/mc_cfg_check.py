@@ -1,6 +1,7 @@
 from ciscoconfparse2 import CiscoConfParse
 import os,requests,json,pprint,re
 from mc_user_info import *
+from mc_check_pedia import *
 
 def CheckFeatures(sw_file):
     """
@@ -10,27 +11,6 @@ def CheckFeatures(sw_file):
     """
     
     debug = DEBUG or DEBUG_CHECKER
-    
-    # ecoen66 added some additional unsupported features
-    '''
-    additional_unsupported = {'RIP':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
-    'EIGRP':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
-    'OSPFv2':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
-    'OSPFv3':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
-    'BGP':'https://documentation.meraki.com/MX/Networks_and_Routing/Border_Gateway_Protocol_(BGP)',\
-    'IS-IS':'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing',\
-    'VRF': 'https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing'\
-    }
-    
-    additional_More_info = {'RIP':'Not Supported',\
-    'EIGRP':'Not Supported',\
-    'OSPFv2':'Supported on MS250 and above',\
-    'OSPFv3':'Not Supported',\
-    'BGP':'Currently supported on MX only',\
-    'IS-IS':'Not Supported',\
-    'VRF': 'Not Supported'\
-    }
-    '''
     
     # Connect to the server where we have the list of unsupported features on Meraki MS and the links associated to those features
     #unsupported_features_raw = requests.get('http://msfeatures.netdecorators.com:7900/return_list_unsupported')
@@ -146,8 +126,8 @@ def CheckFeatures(sw_file):
     ipv6 = parse.find_objects('^ipv6')
     rip = parse.find_objects('^router rip')
     eigrp = parse.find_objects('^router eigrp')
-    ospfv3 = parse.find_objects('^router ospfv3')
     ospf = parse.find_objects('^router ospf')
+    ospfv3 = parse.find_objects('^router ospfv3')
     bgp = parse.find_objects('^router bgp')
     isis = parse.find_objects('^router isis')
     vrf = parse.find_objects('^vrf')
@@ -249,12 +229,51 @@ def Interface_detail(interface_value):
     :return: A combined list of  all the features on the interface.
     """
     
+    debug = DEBUG or DEBUG_CHECKER
+
     feature_list_on_interface=list()
     PAgP=["auto","desirable"]
     LACP =["active", "passive"]
     #check the configuration of the interfaces
     interface_children = interface_value.children
     for config_det in interface_children:
+        '''for key, val in check_pedia['port'].items():
+            newvals = {}
+            if debug:
+                print(f"key,val = {key},{val}")
+            if not val['regex'] == "":
+                if not config_det.re_match_typed(regex=val['regex']) == "":
+                    #print(f"val.get('iosxe') = {val.get('iosxe')}")
+                    exec(val.get('iosxe'),locals(),newvals)
+                    if debug:
+                        print(f"newvals[{key}] = {newvals[key]}")
+                    if not newvals[key] == "":
+                        hold_me = list()
+                        if key == "etherchannel_type":
+                            if newvals[key] in PAgP:
+                                hold_me.extend(["Etherchannel PAgP","",""])
+                            else: 
+                                hold_me.extend(["Etherchannel LACP","",""])
+                        else:
+                            hold_me.extend([val['name'],val['support'],val['translatable']])
+                        if debug:
+                            print(f"hold_me = {hold_me}")
+                        try:
+                            hold_me.extend(val['url'])
+                        except:
+                            hold_me.extend("")
+                        if debug:
+                            print(f"hold_me = {hold_me}")
+                        try:
+                            hold_me.extend(val['note'])
+                        except:
+                            hold_me.extend("")
+                        if debug:
+                            print(f"hold_me = {hold_me}")
+                        feature_list_on_interface.append(hold_me)
+                        if debug:
+                            print(f"feature_list_on_interface = {feature_list_on_interface}")
+        '''
         private_vlan = config_det.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)') #mode private-vlan host
         pruning = config_det.re_match_typed(regex=r'\sswitchport\strunk\spruning?(\S.*)')
         voice_vlan = config_det.re_match_typed(regex=r'\sswitchport\svoice?(\S.*)')
@@ -317,6 +336,6 @@ def Interface_detail(interface_value):
             feature_list_on_interface.append(["Directed Broadcast",""])
         if not description == "":
             feature_list_on_interface.append(["Description","✓"])
-    
+        #'''
     #combine all the features on the interface together in a list and send it back
     return(feature_list_on_interface)

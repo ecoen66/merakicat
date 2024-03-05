@@ -47,6 +47,8 @@ generated value for the element in the meraki config loop.
 
 #####################################################################################
 '''
+
+
 config_pedia = {
     
     'switch': {
@@ -73,6 +75,7 @@ if switch_name == '':\n\
     switch_name = 'Switch'\n\
 if len(sw_list) == 1:\n\
     try:\n\
+        ## Set the switch name and notes\n\
         response = dashboard.devices.updateDevice(sw_list[n], name=switch_name, notes=blurb)\n\
         urls.append(response['url'])\n\
         if debug:\n\
@@ -82,13 +85,24 @@ if len(sw_list) == 1:\n\
 else:\n\
     while n <= len(sw_list)-1:\n\
         try:\n\
+            ## Set the switch name and notes\n\
             response = dashboard.devices.updateDevice(sw_list[n], name=switch_name+'-'+str(n+1), notes=blurb)\n\
             urls.append(response['url'])\n\
+            networkId = response['networkId']\n\
             if debug:\n\
                 print(f'Dashboard response was: {response}')\n\
         except:\n\
             print('Cannot set the switch name for switch ' + switch_name+'-'+str(n+1))\n\
         n +=1\n\
+    if debug:\n\
+        print(f'networkId = {networkId}')\n\
+    try:\n\
+        ## Create the switch stack\n\
+        response = dashboard.switch.createNetworkSwitchStack(networkId=networkId, serials=sw_list, name=switch_name)\n\
+        if debug:\n\
+            print(f'Dashboard response to Create Stack was: {response}')\n\
+    except:\n\
+        print(f'Cannot create switch stack {switch_name} with {sw_list}.')\n\
 return_vals = ['urls']\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n"}
@@ -297,3 +311,15 @@ voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n"
     'uplink': {
     }
 }
+
+def index_config_pedia():
+    print("\n\n=====================")
+    print("Index of config_pedia:")
+    print("=====================\n")
+    for key,value in config_pedia.items():
+        print(key+":\n")
+        for k,v in value.items():
+            print(" - "+k+"\n")
+
+if __name__ == '__main__':
+    index_config_pedia()

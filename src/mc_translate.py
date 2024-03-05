@@ -137,17 +137,11 @@ def Evaluate(config_file):
             int_fx = intf_obj.children
             if debug:
                 print(f"Children are: {int_fx}")
+            
             ## Capture the configuration of the interface
-            
-            ###
-            ###
-            ### Try out our config_pedia for the switch name
-            #for key,val in config_pedia['downlink'].items():
-            #    port_dict[intf_name][key] = ""
-            
             port_sec_raw = port_channel = max_mac = ""
             for child in int_fx:
-                ### Try out our config_pedia for the port description & mode
+                ### Try out our config_pedia
                 if debug:
                     print(f"child = {child}")
                 for key,val in config_pedia['downlink'].items():
@@ -162,42 +156,10 @@ def Evaluate(config_file):
                                 print(f"newvals[{key}] = {newvals[key]}")
                             if not newvals[key] == "":
                                 port_dict[intf_name][key] = newvals[key]
-                #try:
-                #    desc = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')
-                #except:
-                #    pass
-                #try:
-                #    Vlanv = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')
-                #except:
-                #    pass
-                #try:
-                #    port_mode = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')
-                #except:
-                #    pass
-                #try:
-                #    Vlan = child.re_match_typed(regex=r'\sswitchport\saccess\svlan\s+(\S.*)')
-                #except:
-                #    pass
                 try:
                     port_sec_raw = child.re_match_typed(regex=r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)')
                 except:
                     pass
-                #try:
-                #    trunk_native = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')
-                #except:
-                #    pass
-                #try:
-                #    trunk_v_allowed = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')
-                #except:
-                #    pass
-                #try:
-                #    speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')
-                #except:
-                #    pass
-                #try:
-                #    duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')
-                #except:
-                #    pass
                 try:
                     port_channel = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
                 except:
@@ -206,39 +168,12 @@ def Evaluate(config_file):
                     max_mac = child.re_match_typed(regex=r'\sswitchport\sport-security\smaximum\s+(\d)')
                 except:
                     pass
-                #if not desc == "":
-                #    port_dict[intf_name]['desc'] = desc
-                #port_dict[intf_name]['mode'] = "trunk"
-                #if not port_mode == "":
-                #    port_dict[intf_name]['mode'] = port_mode
-                #if not Vlan == "":
-                #    port_dict[intf_name]['data_Vlan'] = Vlan
-                #else:
-                #    if port_dict[intf_name]['mode'] == "access":
-                #        port_dict[intf_name]['data_Vlan'] = 1
-                #if not Vlanv == "":
-                #    port_dict[intf_name]['voice_Vlan'] = Vlanv
                 if not port_sec_raw == "":
                     port_dict[intf_name]['mac'].append(mac_build(port_sec_raw))
-                #if not trunk_native == "":
-                #    port_dict[intf_name]['native'] = trunk_native
-                #if not trunk_v_allowed == "":
-                #    port_dict[intf_name]['trunk_allowed'] = trunk_v_allowed
-                #if not speed == "":
-                #    port_dict[intf_name]['speed'] = speed
-                #if not duplex == "":
-                #    port_dict[intf_name]['duplex'] = duplex
                 if not port_channel == "":
                     port_dict[intf_name]['LACP_Group'] = port_channel
                 if not max_mac == "":
                     port_dict[intf_name]['Port_Sec'] = max_mac
-            
-            #except:
-            #    print(f"Error in ready interface {intf_name}")
-                ## Add 1 to capture the next interface
-                
-        #if debug:
-        #    print(f"port_dict = {port_dict}\n")
         
         Uplink_list, Downlink_list, Other_list = split_down_up_link(All_interfaces,Gig_uplink)
         if debug:
@@ -282,7 +217,8 @@ def Evaluate(config_file):
             if key == "TenGigabitEthernet":
                 for value in interfaces_list_copy["TenGigabitEthernet"]:
                     Uplink_list.append(value)
-        #GigbitEthernet ports to be evaluated if has 1 in subnetwork module (x/1/x) then its uplink otherwise will be downlink
+        #GigbitEthernet ports to be evaluated if it has 1 in subnetwork module (x/1/x)
+        # then its uplink otherwise will be downlink
             if key == "GigabitEthernet":
                for value in interfaces_list_copy["GigabitEthernet"]:
                    if value in Gig_uplink:
@@ -347,7 +283,6 @@ def Evaluate(config_file):
             print(f"obj.group(3) = {obj.group(3)}")
         port = obj.group(3)
         Sub_module = obj.group(2)
-        
         return port,Sub_module
     
     Uplink_list, Downlink_list, Other_list, port_dict, switch_name  = read_Cisco_SW()
@@ -373,7 +308,6 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
     # create a batch action lists
     action_list = list()
     all_actions = list()
-    urls = list()
     returns_dict = {}
     # create good and bad port lists 
     configured_ports = defaultdict(list)
@@ -397,7 +331,6 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
         
         # create a place to hold the Dashboard URL for each switch
         ## Configure the switch_name in the Dashboard
-        
         if debug:
             print(f"switch_dict = {switch_dict}")
         for key,val in config_pedia['switch'].items():
@@ -414,8 +347,9 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                 n += 1
             #for k,v in newvals.items():
             #    exec(k + '=v')
-        y = 0
+        
         ## Loop to get all the interfaces in the port_dict
+        y = 0
         while y <= len(Downlink_list)-1:
             x = Downlink_list[y]
             m = port_dict[x]
@@ -452,19 +386,6 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                     except:
                         m[key] = val['meraki']['default']
                         args[y][2].update({key: m[key]})
-            #try:
-            #    args[y][2].update({'name':m['desc']})
-            #except:
-            #    m["desc"] = args['name']
-            ## Setup the items common to all port types
-            #try:
-            #    args[y][2].update({'type':m['mode'] if not m['mode'] == "" else "trunk"})
-            #except:
-            #    pass
-            #try:
-            #    args[y][2].update({'voiceVlan':None if m['voice_Vlan'] == "" else int(m['voice_Vlan'])})
-            #except:
-            #    pass
             try:
                 args[y][2].update({'enabled':False if m["active"] == "false" else True})
             except:
@@ -476,10 +397,6 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                         pass
                 except:
                     pass
-                #try:
-                #    args[y][2].update({'vlan':int(m['data_Vlan']) if not m['data_Vlan'] == "" else 1})
-                #except:
-                #    pass
                 try:
                     if not m['Port_Sec'] == "":
                         mac_limit = m['Port_Sec']
@@ -489,19 +406,6 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                     args[y][2].update({'accessPolicyType':'Sticky MAC allow list',
                         'stickyMacAllowList':json.dumps(m['mac']),
                         'stickyMacAllowListLimit':mac_limit})
-            
-            ## The interface mode is configured as Trunk
-            #else:
-                #try:
-                #    args[y][2].update({'vlan':m['native'] if not m['native'] == '' else 1})
-                #except:
-                #    args[y][2].update({'vlan':1})
-                #    m['native'] = "1"
-                #try:
-                #    args[y][2].update({'allowedVlans':m['trunk_allowed'] if not m['trunk_allowed'] == '' else '1-1000'})
-                #except:
-                #    args[y][2].update({'allowedVlans':'1-1000'})
-                #    m['trunk_allowed'] = "1-1000"
             
             ## Append the port update call to Dashboard to the batch list
             if debug:
