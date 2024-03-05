@@ -1,6 +1,5 @@
 import meraki
 import batch_helper
-from meraki.config import SUPPRESS_LOGGING
 from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
 import os, requests, json, pprint, re

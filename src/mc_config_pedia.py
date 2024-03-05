@@ -54,7 +54,9 @@ config_pedia = {
     'switch': {
         
         'switch_name': {
-            'iosxe': "switch_name = ''\n\
+            'iosxe': "\
+\
+switch_name = ''\n\
 switch_name_obj = parse.find_objects('^hostname')\n\
 if not switch_name_obj == []:\n\
     switch_name = switch_name_obj[0].re_match_typed('^hostname\s(\S+)')\n\
@@ -63,7 +65,7 @@ if switch_name == '':\n\
 if debug:\n\
     print(f'switch_name = {switch_name}')\n",
             
-        'meraki': "\
+            'meraki': "\
 \
 urls = list()\n\
 blurb = 'This was a conversion from a Catalyst IOSXE config.'\n\
@@ -101,8 +103,15 @@ else:\n\
         response = dashboard.switch.createNetworkSwitchStack(networkId=networkId, serials=sw_list, name=switch_name)\n\
         if debug:\n\
             print(f'Dashboard response to Create Stack was: {response}')\n\
-    except:\n\
-        print(f'Cannot create switch stack {switch_name} with {sw_list}.')\n\
+        # Oops, we got a Dashboard ERROR while claiming the switches to the network\n\
+    except Exception as e:\n\
+        if debug:\n\
+            print(f'Meraki API error: {e}')\n\
+            print(f'status code = {e.status}')\n\
+            print(f'reason = {e.reason}')\n\
+            print(f'error = {e.message}')\n\
+        if not e.message['errors'][0] == 'Cannot stack switches that are already part of a switch stack':\n\
+            print(f'Cannot create switch stack {switch_name} with {sw_list}.')\n\
 return_vals = ['urls']\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n"}
