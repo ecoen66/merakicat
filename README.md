@@ -1,12 +1,5 @@
 # merakicat
 
-You will need to copy src/user_sample.py to src/mc_user_info.py in order to use this app.
-
-# The rest of this file needs to be replaced!
-
-
-
-
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.  
 
 Below is the list of configurations the tool can currently migrate:
