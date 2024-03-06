@@ -24,7 +24,7 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
 1. Click **Create a Bot**.
 
-    ![create-bot](https://github.com/ecoen66/merakicat/master/images/createbot.jpg)
+    ![create-bot](https://github.com/ecoen66/merakicat/main/images/createbot.jpg)
 
 2. Fill out all the details about your bot.  You'll need to set a name, username, icon (either upload one or choose a sample), and provide a description.
 
