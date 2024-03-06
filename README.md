@@ -127,19 +127,19 @@ python3.11 merakicat.py
     ```
     check host <FQDN or IP address> | file <filespec> 
     ```
-    Register a Catalyst switch to the Meraki Dashboard
+    Register a Catalyst switch or stack to the Meraki Dashboard:
     ```
     register host <FQDN or IP address>
     ```
-    Claim Catalyst switches to a Meraki Network
+    Claim Catalyst switches to a Meraki Network:
     ```
     claim <Meraki serial numbers> to <Meraki network name>
     ```
-    Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers
+    Translate a Catalyst switch or stack config from a file or host to claimed Meraki serial numbers:
     ```
     translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>
     ```
-    Migrate a Catalyst switch to a Meraki switch - register, claim & translate
+    Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
     ```
     migrate host <FQDN or IP address> to <Meraki network name>
     ```
