@@ -72,9 +72,9 @@ python3.11 merakicat.py
 
     ```
     export TEAMS_BOT_URL=https://mypublicsite.io (if using ngrok, use the Forwarding URL it provides)
-    export TEAMS_BOT_TOKEN=<your bots token>
-    export TEAMS_BOT_EMAIL=<your bots email>
-    export TEAMS_BOT_APP_NAME=<your bots name>
+    export TEAMS_BOT_TOKEN=<your bot's token>
+    export TEAMS_BOT_EMAIL=<your bot's email>
+    export TEAMS_BOT_APP_NAME=<your bot's name>
     export TEAMS_EMAILS=<a comma delimited list of email addresses the bot will respond to>
     export IOS_USERNAME=<the ssh username for the Catalyst switches>
     export IOS_PASSWORD=<the ssh password for the Catalyst switches>
