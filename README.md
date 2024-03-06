@@ -91,7 +91,7 @@ python3.11 merakicat.py
     ```
     **Bot commands include the following:**
 
-    Check a Catalyst switch config for Meraki compatible settings using a card:
+    Check a Catalyst switch config for both translatable and possible Meraki features using a card:
     ```
     /check
     ```
