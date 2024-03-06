@@ -81,22 +81,18 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
     ```
     /check
     ```
-
     Translate a Catalyst switch config to a Meraki switch with translatable settings using a card:
     ```
     /translate
     ```
-
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
     check [host <FQDN or IP address> | file <filespec>]
     ```
-
     Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers:
     ```
     translate [host <FQDN or IP address> | file <filespec>] [to <Meraki serial numbers>]
     ```
-
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
     ```
     migrate [host <FQDN or IP address>] [to <Meraki network name>]
@@ -130,8 +126,8 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
     translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>
     ```
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]
-    ``
-    `migrate host <FQDN or IP address> to <Meraki network name>
+    ```
+    migrate host <FQDN or IP address> to <Meraki network name>
     ```
 
 
