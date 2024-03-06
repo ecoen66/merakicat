@@ -9,6 +9,24 @@ You will need to copy src/user_sample.py to src/mc_user_info.py in order to use 
 
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.  
 
+Below is the list of configurations the tool can currently migrate:
+- Hostname
+- Switch stack configuration (up to 8 switches)
+- Interface description
+- Interface type (Access / Trunk)
+- VLANS allowed through the trunk interfaces
+- Data VLAN
+- Voice VLAN
+- Port security
+- MAC whitelist
+- Enable / disable ports
+- Link negotiation
+- PoE enablement
+- Spanning-tree root guard
+- Spanning-tree loop guard
+- Spanning-tree BPDU guard
+
+After the configuration is pushed to the Meraki dashboard, the app will present a summary of configured ports and the ones are not.
 
 # Prerequisites
 
@@ -181,5 +199,14 @@ You can find installation instructions here: [https://ngrok.com/download](https:
     ```
 
 # Credits
+This project is heavily based on the work of others:
+Catalyst_to_Meraki_Migration_Tool by [Fady Sharobeem](https://github.com/fadysharobeem).
+Catalyst_2_Meraki_Config_Checker by [Fady Sharobeem](https://github.com/fadysharobeem).
+    Both of which were assisted by:
+    Josh Anderson <https://github.com/joshand>
+    Oleksii Borisenko <https://github.com/oborys>
+
+
+The bot functionality is based on the `webexteamsbot` project by [Hank Preston](https://github.com/hpreston).  
 The initial packaging of the original `ciscosparkbot` project was done by [Kevin Corbin](https://github.com/kecorbin).  
 
