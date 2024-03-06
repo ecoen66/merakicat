@@ -20,21 +20,21 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
 1. Click **Create a New App**
 
-    ![add-app](https://github.com/ecoen66/merakicat/raw/master/images/newapp.jpg)
+    ![add-app](https://github.com/ecoen66/merakicat/master/images/newapp.jpg)
 
 1. Click **Create a Bot**.
 
-    ![create-bot](https://github.com/ecoen66/merakicat/raw/master/images/createbot.jpg)
+    ![create-bot](https://github.com/ecoen66/merakicat/master/images/createbot.jpg)
 
 2. Fill out all the details about your bot.  You'll need to set a name, username, icon (either upload one or choose a sample), and provide a description.
 
-    ![add-bot](https://github.com/ecoen66/merakicat/raw/master/images/newbot.jpg)
+    ![add-bot](https://github.com/ecoen66/merakicat/master/images/newbot.jpg)
 
 3. Click **Add Bot**.
 
 1. On the Congratulations screen, make sure to copy the *Bot's Access Token*, you will need this in a second.
 
-    ![enter-details](https://github.com/ecoen66/merakicat/raw/master/images/botcongrats.jpg)
+    ![enter-details](https://github.com/ecoen66/merakicat/master/images/botcongrats.jpg)
 
 # Installation
 
@@ -52,6 +52,8 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
 1. The easiest way to use this module is to set a few environment variables
 
+    > Note: As an alternative, you may rename mc_user_sample.py to mc_user_info.py and edit the variables there.  Although more convenient, it is considered less secure.
+
     > Note: See [ngrok](#ngrok) for details on setting up an easy HTTP tunnel for webhooks callbacks.
 
     ```
@@ -67,214 +69,50 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
     export MERAKI_API_KEY=<your meraki dashboard API key>
     ```
 
-1. A basic bot requires very little code to get going.  
+1. This app can be run either as a Webex Teams bot or as a standalone command line program.  To run it as a bot, just start it without any parameters:  
 
-    ```python
-    import os
-    from webexteamsbot import TeamsBot
-
-    # Retrieve required details from environment variables
-    bot_email = os.getenv("TEAMS_BOT_EMAIL")
-    teams_token = os.getenv("TEAMS_BOT_TOKEN")
-    bot_url = os.getenv("TEAMS_BOT_URL")
-    bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
-
-    # Create a Bot Object
-    bot = TeamsBot(
-        bot_app_name,
-        teams_bot_token=teams_token,
-        teams_bot_url=bot_url,
-        teams_bot_email=bot_email,
-    )
-
-
-    # A simple command that returns a basic string that will be sent as a reply
-    def do_something(incoming_msg):
-        """
-        Sample function to do some action.
-        :param incoming_msg: The incoming message object from Teams
-        :return: A text or markdown based reply
-        """
-        return "i did what you said - {}".format(incoming_msg.text)
+    ```cd src
+    python3.11 merakicat.py
+    ```
+    Bot commands include the following:
+    Check a Catalyst switch config for Meraki compatible settings using a card:
+    ```/check
+    ```
+    Translate a Catalyst switch config to a Meraki switch with translatable settings using a card:
+    ```\/translate
+    ```
+    Check a Catalyst switch config for both translatable and possible Meraki features:
+    ```check [host _FQDN or IP address_ | file _filespec_]
+    ```
+    Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers:
+    ```translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_]
+    ```
+    Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
+    migrate [host _FQDN or IP address_] [to _Meraki network name_]
+    Register a Catalyst switch to the Meraki Dashboard:
+    register [host _FQDN or IP address_]
+    Claim Catalyst switches to a Meraki Network:
+    claim [_Meraki serial numbers_] [to _Meraki network name_]
 
 
-    # Add new commands to the box.
-    bot.add_command("/dosomething", "help for do something", do_something)
+1. To run it from the command line (or from a shell script), enter any of the following:
 
-
-    if __name__ == "__main__":
-        # Run Bot
-        bot.run(host="0.0.0.0", port=5000)
+    Check a Catalyst switch config for both translatable and possible Meraki features:
+    ```check host <FQDN or IP address> | file <filespec> 
+    ```
+    Register a Catalyst switch to the Meraki Dashboard
+    ```register host <FQDN or IP address>
+    ```
+    Claim Catalyst switches to a Meraki Network
+    ```claim <Meraki serial numbers> to <Meraki network name>
+    ```
+    Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers
+    ```translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>
+    ```
+    Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]
+    ```migrate host <FQDN or IP address> to <Meraki network name>
     ```
 
-1. A [sample script](https://github.com/hpreston/webexteamsbot/blob/master/sample.py) that shows more advanced bot features and customization is also provided in the repo.  
-
-## Advanced Options
-### Changing the Help Message
-1. Although "set_greeting" has existed for a while now, you may mostly like the internal greeting mechanism, but only want to change the help banner itself. You can do that with the "set_help_message" command like this:
-    ```python
-    bot.set_help_message("Welcome to the Super Cool Bot! You can use the following commands:\n")
-    ```
-### Working with events other than created messages
-1. By default, the bot will configure the webhook to listen for messages:created events. This behavior can be changed using the "webhook_resource" and "webhook_event" parameters. So, for example, if you wish for the bot to monitor any changes to a room's membership list, you would instanciate the bot like this:
-    ```python
-    # Create a Bot Object
-    bot = TeamsBot(
-        bot_app_name,
-        teams_bot_token=teams_token,
-        teams_bot_url=bot_url,
-        teams_bot_email=bot_email,
-        webhook_resource="memberships",
-        webhook_event="all",
-    )
-    ```
-
-    You also need a way to catch anything other than "messages", which is the only thing handled entirely inside the bot framework. Continuing the example of monitoring for membership changes in a room, you would also need to add a "command" to catch the membership events. You would use the following to do so:
-    ```python
-    # check membership:all webhook to verify that person added to room (or otherwise modified) is allowed to be in the room 
-    def check_memberships(api, incoming_msg):
-        wl_dom = os.getenv("WHITELIST_DOMAINS")
-        if wl_dom.find("[") < 0:
-            wl_dom = '["' + wl_dom + '"]'
-            wl_dom = wl_dom.replace(",", '","')
-    
-        if wl_dom and incoming_msg["event"] != "deleted":
-            pemail = incoming_msg["data"]["personEmail"]
-            pid = incoming_msg["data"]["personId"]
-            pdom = pemail.split("@")[1]
-            plist = json.loads(wl_dom)
-            print(pemail, pdom, plist)
-            if pdom in plist or pemail == bot_email:
-                # membership check succeeded
-                return ""
-            else:
-                # membership check failed
-                print("membership failed. deleting " + incoming_msg["data"]["id"])
-                api.memberships.delete(incoming_msg["data"]["id"])
-                api.messages.create(toPersonId=pid, markdown="You were automatically removed from the space because "
-                                            "it is restricted to employees.")
-                return "'" + pemail + "' was automatically removed from this space; it is restricted to only " \
-                                        "internal users."
-    
-        return ""
-    
-    ###### 
-    
-    bot.add_command('memberships', '*', check_memberships)
-    ```
-    The first argument, "memberships", tells the bot to look for resources of the type "memberships", the second argument "*" instructs the bot that this is not something that should be included in the internal "help" command, and the third command is the function to execute to handle the membership creation.
-
-1. The bot can also be configured to listen for multiple different events. So, for example, if you wish for the bot to monitor not only new messages in a room, but also any card actions in a room, you would instanciate the bot like this:
-    ```python
-    # Create a Bot Object
-    bot = TeamsBot(
-        bot_app_name,
-        teams_bot_token=teams_token,
-        teams_bot_url=bot_url,
-        teams_bot_email=bot_email,
-        webhook_resource_event=[{"resource": "messages", "event": "created"},
-                                {"resource": "attachmentActions", "event": "created"}]
-    )
-    ```
-    Once again, You also need a way to catch anything other than "messages". Continuing the example of monitoring card actions, you would also need to add a "command" to catch the card actions. You would use the following to do so:
-    ```python
-    # API request to get card actions (not currently covered in webexteamssdk==1.2)
-    def get_attachment_actions(attachmentid):
-        headers = {
-            'content-type': 'application/json; charset=utf-8',
-            'authorization': 'Bearer ' + teams_token
-        }
-    
-        url = 'https://api.ciscospark.com/v1/attachment/actions/' + attachmentid
-        response = requests.get(url, headers=headers)
-        return response.json()
-
-    # check attachmentActions:created webhook to handle any card actions 
-    def handle_cards(api, incoming_msg):
-        m = get_attachment_actions(incoming_msg["data"]["id"])
-        print(m)
-            
-        return m["inputs"]
-    
-    ###### 
-    
-    bot.add_command('attachmentActions', '*', handle_cards)
-    ```
-    The first argument, "attachmentActions", tells the bot to look for resources of the type "attachmentActions", the second argument "*" instructs the bot that this is not something that should be included in the internal "help" command, and the third command is the function to execute to handle the card action.
-
-### Creating arbitrary HTTP Endpoints/URLs 
-1. You can also add a new path to Flask by using the "add_new_url" command. You can use this so that the bot can handle things other than Webex Teams Webhooks. For example, if you wanted to receive other webhooks to the "/webhooks" path, you would use this:
-    ```python
-    def handle_webhooks():
-        try:
-            webhook_event = json.loads(request.data.decode("UTF-8"))
-        except:
-            return ""
-        netid = webhook_event["networkId"]
-        print(netid)
-
-    ###### 
-
-    bot.add_new_url("/webhooks", "webhooks", handle_webhooks)
-    ```
-    The first argument, "/webhooks", represents the URL path to listen for, the second argument represents the Flask endpoint, and the third command is the function to execute to handle GET, PUT, or POST actions.
-
-### Limiting Who Can Interact with the Bot 
-1. By default the bot will reply to any Webex Teams user who talks with it.  But you may want to setup a Bot that only talks to "approved users". 
-1. Start by creating a list of email addresses of your approved users. 
-
-    ```python
-    approved_users = [
-        "josmith@demo.local",
-    ]
-    ```
-
-1. Now when creating the bot object, simply add the `approved_users` parameter. 
-
-    ```python
-    bot = TeamsBot(
-        bot_app_name,
-        teams_bot_token=teams_token,
-        teams_bot_url=bot_url,
-        teams_bot_email=bot_email,
-        approved_users=approved_users,
-    )
-    ```
-
-1. Now if a users **NOT** listed in the `approved_users` list attempts to communicate with the bot, the message will be ignored and a notification is logged. 
-
-    ```
-    Message from: hapresto@cisco.com
-    User: hapresto@cisco.com is not approved to interact with bot. Ignoring.
-    ```
-# Deploy in Cisco Exchange Dev environment
-
-If you run this project using Cisco Exchange Dev environment
-
-![webexteamsbot-exchange-devenv](https://raw.githubusercontent.com/CiscoDevNet/code-exchange-repo-template/master/manual-sample-repo/img/webexteamsbot-exchange-devenv.png)
-
-Open a new terminal and run the command to get the external URL:
-
-`echo $DEVENV_APP_9082_URL`
-
-As output, you will see an external URL for the webhook
-
-For example
-`https://app-9082-8093942179345178980.devenv-int.ap-ne-1.devnetcloud.com`
-
-Update your environment with this url
-
-`export TEAMS_BOT_URL=https://this.is.the.url.you.need`
-
-In VSCode DevEnv open file `sample.py`
-At the bottom, in code `bot.run(host="0.0.0.0", port=5000)` change the port from `5000` to `9082`
-How it should look like: `bot.run(host="0.0.0.0", port=9082)`  
-
-Launch your bot
-
-```
-python sample.py
-```
 
 # ngrok
 
@@ -327,38 +165,13 @@ You can find installation instructions here: [https://ngrok.com/download](https:
 If you have an idea for a feature you would like to see, we gladly accept pull requests.  To get started developing, simply run the following..
 
 ```
-git clone https://github.com/hpreston/webexteamsbot
-cd webexteamsbot
+git clone https://github.com/ecoen66/merakicat
+cd merakicat
 pip install -r requirements_dev.txt
-python setup.py develop
+cd src
+python3.11 merakicat.py
 ```
-
-### Linting
-
-We use flake 8 to lint our code. Please keep the repository clean by running:
-
-```
-flake8
-```
-
-### Testing
-
-Tests are located in the [tests](./tests) directory.
-
-To run the tests in the `tests` folder, you can run the following command
-from the project root.
-
-```
-coverage run --source=webexteamsbot setup.py test
-coverage html
-```
-
-This will generate a code coverage report in a directory called `htmlcov`
 
 # Credits
 The initial packaging of the original `ciscosparkbot` project was done by [Kevin Corbin](https://github.com/kecorbin).  
 
-This package was created with
-[Cookiecutter](https://github.com/audreyr/cookiecutter) and the
-[audreyr/cookiecutter-pypackage](https://github.com/audreyr/cookiecutter-pypackage)
-project template.
