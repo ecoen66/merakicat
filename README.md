@@ -182,7 +182,6 @@ You can find installation instructions here: [https://ngrok.com/download](https:
 
     ```
     export TEAMS_BOT_URL=https://this.is.the.url.you.need
-
     ```
 
 1. Now launch the bot!!
