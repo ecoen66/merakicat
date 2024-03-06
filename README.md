@@ -192,7 +192,7 @@ You can find installation instructions here: [https://ngrok.com/download](https:
     ```
 
 # Credits
-**This project is __heavily__ based on the work of others:**
+**This project is _heavily_ based on the work of others:**
 
 `Catalyst_to_Meraki_Migration_Tool` by [Fady Sharobeem](https://github.com/fadysharobeem).
 
