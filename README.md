@@ -139,7 +139,7 @@ python3.11 merakicat.py
     ```
     translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>
     ```
-    Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]
+    Migrate a Catalyst switch to a Meraki switch - register, claim & translate
     ```
     migrate host <FQDN or IP address> to <Meraki network name>
     ```
