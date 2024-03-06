@@ -192,14 +192,9 @@ You can find installation instructions here: [https://ngrok.com/download](https:
     ```
 
 # Credits
-This project is heavily based on the work of others:
-Catalyst_to_Meraki_Migration_Tool by [Fady Sharobeem](https://github.com/fadysharobeem).
-Catalyst_2_Meraki_Config_Checker by [Fady Sharobeem](https://github.com/fadysharobeem).
-    Both of which were assisted by:
-    Josh Anderson <https://github.com/joshand>
-    Oleksii Borisenko <https://github.com/oborys>
-
-
+**This project is heavily based on the work of others:**
+`Catalyst_to_Meraki_Migration_Tool` by [Fady Sharobeem](https://github.com/fadysharobeem).
+`Catalyst_2_Meraki_Config_Checker` by [Fady Sharobeem](https://github.com/fadysharobeem).
 The bot functionality is based on the `webexteamsbot` project by [Hank Preston](https://github.com/hpreston).  
 The initial packaging of the original `ciscosparkbot` project was done by [Kevin Corbin](https://github.com/kecorbin).  
 
