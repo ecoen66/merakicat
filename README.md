@@ -75,18 +75,23 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
     python3.11 merakicat.py
     ```
     Bot commands include the following:
+
     Check a Catalyst switch config for Meraki compatible settings using a card:
     ```/check
     ```
+
     Translate a Catalyst switch config to a Meraki switch with translatable settings using a card:
-    ```\/translate
+    ```/translate
     ```
+
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```check [host _FQDN or IP address_ | file _filespec_]
     ```
+
     Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers:
     ```translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_]
     ```
+
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
     migrate [host _FQDN or IP address_] [to _Meraki network name_]
     Register a Catalyst switch to the Meraki Dashboard:
