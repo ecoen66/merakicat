@@ -145,7 +145,7 @@ python3.11 merakicat.py
     ```
 
 
-# ngrok
+# ngrok for usage as a bot
 
 [ngrok](http://ngrok.com) will make easy for you to develop your code with a live bot.
 
@@ -185,10 +185,10 @@ You can find installation instructions here: [https://ngrok.com/download](https:
 
     ```
 
-1. Now launch your bot!!
+1. Now launch the bot!!
 
     ```
-    python sample.py
+    python merakicat.py
     ```
 
 # Credits
