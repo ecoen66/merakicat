@@ -7,7 +7,7 @@ You will need to copy src/user_sample.py to src/mc_user_info.py in order to use 
 
 
 
-This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard super simple.  
+This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.  
 
 
 # Prerequisites
@@ -40,13 +40,15 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
 > Python 3.11+ is recommended.
 
-1. Create a virtualenv and install the module
+1. Clone the github repository and install the requirements
 
-    ```
-    python3.11 -m venv venv
-    source venv/bin/activate
-    pip install webexteamsbot
-    ```
+```
+git clone https://github.com/ecoen66/merakicat
+cd merakicat
+pip install -r requirements_dev.txt
+cd src
+python3.11 merakicat.py
+```
 
 # Usage
 
@@ -75,7 +77,7 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
     cd src
     python3.11 merakicat.py
     ```
-    Bot commands include the following:
+    **Bot commands include the following:**
 
     Check a Catalyst switch config for Meraki compatible settings using a card:
     ```
@@ -176,18 +178,6 @@ You can find installation instructions here: [https://ngrok.com/download](https:
     ```
     python sample.py
     ```
-
-## Local Development
-
-If you have an idea for a feature you would like to see, we gladly accept pull requests.  To get started developing, simply run the following..
-
-```
-git clone https://github.com/ecoen66/merakicat
-cd merakicat
-pip install -r requirements_dev.txt
-cd src
-python3.11 merakicat.py
-```
 
 # Credits
 The initial packaging of the original `ciscosparkbot` project was done by [Kevin Corbin](https://github.com/kecorbin).  
