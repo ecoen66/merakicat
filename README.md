@@ -114,19 +114,24 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 1. To run it from the command line (or from a shell script), enter any of the following:
 
     Check a Catalyst switch config for both translatable and possible Meraki features:
-    ```check host <FQDN or IP address> | file <filespec> 
+    ```
+    check host <FQDN or IP address> | file <filespec> 
     ```
     Register a Catalyst switch to the Meraki Dashboard
-    ```register host <FQDN or IP address>
+    ```
+    register host <FQDN or IP address>
     ```
     Claim Catalyst switches to a Meraki Network
-    ```claim <Meraki serial numbers> to <Meraki network name>
+    ```
+    claim <Meraki serial numbers> to <Meraki network name>
     ```
     Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers
-    ```translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>
+    ```
+    translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>
     ```
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]
-    ```migrate host <FQDN or IP address> to <Meraki network name>
+    ``
+    `migrate host <FQDN or IP address> to <Meraki network name>
     ```
 
 
