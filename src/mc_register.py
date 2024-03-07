@@ -74,7 +74,7 @@ def Register(host_id,ios_username,ios_password,ios_port,ios_secret):
     
     ## Check the version of IOSXE running on the switch
     r = net_connect.send_command('show version').split("\n")
-    version = r[0].split("Version")[1].strip()
+    version = r[0].split("Version")[1].strip()[:8]
     if debug:
         print(f"In Register, version = {version}")
     v = list(map(int,version.split('.')))

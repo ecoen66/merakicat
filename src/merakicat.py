@@ -618,13 +618,12 @@ def check_switch(incoming_msg,config="",host=""):
     # unsupported features as well as the additional text and links for the unsupported
     
     x = 0
-    while x < (len(the_list)-1):
+    while x < (len(the_list)):
         if not the_list[x][1] == "":
             can_list.append(the_list[x])
         else:
             not_list.append(the_list[x])
         x +=1
-    
     # Build the dynamic report card.
     
     if BOT: 

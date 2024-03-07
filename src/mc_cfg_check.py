@@ -29,26 +29,29 @@ def CheckFeatures(sw_file):
                 #print(f"val.get('iosxe') = {val.get('iosxe')}")
                 exec(val.get('iosxe'),locals(),newvals)
                 if debug:
-                    print(f"newvals[{key}] = {newvals[key]}\n")
-                if key == "hostname":
-                    host_name = newvals['host_name']
-                hold_me = list()
-                hold_me.extend([val['name'],val['support'],val['translatable']])
-                if debug:
-                    print(f"hold_me = {hold_me}")
-                try:
-                    hold_me.extend([val['note']])
-                except:
-                    hold_me.extend([""])
-                if debug:
-                    print(f"hold_me = {hold_me}")
-                try:
-                    hold_me.extend([val['url']])
-                except:
-                    hold_me.extend([""])
-                if debug:
-                    print(f"hold_me = {hold_me}")
-                Features_configured.append(hold_me)
+                    print(f"newvals = {newvals}\n")
+                if not newvals[key] == "":
+                    if debug:
+                        print(f"newvals[{key}] = {newvals[key]}\n")
+                    if key == "hostname":
+                        host_name = newvals['host_name']
+                    hold_me = list()
+                    hold_me.extend([val['name'],val['support'],val['translatable']])
+                    if debug:
+                        print(f"hold_me = {hold_me}")
+                    try:
+                        hold_me.extend([val['note']])
+                    except:
+                        hold_me.extend([""])
+                    if debug:
+                        print(f"hold_me = {hold_me}")
+                    try:
+                        hold_me.extend([val['url']])
+                    except:
+                        hold_me.extend([""])
+                    if debug:
+                        print(f"hold_me = {hold_me}")
+                    Features_configured.append(hold_me)
 
     port_details = parse.find_objects('^interface')
     for detail in port_details:
@@ -85,27 +88,28 @@ def Interface_detail(interface_value):
     LACP =["active", "passive"]
     #check the configuration of the interfaces
     interface_children = interface_value.children
-    for config_det in interface_children:
+    for child in interface_children:
         #'''
         for key, val in check_pedia['port'].items():
             newvals = {}
             if debug:
                 print(f"key,val = {key},{val}\n")
+            
             if not val['regex'] == "":
-                if not config_det.re_match_typed(regex=val['regex']) == "":
+                if not child.re_match_typed(regex=val['regex']) == "":
                     #print(f"val.get('iosxe') = {val.get('iosxe')}")
                     exec(val.get('iosxe'),locals(),newvals)
                     if debug:
                         print(f"newvals[{key}] = {newvals[key]}\n")
                     if not newvals[key] == "":
                         hold_me = list()
-                        if key == "etherchannel_type":
-                            if newvals[key] in PAgP:
-                                hold_me.extend(["Etherchannel PAgP","",""])
-                            else: 
-                                hold_me.extend(["Etherchannel LACP","",""])
-                        else:
-                            hold_me.extend([val['name'],val['support'],val['translatable']])
+                        hold_me.extend([val['name'],val['support'],val['translatable']])
+                        if debug:
+                            print(f"hold_me = {hold_me}")
+                        try:
+                            hold_me.extend([val['note']])
+                        except:
+                            hold_me.extend([""])
                         if debug:
                             print(f"hold_me = {hold_me}")
                         try:
@@ -114,10 +118,11 @@ def Interface_detail(interface_value):
                             hold_me.extend([""])
                         if debug:
                             print(f"hold_me = {hold_me}")
-                        try:
-                            hold_me.extend([val['note']])
-                        except:
-                            hold_me.extend([""])
+                        if key == "etherchannel":
+                            if newvals[key] in PAgP:
+                                hold_me[0] = "Etherchannel PAgP"
+                            elif newvals[key] in LACP:
+                                hold_me = ["Etherchannel LACP","✓","","",""]
                         if debug:
                             print(f"hold_me = {hold_me}")
                         feature_list_on_interface.append(hold_me)

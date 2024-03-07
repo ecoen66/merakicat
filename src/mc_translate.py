@@ -61,11 +61,13 @@ def Evaluate(config_file):
         
         # Grab all shutdown interfaces
         intf_for_test = parse.find_parent_objects([r'^interface', r'^\s+shutdown'])
-        ## Remove the management, Loopback and VLAN interfaces from the intf_for_test list
+        ## Remove the management, Loopback, Port-channel and VLAN interfaces from
+        ## the intf_for_test list
         intf_for_test[:] = [y for y in intf_for_test if not (
             y.re_match_typed('^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("Loopback") or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
+            y.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("AppGig"))]
         ## Test the remaining interfaces for shutdown and add to shut list
         for intf_obj in intf_for_test:
@@ -75,11 +77,13 @@ def Evaluate(config_file):
         intf = parse.find_objects('^interface')
         if debug:
             print(f"intf = {intf}")
-        ## Remove the management, Loopback and VLAN interfaces from the interface list
+        ## Remove the management, Loopback, Port-channel and VLAN interfaces from
+        ## the interface list
         intf[:] = [x for x in intf if not (
             x.re_match_typed('^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("Loopback") or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
+            x.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("AppGig"))]
         
 ##        print(f"These are the shut interfaces: {shut_interfaces}")

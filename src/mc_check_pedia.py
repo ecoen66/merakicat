@@ -63,12 +63,23 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'regex': '^mls',
             'iosxe': "mls = parse.find_objects('^mls')\n"
             },
+        "rstp":{
+            'name':"Spanning Tree RSTP",
+            'support':"✓",
+            'translatable':"✓",
+            'regex': '^spanning-tree mode rapid-pvst',
+            'iosxe': "rstp = parse.find_objects('^spanning-tree mode rapid-pvst')\n"
+        },
         "spanning":{
             'name':"Spanning Tree",
             'support':"",
             'translatable':"",
-            'regex': '^spanning',
-            'iosxe': "spanning = parse.find_objects('^spanning')\n",
+            'regex': '^spanning-tree',
+            'iosxe': "\
+spanning = ''\n\
+if parse.find_objects('^spanning-tree extend system-id') == '':\n\
+    if parse.find_objects('^spanning-tree mode rapid-pvst') == '':\n\
+        spanning = parse.find_objects('^spanning-tree\s+(\S.+)')\n",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Configuring_Spanning_Tree_on_Meraki_Switches_(MS)",
             'note':"Only Supports RSTP"
         },
@@ -396,7 +407,7 @@ if len(stack) == 1:\n\
         "private_vlan": {
             'name': "Private VLAN",
             'regex': r'\sswitchport\smode\sprivate-vlan?(\S.*)',
-            'iosxe': "private_vlan = config_det.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)')\n",
+            'iosxe': "private_vlan = child.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)')\n",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
             'note':"Port Isolation can be used"
             },
@@ -405,7 +416,7 @@ if len(stack) == 1:\n\
             'support':"",
             'translatable':"",
             'regex': r'\sswitchport\strunk\spruning?(\S.*)',
-            'iosxe': "pruning = config_det.re_match_typed(regex=r'\sswitchport\strunk\spruning?(\S.*)')\n",
+            'iosxe': "pruning = child.re_match_typed(regex=r'\sswitchport\strunk\spruning?(\S.*)')\n",
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Fundamentals_of_802.1Q_VLAN_Tagging",
             'note':"Not required"
             },
@@ -414,63 +425,63 @@ if len(stack) == 1:\n\
             'support':"✓",
             'translatable':"✓",
             'regex': r'\sswitchport\svoice?(\S.*)',
-            'iosxe': "voice_vlan = config_det.re_match_typed(regex=r'\sswitchport\svoice?(\S.*)')\n"
+            'iosxe': "voice_vlan = child.re_match_typed(regex=r'\sswitchport\svoice?(\S.*)')\n"
             },
         "data_vlan": {
             'name': "Data VLAN",
             'support':"✓",
             'translatable':"✓",
             'regex': r'\sswitchport\saccess?(\S.*)',
-            'iosxe': "data_vlan = config_det.re_match_typed(regex=r'\sswitchport\saccess?(\S.*)')\n"
+            'iosxe': "data_vlan = child.re_match_typed(regex=r'\sswitchport\saccess?(\S.*)')\n"
             },
         "stp_port": {
             'name': "STP Port Priority",
             'support':"",
             'translatable':"",
             'regex': r'\sspanning-tree\sport-priority?(\S.*)',
-            'iosxe': "stp_port = config_det.re_match_typed(regex=r'\sspanning-tree\sport-priority?(\S.*)')\n"
+            'iosxe': "stp_port = child.re_match_typed(regex=r'\sspanning-tree\sport-priority?(\S.*)')\n"
             },
         "portfast": {
             'name': "STP Portfast",
             'support':"",
             'translatable':"",
             'regex': r'\sspanning-tree\sportfast?(\S.*)',
-            'iosxe': "portfast = config_det.re_match_typed(regex=r'\sspanning-tree\sportfast?(\S.*)')\n"
+            'iosxe': "portfast = child.re_match_typed(regex=r'\sspanning-tree\sportfast?(\S.*)')\n"
             },
         "root_guard": {
             'name': "STP RootGuard",
             'support':"✓",
             'translatable':"✓",
             'regex': r'\sspanning-tree\sguard\sroot?(\S.*)',
-            'iosxe': "root_guard = config_det.re_match_typed(regex=r'\sspanning-tree\sguard\sroot?(\S.*)')\n"
+            'iosxe': "root_guard = child.re_match_typed(regex=r'\sspanning-tree\sguard\sroot?(\S.*)')\n"
             },
         "loop_guard": {
             'name': "STP Loop Guard",
             'support':"✓",
             'translatable':"✓",
             'regex': r'\sspanning-tree\sguard\sloop?(\S.*)',
-            'iosxe': "loop_guard = config_det.re_match_typed(regex=r'\sspanning-tree\sguard\sloop?(\S.*)')\n"
+            'iosxe': "loop_guard = child.re_match_typed(regex=r'\sspanning-tree\sguard\sloop?(\S.*)')\n"
             },
         "bpdu_guard": {
             'name': "STP BPDU Guard",
             'support':"✓",
             'translatable':"✓",
             'regex': r'\sspanning-tree\sbpduguard?(\S.*)',
-            'iosxe': "bpdu_guard = config_det.re_match_typed(regex=r'\sspanning-tree\sbpduguard?(\S.*)')\n"
+            'iosxe': "bpdu_guard = child.re_match_typed(regex=r'\sspanning-tree\sbpduguard?(\S.*)')\n"
             },
         "flex_links": {
             'name': "Flex Links",
             'support':"",
             'translatable':"",
             'regex': r'\sswitchport\sbackup\sinterface?(\S.*)',
-            'iosxe': "flex_links = config_det.re_match_typed(regex=r'\sswitchport\sbackup\sinterface?(\S.*)')\n"
+            'iosxe': "flex_links = child.re_match_typed(regex=r'\sswitchport\sbackup\sinterface?(\S.*)')\n"
             },
         "storm_control": {
             'name': "Storm Control",
             'support':"",
             'translatable':"",
             'regex': r'\sstorm-control?(\S.*)',
-            'iosxe': "storm_control = config_det.re_match_typed(regex=r'\sstorm-control?(\S.*)')\n",
+            'iosxe': "storm_control = child.re_match_typed(regex=r'\sstorm-control?(\S.*)')\n",
             'url':"https://documentation.meraki.com/MS/Other_Topics/Storm_Control_for_MS",
             'note':"Network-wide"
             },
@@ -479,28 +490,28 @@ if len(stack) == 1:\n\
             'support':"",
             'translatable':"",
             'regex': r'\sswitchport\sprotected?(\S.*)',
-            'iosxe': "protected = config_det.re_match_typed(regex=r'\sswitchport\sprotected?(\S.*)')\n"
+            'iosxe': "protected = child.re_match_typed(regex=r'\sswitchport\sprotected?(\S.*)')\n"
             },
         "port_security": {
             'name': "Port Security",
             'support':"✓",
             'translatable':"",
             'regex': r'\sswitchport\sport-security?(\S.*)',
-            'iosxe': "port_security = config_det.re_match_typed(regex=r'\sswitchport\sport-security?(\S.*)')\n"
+            'iosxe': "port_security = child.re_match_typed(regex=r'\sswitchport\sport-security?(\S.*)')\n"
             },
         "port_udld": {
             'name': "Port UDLD",
             'support':"✓",
             'translatable':"",
             'regex': r'\sudld\sport?(\S.*)',
-            'iosxe': "port_udld = config_det.re_match_typed(regex=r'\sudld\sport?(\S.*)')\n"
+            'iosxe': "port_udld = child.re_match_typed(regex=r'\sudld\sport?(\S.*)')\n"
             },
         "lldp": {
             'name': "LLDP",
             'support':"",
             'translatable':"",
             'regex': r'\slldp?(\S.*)',
-            'iosxe': "lldp = config_det.re_match_typed(regex=r'\slldp?(\S.*)')\n",
+            'iosxe': "lldp = child.re_match_typed(regex=r'\slldp?(\S.*)')\n",
             'url':"https://documentation.meraki.com/General_Administration/Other_Topics/LLDP_Support_on_Cisco_Meraki_Products#ms",
             'note':"Always on"
             },
@@ -509,42 +520,46 @@ if len(stack) == 1:\n\
             'support':"",
             'translatable':"",
             'regex': r'\sipv6?(\S.*)',
-            'iosxe': "ipv6 = config_det.re_match_typed(regex=r'\sipv6?(\S.*)')\n",
+            'iosxe': "ipv6 = child.re_match_typed(regex=r'\sipv6?(\S.*)')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
             },
-        "etherchannel_type": {
-            'name': "Etherchannel Type",
+        "etherchannel": {
+            'name': "Etherchannel",
+            'support':"",
+            'translatable':"",
             'regex': r'^\schannel-group\s\d\smode\s+(\S.+)',
-            'iosxe': "etherchannel_type = config_det.re_match_typed('^\schannel-group\s\d\smode\s+(\S.+)')\n"
+            'iosxe': "etherchannel = child.re_match_typed('^\schannel-group\s\d\smode\s+(\S.+)')\n",
+            'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Link_Aggregation_and_Load_Balancing",
+            'note':"Only LACP is supported"
             },
         "mode_access": {
             'name': "Access Port",
             'support':"✓",
             'translatable':"✓",
             'regex': r'\sswitchport\smode\saccess?(\S.*)',
-            'iosxe': "mode_access = config_det.re_match_typed(regex=r'\sswitchport\smode\saccess?(\S.*)')\n"
+            'iosxe': "mode_access = child.re_match_typed(regex=r'\sswitchport\smode\saccess?(\S.*)')\n"
             },
         "mode_trunk": {
             'name': "Trunk Port",
             'support':"✓",
             'translatable':"✓",
             'regex': r'\sswitchport\smode\strunk?(\S.*)',
-            'iosxe': "mode_trunk = config_det.re_match_typed(regex=r'\sswitchport\smode\strunk?(\S.*)')\n"
+            'iosxe': "mode_trunk = child.re_match_typed(regex=r'\sswitchport\smode\strunk?(\S.*)')\n"
             },
         "directed_broadcast": {
             'name': "IP Directed Broadcast",
             'support':"",
             'translatable':"",
             'regex': r'\sip\sdirected-broadcast?(\S.*)',
-            'iosxe': "directed_broadcast = config_det.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')\n"
+            'iosxe': "directed_broadcast = child.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')\n"
             },
-        "description": {
+        "name": {
             'name': "Port Description",
             'support':"✓",
             'translatable':"✓",
-            'regex': r'\sdescription?(\S.*)',
-            'iosxe': "description = config_det.re_match_typed(regex=r'\sdescription?(\S.*)')\n"
+            'regex': r'\sdescription\s+(\S.+)',
+            'iosxe': "name = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')\n"
         }
     }
 }
