@@ -41,21 +41,17 @@ check_pedia = {
             'name': "Hostname",
             'support':"✓",
             'translatable':"✓",
+            'regex': '^hostname',
             'iosxe':"\
 \
 hostname = parse.find_objects('^hostname')\n\
 host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             },
-        "interface":{
-            'name': "Interface",
-            'support':"✓",
-            'translatable':"✓",
-            'iosxe':"interface = parse.find_objects('^interface')\n"
-            },
         "vtp":{
             'name': "VTP",
             'support':"",
             'translatable':"",
+            'regex': '^vtp',
             'iosxe': "vtp = parse.find_objects('^vtp')\n",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Integrating_the_MS_Access_Switch_into_a_Cisco_VTP_domain",
             'note':"Not required"
@@ -64,12 +60,14 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "QoS",
             'support':"",
             'translatable':"",
+            'regex': '^mls',
             'iosxe': "mls = parse.find_objects('^mls')\n"
             },
         "spanning":{
             'name':"Spanning Tree",
             'support':"",
             'translatable':"",
+            'regex': '^spanning',
             'iosxe': "spanning = parse.find_objects('^spanning')\n",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Configuring_Spanning_Tree_on_Meraki_Switches_(MS)",
             'note':"Only Supports RSTP"
@@ -78,18 +76,21 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "SNMP",
             'support':"",
             'translatable':"",
-            'iosxe':"parse.find_objects('^snmp')\n"
+            'regex': '^snmp',
+            'iosxe':"snmp = parse.find_objects('^snmp')\n"
             },
         "logging_host":{
             'name': "Syslog",
             'support':"",
             'translatable':"",
+            'regex': '^logging',
             'iosxe':"logging_host = parse.find_objects('^logging')\n"
             },
         "ntp":{
             'name':"NTP",
             'support':"",
             'translatable':"",
+            'regex': '^ntp',
             'iosxe':"ntp = parse.find_objects('^ntp')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
@@ -98,24 +99,28 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "Access-List",
             'support':"",
             'translatable':"",
+            'regex': '^access-list',
             'iosxe': "access_list = parse.find_objects('^access-list')\n"
             },
         "extended_access_list":{
             'name': "Extended ACL",
             'support':"",
             'translatable':"",
+            'regex': '^ip\saccess-list',
             'iosxe': "extended_access_list = parse.find_objects('^ip\saccess-list')\n"
             },
         "port_mirror":{
             'name': "Port mirroring",
             'support': "✓",
             'translatable':"",
+            'regex': '^monitor',
             'iosxe': "port_mirror = parse.find_objects('^monitor')\n"
             },
         "aaa":{
             'name': "AAA",
             'support':"",
             'translatable':"",
+            'regex': '^aaa',
             'iosxe': "aaa = parse.find_objects('^aaa')\n",
             'url':"https://documentation.meraki.com/General_Administration/Managing_Dashboard_Access/Managing_Dashboard_Administrators_and_Permissions",
             'note':"Built in Meraki dashboard"
@@ -124,6 +129,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "NetFlow",
             'support':"",
             'translatable':"",
+            'regex': '^flow\sexporter',
             'iosxe': "netflow = parse.find_objects('^flow\sexporter')\n",
             'url':"https://documentation.meraki.com/MX/Monitoring_and_Reporting/NetFlow_Overview",
             'note':"Currently supported on MX only"
@@ -132,12 +138,14 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name':"DHCP server",
             'support':"",
             'translatable':"",
+            'regex': '^ip\sdhcp\spool',
             'iosxe':"dhcp = parse.find_objects('^ip\sdhcp\spool')\n"
             },
         "banner":{
             'name': "Banner",
             'support':"",
             'translatable':"",
+            'regex': '^banner',
             'iosxe': "banner = parse.find_objects('^banner')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not required"
@@ -146,18 +154,21 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name':"radius",
             'support':"",
             'translatable':"",
+            'regex': '^radius-server',
             'iosxe':"radius = parse.find_objects('^radius-server')\n"
             },
         "radius2":{
             'name':"radius",
             'support':"",
             'translatable':"",
+            'regex': '^radius\sserver',
             'iosxe':"radius2 = parse.find_objects('^radius\sserver')\n"
             },
         "http_server":{
             'name': "HTTP server",
             'support':"",
             'translatable':"",
+            'regex': '^ip\shttp',
             'iosxe': "http_server = parse.find_objects('^ip\shttp')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
@@ -166,12 +177,17 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "Stack",
             'support':"✓",
             'translatable':"✓",
-            'iosxe': "stack = parse.find_objects('^switch')\n"
+            'regex': '^switch',
+            'iosxe': "\
+stack = parse.find_objects('^switch')\n\
+if len(stack) == 1:\n\
+    stack = []\n"
             },
         "mab_vlan_mac":{
             'name': "MAB VLAN MAC Auth",
             'support':"",
             'translatable':"",
+            'regex': '^mab\srequest\sformat',
             'iosxe': "mab_vlan_mac = parse.find_objects('^mab\srequest\sformat')\n",
             'url':"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
             'note':"MAB with RADIUS is supported"
@@ -180,6 +196,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "Layer 2 VLAN",
             'support':"",
             'translatable':"",
+            'regex': '^vlan',
             'iosxe': "vlan = parse.find_objects('^vlan')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
@@ -188,6 +205,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "VPMS",
             'support':"",
             'translatable':"",
+            'regex': '^vpms',
             'iosxe': "vpms = parse.find_objects('^vpms')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported as it is dated technology"
@@ -196,6 +214,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "STP Uplinkfast",
             'support':"",
             'translatable':"",
+            'regex': '^spanning-tree\suplinkfast',
             'iosxe': "uplinkfast = parse.find_objects('^spanning-tree\suplinkfast')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
@@ -204,6 +223,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "STP Backbonefast",
             'support':"",
             'translatable':"",
+            'regex': '^spanning-tree\sbackbonefast',
             'iosxe': "backbonefast = parse.find_objects('^spanning-tree\sbackbonefast')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
@@ -212,12 +232,15 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "STP Loopguard",
             'support':"",
             'translatable':"",
-            'iosxe': "loopguard = parse.find_objects('spanning-tree\sloopguard')\n"
+            'regex': '^vpms',
+            'iosxe': "loopguard = parse.find_objects('spanning-tree\sloopguard')\n",
+            'note':"Supported at the port level"
             },
         "dhcp_snooping":{
             'name': "DHCP Snooping",
             'support':"",
             'translatable':"",
+            'regex': '^ip\sdhcp\ssnooping',
             'iosxe': "dhcp_snooping = parse.find_objects('ip\sdhcp\ssnooping')\n",
             'note':"Not Supported"
             },
@@ -225,18 +248,21 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "IP Source Binding",
             'support':"",
             'translatable':"",
+            'regex': '^ip\ssource\sbinding',
             'iosxe': "ip_source_guard = parse.find_objects('ip\ssource\sbinding')\n"
             },
         "arp_inspection":{
             'name': "ARP Inspection",
             'support':"",
             'translatable':"",
+            'regex': '^ip\sarp\sinspection',
             'iosxe': "arp_inspection = parse.find_objects('^ip\sarp\sinspection')\n"
             },
         "arp_acl":{
             'name': "ARP Access-list",
             'support':"",
             'translatable':"",
+            'regex': '^arp\saccess-list',
             'iosxe': "arp_acl = parse.find_objects('^arp\saccess-list')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
@@ -245,6 +271,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "Protocol Storm Protection",
             'support':"",
             'translatable':"",
+            'regex': '^psp',
             'iosxe': "psp = parse.find_objects('^psp')\n",
             'url': "https://documentation.meraki.com/MS",
             'note':"Not Supported"
@@ -253,21 +280,22 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "UDLD",
             'support':"",
             'translatable':"",
-            'translateable':"",
-            'iosxe': "udld = parse.find_objects('^udld')\n"
+            'regex': '^udld',
+            'iosxe': "udld = parse.find_objects('^udld')\n",
+            'note':"Supported at the port level"
             },
         "logging":{
             'name': "Logging",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^logging',
             'iosxe': "logging = parse.find_objects('^logging')\n"
             },
         "ip_sla":{
             'name': "IP SLA",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^ip\ssla',
             'iosxe': "ip_sla = parse.find_objects('^ip\ssla')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
@@ -276,37 +304,35 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "Multicast IGMP",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^ip\sigm',
             'iosxe': "multicast_igmp = parse.find_objects('^ip\sigmp')\n"
             },
         "multicast_pim":{
             'name': "Multicast PIM",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^ip\spim',
             'iosxe': "multicast_pim = parse.find_objects('^ip\spim')\n"
             },
         "static_routing":{
             'name': "Static routing",
-            'support':"",
+            'support':"✓",
             'translatable':"",
-            'translateable':"",
+            'regex': '^ip\sroute',
             'iosxe': "static_routing = parse.find_objects('^ip\sroute')\n"
             },
         "ipv6":{
             'name': "IPv6",
-            'support':"",
+            'support':"✓",
             'translatable':"",
-            'translateable':"",
-            'iosxe': "ipv6 = parse.find_objects('^ipv6')\n",
-            'url':"https://documentation.meraki.com/MS",
-            'note':"Not Supported"
+            'regex': '^ipv6',
+            'iosxe': "ipv6 = parse.find_objects('^ipv6')\n"
             },
         "rip":{
             'name': "RIP",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^router rip',
             'iosxe': "rip = parse.find_objects('^router rip')\n",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
@@ -315,7 +341,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "EIGRP",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^router eigrp',
             'iosxe': "eigrp = parse.find_objects('^router eigrp')\n",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
@@ -324,7 +350,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "OSPFv2",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^router ospf',
             'iosxe': "ospf = parse.find_objects('^router ospf')\n",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Supported on MS250 and above"
@@ -333,7 +359,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "OSPFv3",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^router ospfv3',
             'iosxe': "ospfv3 = parse.find_objects('^router ospfv3')\n",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
@@ -342,8 +368,8 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "BGP",
             'support':"",
             'translatable':"",
-            'translateable':"",
-           'iosxe': "bgp = parse.find_objects('^router bgp')\n",
+            'regex': '^router bgp',
+            'iosxe': "bgp = parse.find_objects('^router bgp')\n",
             'url':"https://documentation.meraki.com/MX/Networks_and_Routing/Border_Gateway_Protocol_(BGP)",
             'note':"Currently supported on MX only"
             },
@@ -351,7 +377,7 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "IS-IS",
             'support':"",
             'translatable':"",
-            'translateable':"",
+            'regex': '^router isis',
             'iosxe': "isis = parse.find_objects('^router isis')\n",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
@@ -360,15 +386,9 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             'name': "VRF",
             'support':"",
             'translatable':"",
+            'regex': '^vpms',
             'iosxe': "vrf = parse.find_objects('^vrf')\n",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
-            'note':"Not Supported"
-            },
-        "Directed Broadcast":{
-            'name': "Directed Broadcast",
-            'support':"",
-            'translatable':"",
-            'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Multicast_Routing_Overview",
             'note':"Not Supported"
             }
     },
@@ -420,21 +440,21 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
         "root_guard": {
             'name': "STP RootGuard",
             'support':"✓",
-            'translatable':"",
+            'translatable':"✓",
             'regex': r'\sspanning-tree\sguard\sroot?(\S.*)',
             'iosxe': "root_guard = config_det.re_match_typed(regex=r'\sspanning-tree\sguard\sroot?(\S.*)')\n"
             },
         "loop_guard": {
             'name': "STP Loop Guard",
             'support':"✓",
-            'translatable':"",
+            'translatable':"✓",
             'regex': r'\sspanning-tree\sguard\sloop?(\S.*)',
             'iosxe': "loop_guard = config_det.re_match_typed(regex=r'\sspanning-tree\sguard\sloop?(\S.*)')\n"
             },
         "bpdu_guard": {
             'name': "STP BPDU Guard",
             'support':"✓",
-            'translatable':"",
+            'translatable':"✓",
             'regex': r'\sspanning-tree\sbpduguard?(\S.*)',
             'iosxe': "bpdu_guard = config_det.re_match_typed(regex=r'\sspanning-tree\sbpduguard?(\S.*)')\n"
             },
@@ -514,6 +534,8 @@ host_name = hostname[0].re_match_typed(r'^hostname\s+(\S+)',default='')\n"
             },
         "directed_broadcast": {
             'name': "IP Directed Broadcast",
+            'support':"",
+            'translatable':"",
             'regex': r'\sip\sdirected-broadcast?(\S.*)',
             'iosxe': "directed_broadcast = config_det.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')\n"
             },

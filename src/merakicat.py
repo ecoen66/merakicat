@@ -5,6 +5,7 @@ of functions for checking & translating Catalyst IOSXE to Meraki
 switch configs, registering Catalyst switches to Dashboard and
 claiming them.
 """
+import ngrok
 import meraki
 from ciscoconfparse2 import CiscoConfParse
 from webexteamsbot import TeamsBot
@@ -68,7 +69,9 @@ if BOT:
     teams_token = os.getenv("TEAMS_BOT_TOKEN")
     if not os.getenv("TEAMS_EMAILS") is None:
         teams_emails.append(os.getenv("TEAMS_EMAILS"))
-    bot_url = os.getenv("TEAMS_BOT_URL")
+    ngrok_token = os.getenv("NGROK_AUTHTOKEN")
+    print(f"ngrok_token = {ngrok_token}")
+    #bot_url = os.getenv("TEAMS_BOT_URL")
     
     # If the required details were not in the environment variables
     # grab them from the mc_user_info.py file
@@ -80,8 +83,13 @@ if BOT:
         teams_token = TEAMS_BOT_TOKEN
     if len(teams_emails) == 0:
         teams_emails = TEAMS_EMAILS
-    if bot_url is None:
-        bot_url = BOT_URL
+    if ngrok_token == None:
+        ngrok_token = NGROK_AUTHTOKEN
+    listener = ngrok.forward("localhost:5000", authtoken=ngrok_token)
+    print(f"Ingress established at: {listener.url()}");
+    bot_url = listener.url()
+    #if bot_url is None:
+    #    bot_url = BOT_URL
 
     # Either way, let's got the Bot's first name in case we are
     # directly addressed in room with multiple users
@@ -592,7 +600,8 @@ def check_switch(incoming_msg,config="",host=""):
     
     # Run the function in config_checker to get the list of features configured on
     # the switch (supported and not)
-    host_name,the_list,unsupported_features,More_info = CheckFeatures(config_file)
+    # host_name,the_list,unsupported_features,More_info = CheckFeatures(config_file)
+    host_name,the_list = CheckFeatures(config_file)
     
     # Clear some variables for the next step
     can_list = list()
@@ -610,45 +619,40 @@ def check_switch(incoming_msg,config="",host=""):
     
     x = 0
     while x < (len(the_list)-1):
-        if the_list[x][0] not in unsupported_features.keys():
-            can_list.append([the_list[x][0],"✓",the_list[x][1]," "])
-            x +=1
-        if the_list[x][0] in unsupported_features.keys():
-            not_list.append([
-                the_list[x][0],"X",
-                the_list[x][1],
-                More_info[the_list[x][0]],
-                unsupported_features[the_list[x][0]]
-            ])
-            x +=1
+        if not the_list[x][1] == "":
+            can_list.append(the_list[x])
+        else:
+            not_list.append(the_list[x])
+        x +=1
     
+    # Build the dynamic report card.
+    
+    if BOT: 
     # Add the supported features to the report card.
     # Highlight the Available(Meraki supported) and Translatable (supported by this Bot)
     # features with a green ✓, while highlighting unavailable features with a red X.
     
-    y = 0
-    while y < (len(can_list)-1):
-        c1_items.append(TextBlock(text=can_list[y][0],horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-        coloring = Colors.GOOD if can_list[y][1]=='✓' else Colors.ATTENTION
-        c2_items.append(TextBlock(text=can_list[y][1],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=coloring))
-        coloring = Colors.GOOD if can_list[y][2]=='✓' else Colors.ATTENTION
-        c3_items.append(TextBlock(text=can_list[y][2],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=coloring))
-        c4_items.append(TextBlock(text=can_list[y][3],horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-        y +=1
-    
-    # Add the unavailable (Meraki unsupported) features to the report card.
-    # Highlight them with a red X, and indicate any additional notes and links.
-    
-    z = 0
-    while z < (len(not_list)-1):
-        c1_items.append(TextBlock(text=not_list[z][0],horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-        c2_items.append(TextBlock(text=not_list[z][1],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.ATTENTION))
-        c3_items.append(TextBlock(text=not_list[z][2],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.ATTENTION))
-        c4_items.append(TextBlock(text='['+not_list[z][3]+']('+not_list[z][4]+')',horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-        z +=1
-    
-    # Build the dynamic report card.
-    if BOT: 
+        y = 0
+        while y < (len(can_list)-1):
+            item4 = " " if can_list[y][3] == "" else can_list[y][3]
+            c1_items.append(TextBlock(text=can_list[y][0],horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
+            c2_items.append(TextBlock(text=can_list[y][1],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.GOOD))
+            coloring = Colors.GOOD if can_list[y][2]=='✓' else Colors.ATTENTION
+            c3_items.append(TextBlock(text=can_list[y][2],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=coloring))
+            c4_items.append(TextBlock(text=item4,horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
+            y +=1
+        
+        # Add the unavailable (Meraki unsupported) features to the report card.
+        # Highlight them with a red X, and indicate any additional notes and links.
+        
+        z = 0
+        while z < (len(not_list)-1):
+            c1_items.append(TextBlock(text=not_list[z][0],horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
+            c2_items.append(TextBlock(text=not_list[z][1],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.ATTENTION))
+            c3_items.append(TextBlock(text=not_list[z][2],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.ATTENTION))
+            c4_items.append(TextBlock(text='['+not_list[z][3]+']('+not_list[z][4]+')',horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
+            z +=1
+
         card = AdaptiveCard()
         card.body = [
             TextBlock(text='Configuration Report for '+host_name, horizontalAlignment='Center', wrap=True, size='Large', weight='Default'),
@@ -692,11 +696,6 @@ If you prefer, I can prepare for the switch to become a Meraki managed switch, k
     # Not a BOT
     else:
         all_list = list(list())
-        for row in can_list:
-            row.append(" ")
-        if debug:
-            print(f"can_list = {can_list}")
-            print(f"not_list = {not_list}")
         all_list.extend(can_list)
         all_list.extend(not_list)
         if debug:
@@ -743,17 +742,27 @@ def register_switch(incoming_msg,host="",called=""):
             for switch in registered_switches:
                 print(f"In register_switch status = {status}")
                 print(f"switch = {switch}")
-                print(f"switch['Migration Status'] = {switch['Migration Status']}")
+                print(f"switch['Migration Status'] = {switch['migration_status']}")
     if debug:
         print(f"After registering switches, meraki_serials = {meraki_serials}")
     # Report back on what happened
     if called == "":
-        vals=reduce(lambda x,y:x+y,[list(dic.values()) for dic in registered_switches])
-        header = registered_switches[0].keys()
-        rows = [x.values() for x in registered_switches]
-        thing = tabulate(rows, header)
-        payload = "```\n%s"%thing
-        return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
+        if not len(registered_switches) == 0:
+            vals=reduce(lambda x,y:x+y,[list(dic.values()) for dic in registered_switches])
+            header = registered_switches[0].keys()
+            rows = [x.values() for x in registered_switches]
+            thing = tabulate(rows, header)
+            if BOT:
+                payload = "```\n%s"%thing
+                return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
+            else:
+                payload = "\n%s"%thing
+                return (f"\n\nWe {status} registered {vals.count('Registered')} switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
+        else:
+            payload = ""
+            for issue in issues:
+                payload += issue + "\n"
+            return (f"We were unsuccessful registering {host}:\n\n{payload}")        
     else:
         return (status, issues, registered_switches)
 

@@ -71,7 +71,7 @@ python3.11 merakicat.py
     > Note: See [ngrok](#ngrok) for details on setting up an easy HTTP tunnel for webhooks callbacks.
 
     ```
-    export TEAMS_BOT_URL=https://mypublicsite.io (if using ngrok, use the Forwarding URL it provides)
+    export NGROK_AUTHTOKEN=<your ngrok Authtoken>
     export TEAMS_BOT_TOKEN=<your bot's token>
     export TEAMS_BOT_EMAIL=<your bot's email>
     export TEAMS_BOT_APP_NAME=<your bot's name>
@@ -149,39 +149,15 @@ python3.11 merakicat.py
 
 [ngrok](http://ngrok.com) will make easy for you to develop your code with a live bot.
 
-You can find installation instructions here: [https://ngrok.com/download](https://ngrok.com/download)
+You can find account instructions here under `Sign up for free!`: [https://dashboard.ngrok.com/login](https://dashboard.ngrok.com/login)
 
-1. After you've installed `ngrok`, in another window start the service
+1. After you've created an `ngrok` account, you will need to get your Authtoken.  Click on `Your Authtoken` on the ngrok dashboard and copy it.
 
-    ```
-    ngrok http 5000
-    ```
 
-1. You should see a screen that looks like this:
+1. You can now export it to the OS environment variables like this:
 
     ```
-    ngrok by @inconshreveable                                                                                                                                 (Ctrl+C to quit)
-
-    Session Status                online
-    Version                       2.2.4
-    Region                        United States (us)
-    Web Interface                 http://127.0.0.1:4040
-    Forwarding                    http://this.is.the.url.you.need -> localhost:5000
-    Forwarding                    https://this.is.the.url.you.need -> localhost:5000
-
-    Connections                   ttl     opn     rt1     rt5     p50     p90
-                                  2       0       0.00    0.00    0.77    1.16
-
-    HTTP Requests
-    -------------
-
-    POST /                         200 OK
-    ```
-
-1. Make sure and update your environment with this url:
-
-    ```
-    export TEAMS_BOT_URL=https://this.is.the.url.you.need
+    export NGROK_AUTHTOKEN=<your ngrok Authtoken>
     ```
 
 1. Now launch the bot!!
