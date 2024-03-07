@@ -181,6 +181,7 @@ def Register(host_id,ios_username,ios_password,ios_port,ios_secret):
     
     ## If we had any issues to this point, return with issues
     if not len(issues) == 0:
+        net_connect.disconnect()
         return "unsuccessfully", issues, registered_switches, [], nm_list
     
     
@@ -197,7 +198,7 @@ def Register(host_id,ios_username,ios_password,ios_port,ios_secret):
             strip_command=False)
         if debug:
             print(r)
-    
+    net_connect.disconnect()
     
     #### Add logic to parse for issues in Conversion Status column
     ####

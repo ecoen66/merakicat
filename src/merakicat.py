@@ -28,7 +28,7 @@ from mc_user_info import *
 from mc_cards import *
 
 from tabulate import tabulate
-import os, platform, requests, json, pprint, re, sys
+import os, platform, requests, json, pprint, re, sys, time
 
 # Retrieve required Meraki details from environment variables
 meraki_api_key = os.getenv("MERAKI_API_KEY")
@@ -543,6 +543,8 @@ def check_switch(incoming_msg,config="",host=""):
     :return: A text or markdown based reply
     """
     
+    start_time = time.time()
+    
     # Import the global stateful variables
     global config_file, host_id
     
@@ -700,7 +702,8 @@ If you prefer, I can prepare for the switch to become a Meraki managed switch, k
         if debug:
             print(f"all_list = {all_list}")
         report=tabulate(all_list,headers=["Feature","Available","Translatable","Notes","For more info, see this URL"])
-        return(report + "\n\nPlease review the results above.\nIf you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.")
+        timing =  "\n=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
+        return(report + "\n\nPlease review the results above.\nIf you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
 
 
 def register_switch(incoming_msg,host="",called=""):
@@ -712,6 +715,8 @@ def register_switch(incoming_msg,host="",called=""):
     :return: A text or markdown based reply if called from greeting (called="")
     :      : Or, status, issues & registered switch list otherwise
     """
+    
+    start_time = time.time()
     
     # Import the global stateful variables
     global host_id, meraki_serials, nm_list
@@ -751,17 +756,18 @@ def register_switch(incoming_msg,host="",called=""):
             header = registered_switches[0].keys()
             rows = [x.values() for x in registered_switches]
             thing = tabulate(rows, header)
+            timing =  "\n=== That registraion took %s seconds" % str(round((time.time() - start_time), 2))
             if BOT:
-                payload = "```\n%s"%thing
+                payload = "```\n%s"%thing + timing
                 return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
             else:
-                payload = "\n%s"%thing
+                payload = "\n%s"%thing + timing
                 return (f"\n\nWe {status} registered {vals.count('Registered')} switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
         else:
             payload = ""
             for issue in issues:
                 payload += issue + "\n"
-            return (f"We were unsuccessful registering {host}:\n\n{payload}")        
+            return (f"We were unsuccessful registering {host}:\n\n{payload}" + timing)        
     else:
         return (status, issues, registered_switches)
 
@@ -776,6 +782,9 @@ def claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called=
     :return: A text or markdown based reply if called from greeting (called="")
     :      : Or, status, issues, already claimed & claimed switch lists otherwise
     """
+    
+    start_time = time.time()
+    
     global host_id, meraki_net, meraki_serials, meraki_net_name
     issues = ""
     if debug:
@@ -810,7 +819,9 @@ def claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called=
     # otherwise return the list of issues
     if called == "":
         if len(bad_switches) == 0:
-            return (f"I was able to claim those switches to your Network.")
+            r = "I was able to claim those switches to your Network.\n"
+            r += "=== That claiming process took %s seconds" % str(round((time.time() - start_time), 2))
+            return (r)
         else:
             return(issues)
     # If we WERE called from another function,
@@ -838,6 +849,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     :param verb: Either 'translate' or 'migrate' depending on how the function is called
     :return: A text or markdown based reply
     """
+    start_time = time.time()
       
     # Import the global stateful variables
     global config_file, host_id, meraki_org, meraki_serials, meraki_urls, nm_list
@@ -932,12 +944,9 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     # Update the global stateful variable for later
     config_file = config
     
+    eval_start_time = time.time()
+    
     # Evaluate the Catalyst config and break it into lists we can work with
-    blurb = "Evaluating the switch config."
-    if BOT:
-        c = create_message(incoming_msg.roomId, blurb)
-    else:
-        print(blurb)
     Uplink_list, Downlink_list, Other_list, port_dict, switch_dict = Evaluate(config_file)
     
     ## Creating a list of the downlink port configurations to push to Meraki
@@ -947,15 +956,22 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         interface = Downlink_list[z]
         ToBeConfigured[interface] = port_dict[interface]
         z +=1
-    
+
     ##
     ## Start the meraki config migration after confirmation from the user
     ##
+    blurb = "Evaluated the switch config."
+    blurb += "\n--- That took %s seconds" % str(round((time.time() - start_time), 2))
+    blurb += "\n\nPushing the translated items to the Dashboard in a large batch   .  This will take a while, but I'll message you when I'm done..."
     if BOT:
-        c = create_message(incoming_msg.roomId, "Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
+        c = create_message(incoming_msg.roomId, blurb)
     else:
-        print("Pushing the translated items to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
+        print(blurb)
+    
+    port_cfg_start_time = time.time()
+    
     configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_org,meraki_serials,ToBeConfigured,Downlink_list,switch_dict)
+        
     if debug:
         print(f"configured_ports = {configured_ports}")
         print(f"unconfigured_ports = {unconfigured_ports}")
@@ -1021,6 +1037,9 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
             if debug:
                 print(f"\nu_port={u_port}, and r = {r}")
         switch+=1
+    if verb == "translate":
+        r += "\n--- Pushing to Dashboard took %s seconds" % str(round((time.time() - port_cfg_start_time), 2))
+        r += "\n=== That entire translation took %s seconds" % str(round((time.time() - start_time), 2))
     return (r)
 
 
@@ -1035,6 +1054,8 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     :param dest_net: The incoming Meraki destination Network to claim devices to
     :return: A text or markdown based reply
     """
+    
+    start_time = time.time()
     
     # Import the global stateful variables
     global config_file, host_id, nm_list
@@ -1105,7 +1126,8 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     file.writelines(config)
     file.close()
     config = os.path.join(dir,switch_name+".cfg")
-    blurb = "Logged in to " + host_id + " to grab a copy of the running config and save it as " + switch_name+".cfg."
+    blurb = "Logged in to " + host_id + ", grabbed a copy of the running config and saved it as " + switch_name+".cfg."
+    blurb += "\n--- That took %s seconds" % str(round((time.time() - start_time), 2))
     if BOT:
         c = create_message(incoming_msg.roomId, blurb)
     else:
@@ -1117,6 +1139,9 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     # Register the switch stack to the Meraki dashboard
     if debug:
         print(f"in migrate before register_switch, meraki_serials = {meraki_serials}")    
+    
+    register_start_time = time.time()
+    
     status, issues, registered_switches = register_switch(incoming_msg,host=host_id,called='yes')
 
     if debug:
@@ -1131,7 +1156,8 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
         payload = "```\n%s"%thing
         return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
     string_serials = ', '.join(meraki_serials)
-    blurb = "Registered " + host_id + " to Dashboard as " + string_serials + "."
+    blurb = "Registered " + host_id + " to Dashboard as " + string_serials + ".\n"
+    blurb += "--- That took %s seconds" % str(round((time.time() - register_start_time), 2))
     if BOT:
         c = create_message(incoming_msg.roomId, blurb)
     else:
@@ -1139,6 +1165,7 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     if debug:
         print(f"in migrate before claim_switch, meraki_serials = {meraki_serials}")    
     # Claim the switch stack to a Network in the Meraki dashboard
+    claim_start_time = time.time()
     status, issues, ac_switches, claimed_switches = claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials,called='yes')
     if debug:
         print(f"in migrate after claim_switch, meraki_serials = {meraki_serials}")    
@@ -1146,7 +1173,8 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     # If the attempt to claim the switch stack had issues, return them
     if not status == "Ok":
         return(issues)
-    blurb = "Claimed " + string_serials + " to Meraki network " + meraki_net_name + "."
+    blurb = "Claimed " + string_serials + " to Meraki network " + meraki_net_name + ".\n"
+    blurb += "--- That took %s seconds" % str(round((time.time() - claim_start_time), 2))
     if BOT:
         c = create_message(incoming_msg.roomId, blurb)
     else:
@@ -1154,8 +1182,11 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     if debug:
         print(f"in migrate before translate, meraki_serials = {meraki_serials}")
     # Translate the switch stack to the Meraki switches we just claimed
+    translate_start_time = time.time()
     r = "\n\n" + translate_switch(incoming_msg,config="",host=host_id,serials=meraki_serials,verb="migrate")
-    blurb = "\nTranslated " + switch_name+".cfg to Meraki switches " + string_serials + "."
+    blurb = "\nTranslated " + switch_name+".cfg to Meraki switches " + string_serials + ".\n"
+    blurb += "--- That took %s seconds" % str(round((time.time() - translate_start_time), 2))
+    blurb += "\n=== For a total time of  %s seconds" % str(round((time.time() - start_time), 2))
     if BOT:
         c = create_message(incoming_msg.roomId, blurb)
     else:
