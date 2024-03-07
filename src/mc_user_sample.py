@@ -8,9 +8,8 @@ DEBUG_CLAIM = False
 DEBUG_SPLIT = False
 DEBUG_FILE = False
 
-# The temporary public URL from ngrok for our Bot's webhook
-BOT_URL = \
-"https://c7NN-NN-NNN-NNN-NNN.ngrok-free.app"
+# For ngrok to create a web proxy tunnel for the bot
+NGROK_AUTHTOKEN = "er9usadfj2349uwdfhusdjadu324hjwwdfjksdfu92348ywdf"
 
 # For netmiko to connect to a switch directly
 IOS_USERNAME = 'admin'
