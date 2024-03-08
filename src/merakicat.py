@@ -758,7 +758,7 @@ def register_switch(incoming_msg,host="",called=""):
             thing = tabulate(rows, header)
             timing =  "\n=== That registraion took %s seconds" % str(round((time.time() - start_time), 2))
             if BOT:
-                payload = "```\n%s"%thing + timing
+                payload = "```\n%s"%thing + "\n```" + timing
                 return (f"We **{status}** registered **{vals.count('Registered')}** switch{'es' if (vals.count('Registered') > 1) else ''}:\n{payload}")
             else:
                 payload = "\n%s"%thing + timing
@@ -918,7 +918,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
                 'host': host_id,
                 'username': ios_username,
                 'password': ios_password,
-                'port' : ios_password,          # optional, defaults to 22
+                'port' : ios_port,          # optional, defaults to 22
                 'secret': ios_secret,     # optional, defaults to ''
             }
             if debug:
