@@ -4,22 +4,23 @@ This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to
 
 Below is the list of configurations the tool can currently migrate:
 switch:
- - switch_name = Hostname
- - rstp = Spanning Tree RSTP
- - stack = Stack
+ - Hostname
+ - Spanning Tree RSTP
+ - Stack
 
 port:
- - name = Port Description
- - speed = Port Speed
- - duplex = Port Duplex
- - type = Port Type
- - poeEnabled = Data VLAN
- - allowedVlans = Allowed VLANs
- - vlan = Data VLAN
- - root_guard = STP RootGuard
- - loop_guard = STP Loop Guard
- - bpdu_guard = STP BPDU Guard
- - voiceVlan = Voice VLAN
+ - Port Description
+ - Port Speed
+ - Port Duplex
+ - Port Type
+ - PoE Enabled
+ - Allowed VLANs
+ - Data VLAN
+ - Voice VLAN
+ - STP RootGuard
+ - STP Loop Guard
+ - STP BPDU Guard
+
  
 Once installed, you can print the entire index of this encyclopedia, or to print the index based on either supported and translatable items or both, enter:
 ```

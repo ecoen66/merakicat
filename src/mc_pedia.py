@@ -761,7 +761,7 @@ except:\n\
         },
         
         'poeEnabled': {
-            'name': "Data VLAN",
+            'name': "PoE Enabled",
             'support':"✓",
             'translatable':"✓",
             'uplink':"",
@@ -789,6 +789,20 @@ except:\n\
         },
         
         'vlan': {
+            'name': "Native VLAN",
+            'support':"✓",
+            'translatable':"✓",
+            'uplink':"✓",
+            'downlink':"✓",
+            'regex': r'\sswitchport\strunk\snative\svlan\s+(\S.*)',
+            'meraki': {
+                'skip': False,
+                'default': '1'
+            },
+            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')\n"
+        },
+        
+        'vlan': {
             'name': "Data VLAN",
             'support':"✓",
             'translatable':"✓",
@@ -800,6 +814,31 @@ except:\n\
                 'default': '1'
             },
             'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\svlan\s+(\S.*)')\n"
+        },
+        
+        'voiceVlan': {
+            'name': "Voice VLAN",
+            'support':"✓",
+            'translatable':"✓",
+            'uplink':"✓",
+            'downlink':"✓",
+            'regex': r'\sswitchport\svoice\svlan\s+(\S.*)',
+            'meraki': {
+                'skip': False,
+                'default': None
+            },
+            'iosxe': "voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n"
+        },
+        
+        'private_vlan': {
+            'name': "Private VLAN",
+            'regex': r'\sswitchport\smode\sprivate-vlan?(\S.*)',
+            'meraki': {
+                'skip': True
+            },
+            'iosxe': "private_vlan = child.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)')\n",
+            'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
+            'note':"Port Isolation can be used"
         },
         
         'root_guard': {
@@ -856,45 +895,6 @@ if debug:\n\
     print(f'stpGuard = {stpGuard}')\n",
                 'default': 'disabled'
             }
-        },
-        
-        'vlan': {
-            'name': "Data VLAN",
-            'support':"✓",
-            'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
-            'regex': r'\sswitchport\strunk\snative\svlan\s+(\S.*)',
-            'meraki': {
-                'skip': False,
-                'default': '1'
-            },
-            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')\n"
-        },
-        
-        'voiceVlan': {
-            'name': "Voice VLAN",
-            'support':"✓",
-            'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
-            'regex': r'\sswitchport\svoice\svlan\s+(\S.*)',
-            'meraki': {
-                'skip': False,
-                'default': None
-            },
-            'iosxe': "voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n"
-        },
-        
-        'private_vlan': {
-            'name': "Private VLAN",
-            'regex': r'\sswitchport\smode\sprivate-vlan?(\S.*)',
-            'meraki': {
-                'skip': True
-            },
-            'iosxe': "private_vlan = child.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)')\n",
-            'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
-            'note':"Port Isolation can be used"
         },
         
         'pruning': {
@@ -1104,7 +1104,10 @@ def index_mc_pedia(index_args):
                 elif not v['support'] == "✓":
                     skip = 1
             if skip == 0:
-                print(" - "+k+" = "+v['name']+"\n")
+                if "name" in v:
+                    print(" - "+v['name']+"\n")
+                else:
+                    print(" - "+k+" (for Meraki)\n")
     if len(index_args) == 0:
         print("\n\nTo print the index based on either supported and translatable items or both, enter")
         print("    python mc_pedia [support] [translatable]")
