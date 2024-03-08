@@ -65,7 +65,7 @@ git clone https://github.com/ecoen66/merakicat
 cd merakicat
 pip install -r requirements_dev.txt
 cd src
-python3.11 merakicat.py
+python merakicat.py
 ```
 
 # Usage
@@ -94,7 +94,7 @@ python3.11 merakicat.py
 
     ```
     cd src
-    python3.11 merakicat.py
+    python merakicat.py
     ```
     **Bot commands include the following:**
 
