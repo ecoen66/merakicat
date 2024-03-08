@@ -1104,7 +1104,7 @@ def index_mc_pedia(index_args):
                 elif not v['support'] == "✓":
                     skip = 1
             if skip == 0:
-                print(" - "+k+"\n")
+                print(" - "+k+" = "+v['name']+"\n")
     if len(index_args) == 0:
         print("\n\nTo print the index based on either supported and translatable items or both, enter")
         print("    python mc_pedia [support] [translatable]")
