@@ -16,6 +16,12 @@ Each element is the name of a switch_dict or port_dict key.
 There are currently two sub-dictionaries: 'switch' '& 'port', covering features at
 the switch-level and at the port-level.
 
+        To print the entire index of this encyclopedia, or to print the index
+        based on either supported and translatable items or both, enter:
+
+                  python mc_pedia [support] [translatable]
+
+
 #####################################################################################
 
 Elements in each sub-dictionary has many keys within them:

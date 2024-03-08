@@ -1,10 +1,14 @@
 # History
 
+## 0.0.10 (03-08-2024)
+
+  - Using a single mc_pedia.
+  - Still not yet released on PyPI.
+  
 ## 0.0.9 (03-07-2024)
 
   - Using both config_pedia and check_pedia.
   - Changed to ngrok API for bot functionality
-  - Still not yet released on PyPI.
   
 ## 0.0.8 (03-01-2024)
 
