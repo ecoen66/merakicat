@@ -66,7 +66,7 @@ python3.11 merakicat.py
 1. The easiest way to use this module is to set a few environment variables
 
     > Note: As an alternative, you may rename mc_user_sample.py to mc_user_info.py and edit the variables there.
-    > Although more convenient, it is considered less secure.
+    > Although more convenient, it is less secure.
 
     > Note: See [ngrok](#ngrok) for details on setting up an easy HTTP tunnel for webhooks callbacks.
 
