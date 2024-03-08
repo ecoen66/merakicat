@@ -3,22 +3,29 @@
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.  
 
 Below is the list of configurations the tool can currently migrate:
-- Hostname
-- Switch stack configuration (up to 8 switches)
-- Interface description
-- Interface type (Access / Trunk)
-- VLANS allowed through the trunk interfaces
-- Data VLAN
-- Voice VLAN
-- Port security
-- MAC whitelist
-- Enable / disable ports
-- Link negotiation
-- PoE enablement
-- Spanning-tree root guard
-- Spanning-tree loop guard
-- Spanning-tree BPDU guard
+switch:
+ - switch_name = Hostname
+ - rstp = Spanning Tree RSTP
+ - stack = Stack
 
+port:
+ - name = Port Description
+ - speed = Port Speed
+ - duplex = Port Duplex
+ - type = Port Type
+ - poeEnabled = Data VLAN
+ - allowedVlans = Allowed VLANs
+ - vlan = Data VLAN
+ - root_guard = STP RootGuard
+ - loop_guard = STP Loop Guard
+ - bpdu_guard = STP BPDU Guard
+ - voiceVlan = Voice VLAN
+ 
+Once installed, you can print the entire index of this encyclopedia, or to print the index based on either supported and translatable items or both, enter:
+```
+python mc_pedia [support] [translatable]
+```
+ 
 After the configuration is pushed to the Meraki dashboard, the app will present a summary of configured ports and the ones are not.
 
 # Prerequisites
