@@ -4,7 +4,7 @@ from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
 import os, requests, json, pprint, re
 from mc_user_info import *
-from mc_config_pedia import *
+from mc_pedia import *
 
 def Evaluate(config_file):
     """
@@ -29,7 +29,7 @@ def Evaluate(config_file):
         :return: Lists of uplinks, downlinks and other ports as well as 
         :      : a dictionary with all of the ports and their settings, and the hostname
         """
-        for key,val in config_pedia['switch'].items():
+        for key,val in mc_pedia['switch'].items():
             switch_dict[key] = ""
         if debug:
             print(f"switch_dict = {switch_dict}")
@@ -40,8 +40,8 @@ def Evaluate(config_file):
         
         ###
         ###
-        ### Try out our config_pedia for the switch name
-        for key,val in config_pedia['switch'].items():
+        ### Try out our mc_pedia for the switch name
+        for key,val in mc_pedia['switch'].items():
             newvals = {}
             exec(val.get('iosxe'),locals(),newvals)
             switch_dict[key] = newvals[key]
@@ -144,10 +144,10 @@ def Evaluate(config_file):
             ## Capture the configuration of the interface
             port_sec_raw = port_channel = max_mac = ""
             for child in int_fx:
-                ### Try out our config_pedia
+                ### Try out our mc_pedia
                 if debug:
                     print(f"child = {child}")
-                for key,val in config_pedia['downlink'].items():
+                for key,val in mc_pedia['port'].items():
                     newvals = {}
                     if debug:
                         print(f"key,val = {key},{val}")
@@ -336,20 +336,21 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
         ## Configure the switch_name in the Dashboard
         if debug:
             print(f"switch_dict = {switch_dict}")
-        for key,val in config_pedia['switch'].items():
-            newvals = {}
-            exec(val.get('meraki'),locals(),newvals)
-            if debug:
-                print(f"newvals = {newvals}")
-            return_vals = newvals['return_vals']
-            if debug:
-                print(f"newvals['return_vals'] = {newvals['return_vals']}")
-            n = 0
-            while n < len(return_vals):
-                returns_dict[return_vals[n]] = newvals[return_vals[n]]
-                n += 1
-            #for k,v in newvals.items():
-            #    exec(k + '=v')
+        for key,val in mc_pedia['switch'].items():
+            if val['translatable'] == "✓" and val['meraki']['skip'] == "post-process":
+                newvals = {}
+                exec(val['meraki'].get('post-process'),locals(),newvals)
+                if debug:
+                    print(f"newvals = {newvals}")
+                return_vals = newvals['return_vals']
+                if debug:
+                    print(f"newvals['return_vals'] = {newvals['return_vals']}")
+                n = 0
+                while n < len(return_vals):
+                    returns_dict[return_vals[n]] = newvals[return_vals[n]]
+                    n += 1
+                #for k,v in newvals.items():
+                #    exec(k + '=v')
         
         ## Loop to get all the interfaces in the port_dict
         y = 0
@@ -375,7 +376,7 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
                 'isolationEnable':False,
                 'rstpEnabled':True,
                 'accessPolicyType':'Open'})
-            for key,val in config_pedia['downlink'].items():
+            for key,val in mc_pedia['port'].items():
                 if not val['meraki']['skip'] == True:
                     if val['meraki']['skip'] == 'post-process':
                         exec(val['meraki'].get('post-process'),locals(),newvals)

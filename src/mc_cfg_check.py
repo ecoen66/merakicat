@@ -1,7 +1,7 @@
 from ciscoconfparse2 import CiscoConfParse
 import os,requests,json,pprint,re
 from mc_user_info import *
-from mc_check_pedia import *
+from mc_pedia import *
 
 def CheckFeatures(sw_file):
     """
@@ -20,7 +20,7 @@ def CheckFeatures(sw_file):
     # Here we will go through parsing/reading Cisco Catalyst configuration file and capture specific configuration
     parse =  CiscoConfParse(sw_file, syntax='ios', factory=True)
     
-    for key, val in check_pedia['switch'].items():
+    for key, val in mc_pedia['switch'].items():
         newvals = {}
         if debug:
             print(f"key,val = {key},{val}\n")
@@ -90,7 +90,7 @@ def Interface_detail(interface_value):
     interface_children = interface_value.children
     for child in interface_children:
         #'''
-        for key, val in check_pedia['port'].items():
+        for key, val in mc_pedia['port'].items():
             newvals = {}
             if debug:
                 print(f"key,val = {key},{val}\n")
