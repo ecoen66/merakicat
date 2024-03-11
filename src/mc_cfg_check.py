@@ -33,7 +33,7 @@ def CheckFeatures(sw_file):
                 if not newvals[key] == "":
                     if debug:
                         print(f"newvals[{key}] = {newvals[key]}\n")
-                    if key == "hostname":
+                    if key == "switch_name":
                         host_name = newvals['host_name']
                     hold_me = list()
                     hold_me.extend([val['name'],val['support'],val['translatable']])
@@ -84,8 +84,6 @@ def Interface_detail(interface_value):
         print(f"interface_value = {interface_value}\n")
     
     feature_list_on_interface=list()
-    PAgP=["auto","desirable"]
-    LACP =["active", "passive"]
     #check the configuration of the interfaces
     interface_children = interface_value.children
     for child in interface_children:
@@ -94,35 +92,22 @@ def Interface_detail(interface_value):
             newvals = {}
             if debug:
                 print(f"key,val = {key},{val}\n")
-            
             if not val['regex'] == "":
                 if not child.re_match_typed(regex=val['regex']) == "":
-                    #print(f"val.get('iosxe') = {val.get('iosxe')}")
                     exec(val.get('iosxe'),locals(),newvals)
                     if debug:
                         print(f"newvals[{key}] = {newvals[key]}\n")
                     if not newvals[key] == "":
                         hold_me = list()
                         hold_me.extend([val['name'],val['support'],val['translatable']])
-                        if debug:
-                            print(f"hold_me = {hold_me}")
                         try:
                             hold_me.extend([val['note']])
                         except:
                             hold_me.extend([""])
-                        if debug:
-                            print(f"hold_me = {hold_me}")
                         try:
                             hold_me.extend([val['url']])
                         except:
                             hold_me.extend([""])
-                        if debug:
-                            print(f"hold_me = {hold_me}")
-                        if key == "etherchannel":
-                            if newvals[key] in PAgP:
-                                hold_me[0] = "Etherchannel PAgP"
-                            elif newvals[key] in LACP:
-                                hold_me = ["Etherchannel LACP","✓","","",""]
                         if debug:
                             print(f"hold_me = {hold_me}")
                         feature_list_on_interface.append(hold_me)

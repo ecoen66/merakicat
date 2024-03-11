@@ -28,6 +28,7 @@ from mc_user_info import *
 from mc_cards import *
 
 from tabulate import tabulate
+tabulate.PRESERVE_WHITESPACE = True
 import os, platform, requests, json, pprint, re, sys, time
 
 # Retrieve required Meraki details from environment variables
@@ -411,90 +412,93 @@ def greeting(incoming_msg):
                   response.markdown = "Syntax is **check (host <_fqdn or ip address_> | file <_filespec_>)**"
         
         case "register":
-          # If the only thing the user typed was register...
-          if user_text.lower() == 'register':
-              # Check and see if we have a global stateful host to work with
-              if host_id == "":
-                  # We did not...
-                  response.markdown = "I'm sorry, but I don't have a host that we are working with.  Use the **/check** command."
-              else:
-                  # We did, so translate it!
-                  response.markdown = register_switch(incoming_msg,host=host_id)
-          # Well, did they type more after "register" ?
-          elif user_text.lower().startswith('register'):
-              # Did they type "register file <something>" ?
-              if re.search('host', user_text, re.IGNORECASE):
-                  if not user_text.split("host ",1)[1] == "":
-                      # They did, so register it!
-                      host_id = user_text.split("host ",1)[1]
-                      if not Ping(host_id):
                           response.markdown = "I was unable to ping that host."
-                          return(response)
-                      response.markdown = register_switch(incoming_msg,host=host_id)
-                  else:
-                      # They did not, so BUMP the user.
-                      response.markdown = "I'm sorry, but I don't have a host that we are working with.  Use the **/check** command."
-              else:
-                  response.markdown = "Either enter **register host _fqdn or ip address_**."
+            # If the only thing the user typed was register...
+            if user_text.lower() == 'register':
+                # Check and see if we have a global stateful host to work with
+                if host_id == "":
+                    # We did not...
+                    response.markdown = "I'm sorry, but I don't have a host that we are working with.  Use the **/check** command."
+                else:
+                     # We did, so translate it!
+                    response.markdown = register_switch(incoming_msg,host=host_id)
+            # Well, did they type more after "register" ?
+            elif user_text.lower().startswith('register'):
+                # Did they type "register file <something>" ?
+                if re.search('host', user_text, re.IGNORECASE):
+                    if not user_text.split("host ",1)[1] == "":
+                        # They did, so register it!
+                        host_id = user_text.split("host ",1)[1]
+                        if not Ping(host_id):
+                            response.markdown = "I was unable to ping that host."
+                            return(response)
+                        response.markdown = register_switch(incoming_msg,host=host_id)
+                    else:
+                        # They did not, so BUMP the user.
+                        response.markdown = "I'm sorry, but I don't have a host that we are working with.  Use the **/check** command."
+                else:
+                    response.markdown = "Either enter **register host _fqdn or ip address_**."
         
         case "claim":
-          # If the only thing the user typed was register...
-          if user_text.lower() == 'claim':
-              # Check and see if we have a global stateful list of Meraki serial numbers to work with
-              if len(meraki_serials) == 0 and meraki_net == "":
-                  # We did not...
-                  response.markdown = "I'm sorry, but I don't have a Network a list of Meraki serial numbers that we are working with."
-              else:
-                  if len(meraki_serials) == 0:
-                      # We did not...
-                      response.markdown = "I'm sorry, but I don't have a list of Meraki serial numbers that we are working with."
-                  elif meraki_net == "":
-                      # We did not...
-                      response.markdown = "I'm sorry, but I don't have a Network that we are working with."
-                  else:
-                      # We did, so claim it!
-                      response.markdown = claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials)
-          
-          # Well, did they type more after "claim" ?
-          elif user_text.lower().startswith('claim'):
-              # Did they enter a Meraki network after "to" ?
-              dest_net = meraki_net
-              if re.search('to', user_text, re.IGNORECASE):
-                  regex = re.compile(r"\s*to\s *", flags=re.I)
-                  if not regex.split(user_text)[1] == "":
-                      # They did, so let's grab and test it
-                      dest_net_name = regex.split(user_text)[1]
-                      test_net = [d['id'] for d in meraki_networks if d['name']==dest_net_name]
-                      if not len(test_net) == 0:
-                          dest_net = test_net[0]
-                          meraki_net_name = dest_net_name
-                      else:
-                          response.markdown = "I'm sorry, but {} is not in your list of Meraki networks.".format(dest_net_name)
-              # Set the list of serial numbers to the global stateful list in case
-              # nothing was entered by the user
-              serials = meraki_serials
-              # Did the user enter a list of serial numbers after "Claim" ?
-              maybe_serials, r = Split_check_serials(user_text,"Claim")
-              if debug:
+            # If the only thing the user typed was register...
+            if user_text.lower() == 'claim':
+                # Check and see if we have a global stateful list of Meraki serial numbers to work with
+                if len(meraki_serials) == 0 and meraki_net == "":
+                    # We did not...
+                    response.markdown = "I'm sorry, but I don't have a Network a list of Meraki serial numbers that we are working with."
+                else:
+                    if len(meraki_serials) == 0:
+                        # We did not...
+                        response.markdown = "I'm sorry, but I don't have a list of Meraki serial numbers that we are working with."
+                    elif meraki_net == "":
+                        # We did not...
+                        response.markdown = "I'm sorry, but I don't have a Network that we are working with."
+                    else:
+                        # We did, so claim it!
+                        response.markdown = claim_switch(incoming_msg,dest_net=meraki_net,serials=meraki_serials)
+            
+            # Well, did they type more after "claim" ?
+            elif user_text.lower().startswith('claim'):
+                # Did they enter a Meraki network after "to" ?
+                dest_net = meraki_net
+                if re.search('to', user_text, re.IGNORECASE):
+                    regex = re.compile(r"\s*to\s *", flags=re.I)
+                    if not regex.split(user_text)[1] == "":
+                        # They did, so let's grab and test it
+                        dest_net_name = regex.split(user_text)[1]
+                        test_net = [d['id'] for d in meraki_networks if d['name']==dest_net_name]
+                        if not len(test_net) == 0:
+                            dest_net = test_net[0]
+                            meraki_net_name = dest_net_name
+                        else:
+                            response.markdown = "I'm sorry, but {} is not in your list of Meraki networks.".format(dest_net_name)
+                # Set the list of serial numbers to the global stateful list in case
+                # nothing was entered by the user
+                serials = meraki_serials
+                # Did the user enter a list of serial numbers after "Claim" ?
+                maybe_serials, r = Split_check_serials(user_text,"Claim")
+                if debug:
                   print(f"In case: 'claim': after Split_check_serials, serials = {serials}, maybe_serials = {maybe_serials}, r = {r}")
-              # If we didn't get back some kind of error response, use the returned list
-              if r == "":
+                # If we didn't get back some kind of error response, use the returned list
+                if r == "":
                   serials = maybe_serials
-              # NOW let's see if we have any serial numbers and a Network to work with...
-              if len(serials)==0 and dest_net=="":
-                  # No to both
-                  response.markdown = "Try entering **claim _meraki serial numbers_ to _meraki Network name_**."
-              else:
-                  if len(serials) == 0:
-                      # Just missing serial numbers
-                      response.markdown = "I'm sorry, but I don't have a list of Meraki serial numbers that we are working with."
-                  elif dest_net == "":
-                      # Just missing a network
-                      response.markdown = "I'm sorry, but I don't have a Network that we are working with."
+                  # NOW let's see if we have any serial numbers and a Network to work with...
+                  if len(serials)==0 and dest_net=="":
+                      # No to both
+                      response.markdown = "Try entering **claim _meraki serial numbers_ to _meraki Network name_**."
                   else:
-                      # All good, let's go claim the serial numbers to the network
-                      r = claim_switch(incoming_msg,dest_net=dest_net,serials=serials)
-                      response.markdown = r
+                      if len(serials) == 0:
+                          # Just missing serial numbers
+                          response.markdown = "I'm sorry, but I don't have a list of Meraki serial numbers that we are working with."
+                      elif dest_net == "":
+                          # Just missing a network
+                          response.markdown = "I'm sorry, but I don't have a Network that we are working with."
+                      else:
+                          # All good, let's go claim the serial numbers to the network
+                          r = claim_switch(incoming_msg,dest_net=dest_net,serials=serials)
+                          response.markdown = r
+                else:
+                    response.markdown = r
         
         case "help":
             if BOT:
@@ -609,16 +613,8 @@ def check_switch(incoming_msg,config="",host=""):
     can_list = list()
     not_list = list()
     more = dict()
-    
-    # Create the columns with headers for the report card
-    c1_items = [TextBlock(text="Feature", size=FontSize.SMALL, color=Colors.ACCENT)]
-    c2_items = [TextBlock(text="Available", size=FontSize.SMALL, color=Colors.ACCENT)]
-    c3_items = [TextBlock(text="Translatable", size=FontSize.SMALL, color=Colors.ACCENT)]
-    c4_items = [TextBlock(text="Notes", size=FontSize.SMALL, color=Colors.ACCENT)]
-    
     # Go through the outcome from the read_conf functions and split the supported and
     # unsupported features as well as the additional text and links for the unsupported
-    
     x = 0
     while x < (len(the_list)):
         if not the_list[x][1] == "":
@@ -626,13 +622,19 @@ def check_switch(incoming_msg,config="",host=""):
         else:
             not_list.append(the_list[x])
         x +=1
-    # Build the dynamic report card.
     
     if BOT: 
-    # Add the supported features to the report card.
-    # Highlight the Available(Meraki supported) and Translatable (supported by this Bot)
-    # features with a green ✓, while highlighting unavailable features with a red X.
-    
+        
+        # Create the columns with headers for the report card
+        c1_items = [TextBlock(text="Feature", size=FontSize.SMALL, color=Colors.ACCENT)]
+        c2_items = [TextBlock(text="Available", size=FontSize.SMALL, color=Colors.ACCENT)]
+        c3_items = [TextBlock(text="Translatable", size=FontSize.SMALL, color=Colors.ACCENT)]
+        c4_items = [TextBlock(text="Notes", size=FontSize.SMALL, color=Colors.ACCENT)]
+        
+        # Add the supported features to the report card.
+        # Highlight the Available(Meraki supported) and Translatable (supported by this Bot)
+        # features with a green ✓, while highlighting unavailable features with a red X.
+        
         y = 0
         while y < (len(can_list)-1):
             item4 = " " if can_list[y][3] == "" else can_list[y][3]
@@ -690,12 +692,62 @@ def check_switch(incoming_msg,config="",host=""):
         # Log a copy of the report card to the terminal    
         if debug:
             print(c)
+        
         return ('''**Please review the results above.**
 If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type **translate** and a Meraki switch serial number.
 If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type **migrate [to _meraki network_]**.
 ''')
+        '''
+        tabulate.PRESERVE_WHITESPACE = True
+        x = 0
+        not_notes = list()
+        while x < (len(the_list)):
+            if not the_list[x][1] == "":
+                can_list.append([the_list[x][0],the_list[x][1],the_list[x][2]])
+            else:
+                not_list.append([the_list[x][0]," "," "])
+                not_notes.append([the_list[x][3],the_list[x][4]])
+                print(f"not_list = {not_list}")
+            x +=1
+        # Build the dynamic report card.
+        all_list = list(list())
+        all_list.extend(can_list)
+        all_list.extend(not_list)
+        if debug:
+            print(f"all_list = {all_list}")
+        report=tabulate(all_list,headers=["Feature","Available","Translatable"],tablefmt="github")
+        print(f"report = {report}")
+        report_lines = report.splitlines()
+        print(f"report_lines = {report_lines}")
+        x = 0
+        while x < len(report_lines):
+            report_lines[x] = "```\n" + re.sub('[|]',"",report_lines[x])
+            print(report_lines[x])
+            x+=1
+        bad_start = len(can_list) + 2
+        x = 0
+        while x < len(not_list):
+            hotlink = '    ['+not_notes[x][0]+']('+not_notes[x][1]+')'
+            report_lines[bad_start + x]+=hotlink
+            x+=1
+        new_report = '\n'.join(report_lines) + "\n"
+        print(new_report)
+        '''
+        #return(new_report + "\n" + '''\n\n**Please review the results above.**
+        #If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type **translate** and a Meraki switch serial number.
+        #If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type **migrate [to _meraki network_]**.
+        #''')
+    
     # Not a BOT
     else:
+        x = 0
+        while x < (len(the_list)):
+            if not the_list[x][1] == "":
+                can_list.append(the_list[x])
+            else:
+                not_list.append(the_list[x])
+            x +=1
+        # Build the dynamic report card.
         all_list = list(list())
         all_list.extend(can_list)
         all_list.extend(not_list)
@@ -962,7 +1014,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     ##
     blurb = "Evaluated the switch config."
     blurb += "\n--- That took %s seconds" % str(round((time.time() - start_time), 2))
-    blurb += "\n\nPushing the translated items to the Dashboard in a large batch   .  This will take a while, but I'll message you when I'm done..."
+    blurb += "\n\nPushing the translated items to the Dashboard in a large batch.\nThis will take a while, but I'll message you when I'm done..."
     if BOT:
         c = create_message(incoming_msg.roomId, blurb)
     else:
@@ -970,7 +1022,7 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     
     port_cfg_start_time = time.time()
     
-    configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_org,meraki_serials,ToBeConfigured,Downlink_list,switch_dict)
+    configured_ports,unconfigured_ports,meraki_urls = Meraki_config_down(dashboard,meraki_org,meraki_serials,ToBeConfigured,Downlink_list,Other_list,switch_dict)
         
     if debug:
         print(f"configured_ports = {configured_ports}")
@@ -984,14 +1036,22 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         ToBeConfigured[interface] = port_dict[interface]
         z +=1
     
+    ## Creating a list of the uplink port configurations to push to Meraki
+    ChannelsToBeConfigured = {}
+    z = 0
+    while z < len(Other_list):
+        interface = Other_list[z]
+        ChannelsToBeConfigured[interface] = port_dict[interface]
+        z +=1
+    
     ##
     ## Start the meraki uplink config migration after confirmation from the user
     ##
     if BOT:
-        c = create_message(incoming_msg.roomId, "Pushing the translated uplinks to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
+        c = create_message(incoming_msg.roomId, "Pushing the translated uplinks and Port-channels to the Dashboard, port by port.  This will take a while, but I'll message you when I'm done...")
     else:
-        print("Pushing the translated uplinks to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
-    configured_up_ports,unconfigured_up_ports = Meraki_config_up(dashboard,meraki_serials,ToBeConfigured,Uplink_list,nm_list)
+        print("Pushing the translated uplinks and Port-channels to the Dashboard, port by port.  This will take a while, but I'll let you know when I'm done...")
+    configured_up_ports,unconfigured_up_ports,configured_channels,unconfigured_channels = Meraki_config_up(dashboard,meraki_serials,ToBeConfigured,Uplink_list,nm_list,ChannelsToBeConfigured,Other_list)
     
     if debug:
         print(f"configured_up_ports = {configured_up_ports}")

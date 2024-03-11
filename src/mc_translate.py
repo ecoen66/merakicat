@@ -67,7 +67,7 @@ def Evaluate(config_file):
             y.re_match_typed('^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("Loopback") or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
-            y.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
+            #y.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("AppGig"))]
         ## Test the remaining interfaces for shutdown and add to shut list
         for intf_obj in intf_for_test:
@@ -83,7 +83,7 @@ def Evaluate(config_file):
             x.re_match_typed('^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("Loopback") or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
-            x.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
+            #x.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("AppGig"))]
         
 ##        print(f"These are the shut interfaces: {shut_interfaces}")
@@ -91,11 +91,15 @@ def Evaluate(config_file):
         for intf_obj in intf:
             ## Get the interface name
             intf_name = intf_obj.re_match_typed('^interface\s+(\S.*)$')
+            
             #Only interface name will be used to catogrize different types of interfaces (downlink and uplink)
             only_intf_name = re.sub("\d+|\\/","",intf_name)
-            Switch_module = intf_obj.re_match_typed('^interface\s\S+?thernet+(\d)')
-            if Switch_module == "":
-                Switch_module = intf_obj.re_match_typed('^interface\s\S+?GigE+(\d)')
+            if only_intf_name == "Port-channel":
+                Switch_module = 0
+            else:
+                Switch_module = intf_obj.re_match_typed('^interface\s\S+?thernet+(\d)')
+                if Switch_module == "":
+                    Switch_module = intf_obj.re_match_typed('^interface\s\S+?GigE+(\d)')
             
             All_interfaces[only_intf_name].append(intf_name)
             
@@ -142,7 +146,7 @@ def Evaluate(config_file):
                 print(f"Children are: {int_fx}")
             
             ## Capture the configuration of the interface
-            port_sec_raw = port_channel = max_mac = ""
+            port_sec_raw = max_mac = ""
             for child in int_fx:
                 ### Try out our mc_pedia
                 if debug:
@@ -153,28 +157,28 @@ def Evaluate(config_file):
                         print(f"key,val = {key},{val}")
                     if not val['regex'] == "":
                         if not child.re_match_typed(regex=val['regex']) == "":
-                            #print(f"val.get('iosxe') = {val.get('iosxe')}")
-                            exec(val.get('iosxe'),locals(),newvals)
-                            if debug:
-                                print(f"newvals[{key}] = {newvals[key]}")
-                            if not newvals[key] == "":
-                                port_dict[intf_name][key] = newvals[key]
+                            if not val['iosxe'] == "":
+                                exec(val.get('iosxe'),locals(),newvals)
+                                if debug:
+                                    print(f"newvals[{key}] = {newvals[key]}")
+                                if not newvals[key] == "":
+                                    port_dict[intf_name][key] = newvals[key]
                 try:
                     port_sec_raw = child.re_match_typed(regex=r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)')
                 except:
                     pass
-                try:
-                    port_channel = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
-                except:
-                    pass
+                #try:
+                #    port_channel = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
+                #except:
+                #    pass
                 try:
                     max_mac = child.re_match_typed(regex=r'\sswitchport\sport-security\smaximum\s+(\d)')
                 except:
                     pass
                 if not port_sec_raw == "":
                     port_dict[intf_name]['mac'].append(mac_build(port_sec_raw))
-                if not port_channel == "":
-                    port_dict[intf_name]['LACP_Group'] = port_channel
+                #if not port_channel == "":
+                #    port_dict[intf_name]['LACP_Group'] = port_channel
                 if not max_mac == "":
                     port_dict[intf_name]['Port_Sec'] = max_mac
         
@@ -204,19 +208,19 @@ def Evaluate(config_file):
         if debug:
             print(f"interfaces_list = {interfaces_list}\n")
         for key, value in interfaces_list.items():
-        #HundredGigabitEthernet ports stright away considered as uplinks
+        #HundredGigabitEthernet ports always considered as uplinks
             if key == "HundredGigabitEthernet":
                 for value in interfaces_list_copy["HundredGigabitEthernet"]:
                     Uplink_list.append(value)
-        #FortyGigbitEthernet ports stright away considered as uplinks
+        #FortyGigbitEthernet ports always considered as uplinks
             if key == "FortyGigabitEthernet":
                 for value in interfaces_list_copy["FortyGigabitEthernet"]:
                     Uplink_list.append(value)
-        #TwentyFiveGigbitEthernet ports stright away considered as uplinks
+        #TwentyFiveGigbitEthernet ports always considered as uplinks
             if key == "TwentyFiveGigE":
                 for value in interfaces_list_copy["TwentyFiveGigE"]:
                     Uplink_list.append(value)
-        #TengigbitEthernet ports stright away considered as uplinks
+        #TengigbitEthernet ports always considered as uplinks
             if key == "TenGigabitEthernet":
                 for value in interfaces_list_copy["TenGigabitEthernet"]:
                     Uplink_list.append(value)
@@ -278,21 +282,29 @@ def Evaluate(config_file):
         if debug:
             print(f"Checking interface {intf}.")
        # intf_rgx = re.compile(r'^interface GigabitEthernet(\d+)\/(\d+)\/(\d+)$')
-        obj = re.search(r'(?:Ethernet|GigE)(\d+)\/(\d+)\/(\d+)$',intf)
-        if debug:
-            print(f"obj.group(0) = {obj.group(0)}")
-            print(f"obj.group(1) = {obj.group(1)}")
-            print(f"obj.group(2) = {obj.group(2)}")
-            print(f"obj.group(3) = {obj.group(3)}")
-        port = obj.group(3)
-        Sub_module = obj.group(2)
+        obj = re.search(r'(?:Ethernet|GigE|channel)(\d+)\/(\d+)\/(\d+)$',intf)
+        if not obj == None:
+            if debug:
+                print(f"obj.group(0) = {obj.group(0)}")
+                print(f"obj.group(1) = {obj.group(1)}")
+                print(f"obj.group(2) = {obj.group(2)}")
+                print(f"obj.group(3) = {obj.group(3)}")
+            port = obj.group(3)
+            Sub_module = obj.group(2)
+        else:
+            obj = re.search(r'(?:channel)(\d+)$',intf)
+            if debug:
+                print(f"obj.group(0) = {obj.group(0)}")
+                print(f"obj.group(1) = {obj.group(1)}")
+            port = obj.group(1)
+            Sub_module = 0
         return port,Sub_module
     
     Uplink_list, Downlink_list, Other_list, port_dict, switch_name  = read_Cisco_SW()
     return Uplink_list, Downlink_list, Other_list, port_dict, switch_dict
 
 
-def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list,switch_dict):
+def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list,Other_list,switch_dict):
     """
     This parent function will convert Catalyst switch config features to Meraki features
     and send them to Dashboard to program Meraki switches.
@@ -312,11 +324,17 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
     action_list = list()
     all_actions = list()
     returns_dict = {}
+    post_post_list = list()
     # create good and bad port lists 
     configured_ports = defaultdict(list)
     unconfigured_ports = defaultdict(list)
-
-
+    
+    if debug:
+        print(f"Other_list = {Other_list}")
+        for port in Other_list:
+            if port in port_dict.keys():
+                print(f"port_dict['{port}'] = {port_dict[port]}")
+    
     # create a place to hold all of the arguments to send to Dashboard
     # to update a switch port
     args = list(dict())
@@ -337,9 +355,9 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
         if debug:
             print(f"switch_dict = {switch_dict}")
         for key,val in mc_pedia['switch'].items():
-            if val['translatable'] == "✓" and val['meraki']['skip'] == "post-process":
+            if val['translatable'] == "✓" and val['meraki']['skip'] == "post_process":
                 newvals = {}
-                exec(val['meraki'].get('post-process'),locals(),newvals)
+                exec(val['meraki'].get('post_process'),locals(),newvals)
                 if debug:
                     print(f"newvals = {newvals}")
                 return_vals = newvals['return_vals']
@@ -355,84 +373,101 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
         ## Loop to get all the interfaces in the port_dict
         y = 0
         while y <= len(Downlink_list)-1:
-            x = Downlink_list[y]
-            m = port_dict[x]
+            interface_descriptor = Downlink_list[y]
+            interface_settings = port_dict[interface_descriptor]
             if debug:
-                print("\n----------- "+x+" -----------")
-                pprint.pprint(m)
+                print("\n----------- "+interface_descriptor+" -----------")
+                pprint.pprint(interface_settings)
             
             ## Check the switch that mapped to those catalyst ports
             try:
-                sw = int(m['sw_module'])
+                switch_num = int(interface_settings['sw_module'])
             except:
-                sw = 1
-            if not sw == 0:
-                sw -=1
+                switch_num = 1
+            if not switch_num == 0:
+                switch_num -=1
             
-            args.append([sw_list[sw],m['port'],{}])
+            args.append([sw_list[switch_num],interface_settings['port'],{}])
             args[y][2].update({'enabled':True,
                 'tags':[],
                 'poeEnabled':True,
                 'isolationEnable':False,
                 'rstpEnabled':True,
                 'accessPolicyType':'Open'})
+            newvals = {}
             for key,val in mc_pedia['port'].items():
+                newvals = {}
                 if not val['meraki']['skip'] == True:
-                    if val['meraki']['skip'] == 'post-process':
-                        exec(val['meraki'].get('post-process'),locals(),newvals)
+                    if val['meraki']['skip'] in ['post_process','post_post']:
+                        exec(val['meraki'].get('post_process'),locals(),newvals)
                         if debug:
-                            print(f"newvals[{key}] = {newvals[key]}")
-                        if not newvals[key] == "":
-                            m[key] = newvals[key]
+                            print(f"newvals = {newvals}")
+                        if val['meraki']['skip'] == 'post_process':
+                            if not newvals[key] == "":
+                                interface_settings[key] = newvals[key]
                     try:
-                        args[y][2].update({key: m[key]})
+                        args[y][2].update({key: interface_settings[key]})
                     except:
-                        m[key] = val['meraki']['default']
-                        args[y][2].update({key: m[key]})
+                        if "default" in val['meraki']:
+                            interface_settings[key] = val['meraki']['default']
+                            args[y][2].update({key: interface_settings[key]})
+                    if "return_vals" in newvals:
+                        return_vals = newvals['return_vals']
+                        if debug:
+                            print(f"newvals['return_vals'] = {newvals['return_vals']}")
+                        n = 0
+                        while n < len(return_vals):
+                            if debug:
+                                print(f"return_vals[{n}] = {return_vals[n]}")
+                                print(f"post_post_list = {post_post_list}")
+                            post_post_list.append([return_vals[n],newvals[return_vals[n]]])
+                            if debug:
+                                print(f"post_post_list = {post_post_list}")
+                            n += 1
             try:
-                args[y][2].update({'enabled':False if m["active"] == "false" else True})
+                args[y][2].update({'enabled':False if interface_settings["active"] == "false" else True})
             except:
                 pass            
             ## Check if the interface mode is configured as Access
-            if m['type'] == "access":
+            if interface_settings['type'] == "access":
                 try:
-                    if not m['mac'] == []:
+                    if not interface_settings['mac'] == []:
                         pass
                 except:
                     pass
                 try:
-                    if not m['Port_Sec'] == "":
-                        mac_limit = m['Port_Sec']
+                    if not interface_settings['Port_Sec'] == "":
+                        mac_limit = interface_settings['Port_Sec']
                 except:
-                    m['Port_Sec'] = ""
-                if not m['Port_Sec'] == "":
+                    interface_settings['Port_Sec'] = ""
+                if not interface_settings['Port_Sec'] == "":
                     args[y][2].update({'accessPolicyType':'Sticky MAC allow list',
-                        'stickyMacAllowList':json.dumps(m['mac']),
+                        'stickyMacAllowList':json.dumps(interface_settings['mac']),
                         'stickyMacAllowListLimit':mac_limit})
             
             ## Append the port update call to Dashboard to the batch list
             if debug:
                 print(f"Number of sub lists in action_list is {len(action_list)}")
                 try:
-                    print(f"Number of batch actions in action_list[{sw}] is {len(action_list[sw])}")
+                    print(f"Number of batch actions in action_list[{switch_num}] is {len(action_list[switch_num])}")
                 except:
                     pass
-                print(f"About to append action for port {m['port']}")
+                print(f"About to append action for port {interface_settings['port']}")
             
-            if not len(action_list) == sw+1:
+            if not len(action_list) == switch_num+1:
                 # We are on to the next switch, so I want a new sublist
                 action_list.append([])
             # Add this action to the action_list sublist for the switch
             try:
-                action_list[sw].append(dashboard.batch.switch.updateDeviceSwitchPort(
+                action_list[switch_num].append(dashboard.batch.switch.updateDeviceSwitchPort(
                 args[y][0],
                 args[y][1],
                 **args[y][2]
                 ))
             except:
-                unconfigured_ports[sw].append(m['port'])
-            if not m['port'] in unconfigured_ports[sw]:
-                configured_ports[sw].append(m['port'])
+                unconfigured_ports[switch_num].append(interface_settings['port'])
+            if not interface_settings['port'] in unconfigured_ports[switch_num]:
+                configured_ports[switch_num].append(interface_settings['port'])
             y +=1
     
     loop_configure_meraki(port_dict,Downlink_list,switch_dict)
@@ -464,10 +499,23 @@ def Meraki_config_down(dashboard,organization_id,sw_list,port_dict,Downlink_list
     failed_batch_ids = [batch['id'] for batch in new_batches_statuses if batch['status']['failed']]
     if debug:
         print(f'Failed batch IDs are as follows: {failed_batch_ids}')
+        
+    ## post_post
+    if debug:
+        print(f"Length of post_post_list = {len(post_post_list)}")
+        print(f"post_post_list = {post_post_list}")
+    if not len(post_post_list) == 0:
+        short_list = list(set(map(lambda x: x[0], post_post_list)))
+        if debug:
+            print(f"short_list = {short_list}")
+        for item in short_list:
+            if debug:
+                print(f"item = {item}")
+            exec(mc_pedia['port'][item]['meraki'].get('post_post_process'),locals())
 
     return configured_ports,unconfigured_ports,returns_dict['urls']
 '''
-def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
+def Meraki_config_up(dashboard,organization_id,sw_list,ToBeConfigured,Uplink_list,nm_list,ChannelsToBeConfigured,Other_list):
     """
     This parent function will convert Catalyst switch uplink port config features to
     Meraki features and send them to Dashboard to program Meraki switches.
@@ -477,13 +525,17 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
     :param port_dict: The dictionary of IOSXE ports and features from the Evaluate function
     :param Uplink_list: The list of ports to configure
     :param nm_list: The list of nm_modules installed per switch
-    :return: Lists of configured and unconfigured ports
+    :param channel_dict: The dictionary of IOSXE port-channels and features from the Evaluate function
+    :param Channels_list: The list of port-channels to configure
+    :return: Lists of configured and unconfigured ports & channels
     """
     
     debug = DEBUG or DEBUG_TRANSLATOR
     
     configured_ports = defaultdict(list)
     unconfigured_ports = defaultdict(list)
+    configured_channels = defaultdict(list)
+    unconfigured_channels = defaultdict(list)
     
     ## Grab the switch port list from dashboard
     try:
@@ -506,36 +558,36 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                 pprint.pprint(m)
             
             ## Check if the interface mode is configured as Access
-            if m['mode'] == "access":
+            if interface_settings['mode'] == "access":
                 try:
                     Voice_vlan = 0
-                    if not m['voice_Vlan'] == "":
-                        Voice_vlan = int(m['voice_Vlan'])
+                    if not interface_settings['voice_Vlan'] == "":
+                        Voice_vlan = int(interface_settings['voice_Vlan'])
                 except:
                     pass
                 try:
-                    if not m['desc'] == "":
-                        description = m["desc"]
+                    if not interface_settings['desc'] == "":
+                        description = interface_settings["desc"]
                 except:
-                    m["desc"] = ""
+                    interface_settings["desc"] = ""
                 try:
-                    if not m['mac'] == []:
+                    if not interface_settings['mac'] == []:
                         pass
                 except:
                     pass
                 try:
-                    if not m['data_Vlan'] == "":
-                        data_vlan = int(m['data_Vlan'])
+                    if not interface_settings['data_Vlan'] == "":
+                        data_vlan = int(interface_settings['data_Vlan'])
                 except:
                     data_vlan = 1
                 try:
-                    if not m['Port_Sec'] == "":
-                        mac_limit = m['Port_Sec']
+                    if not interface_settings['Port_Sec'] == "":
+                        mac_limit = interface_settings['Port_Sec']
                 except:
-                    m['Port_Sec'] = ""
+                    interface_settings['Port_Sec'] = ""
             
             ## Check the switch that mapped to those catalyst ports
-                sw = int(m['sw_module'])
+                sw = int(interface_settings['sw_module'])
                 if not sw == 0:
                     sw -=1
                 if debug:
@@ -543,7 +595,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                 nm_model = nm_list[sw]
                 if debug:
                     print("Switch NM module model is "+nm_model)
-                nm_port = "1_" + nm_model + "_" + m['port']
+                nm_port = "1_" + nm_model + "_" + interface_settings['port']
                 ## Find the list of portIds for the NM module
                 #
                 #
@@ -555,8 +607,8 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                 
             ## Test if the interface has Port security configured or not then apply the right Meraki configuration
                 if debug:
-                    print(f"Port_Sec = {m['Port_Sec']}")
-                if m['Port_Sec'] == "":
+                    print(f"Port_Sec = {interface_settings['Port_Sec']}")
+                if interface_settings['Port_Sec'] == "":
                     if debug:
                         print(f"sw = {sw}")
                         print(f"sw_list[sw] = {sw_list[sw]}")
@@ -614,7 +666,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                         print(f"name = {description}")
                         print(f"type = access")
                         print(f"vlan = {data_vlan}")
-                        print(f"stickyMacAllowList = {json.dumps(m['mac'])}"),
+                        print(f"stickyMacAllowList = {json.dumps(interface_settings['mac'])}"),
                         print(f"stickyMacAllowListLimit = {mac_limit}"),
                         print(f"tags = []")
                         print(f"poeEnabled = True")
@@ -631,7 +683,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                             enabled=True,
                             type='access',
                             vlan=data_vlan,
-                            stickyMacAllowList=json.dumps(m['mac']),
+                            stickyMacAllowList=json.dumps(interface_settings['mac']),
                             stickyMacAllowListLimit=mac_limit,
                             tags=[],
                             poeEnabled=True,
@@ -663,30 +715,30 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
             else:
                 description = ""
                 try:
-                    if not m['desc'] == "":
-                        description = m["desc"]
+                    if not interface_settings['desc'] == "":
+                        description = interface_settings["desc"]
                 except:
-                    m["desc"] = ""
-                    description = m["desc"]
+                    interface_settings["desc"] = ""
+                    description = interface_settings["desc"]
                 try:
-                    if not m['native'] == "":
-                        native_vlan = int(m['native'])
+                    if not interface_settings['native'] == "":
+                        native_vlan = int(interface_settings['native'])
                     else:
                         native_vlan = 1
                 except:
                     native_vlan = 1
-                    m['native'] = "1"
+                    interface_settings['native'] = "1"
                 try:
-                    if not m['trunk_allowed'] == "":
-                        trunk_allow = m['trunk_allowed']
+                    if not interface_settings['trunk_allowed'] == "":
+                        trunk_allow = interface_settings['trunk_allowed']
                     else:
                         trunk_allow = "1-1000"
                 except:
-                    m['trunk_allowed'] = "1-1000"
+                    interface_settings['trunk_allowed'] = "1-1000"
                     trunk_allow = "1-1000"
             
             ## Check the switch that mapped to those catalyst ports
-                sw = int(m['sw_module'])
+                sw = int(interface_settings['sw_module'])
                 if not sw == 0:
                     sw -=1
                 if debug:
@@ -727,7 +779,7 @@ def Meraki_config_up(dashboard,sw_list,port_dict,Uplink_list,nm_list):
                 except:
                     unconfigured_ports[sw].append(nm_port)
                     print("Error in configuring Trunk port "+nm_port)
-            if m["active"] == "false":
+            if interface_settings["active"] == "false":
                 try:
                     response = dashboard.switch.updateDeviceSwitchPort(
                         sw_list[sw],

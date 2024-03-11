@@ -46,17 +46,17 @@ The OPTIONAL 'url' value provides a link to documentation for additional informa
 this unsupported element -- also for reporting.
 
 The 'meraki' value is a sub-dictionary that contains up to 3 entries:
-'skip', 'default' and OPTIONALLY 'post-process'.
+'skip', 'default' and OPTIONALLY 'post_process'.
 
 The 'skip' value indicates whether or not to add this element to the meraki config,
-or to do some post-processing for the meraki config.
+or to do some post_processing for the meraki config.
     Examples include 'speed' & 'duplex', which have no direct
     relation to meraki config elements.
 
 The 'default' value indicates the value to set for this port if there was no match
 in the IOSXE config for the port.
 
-The OPTIONAL 'post-process' value is the python code (as a string) to execute to
+The OPTIONAL 'post_process' value is the python code (as a string) to execute to
 provide a generated value for the element in the meraki config loop.
     An example would be 'linkNegotiation' which must be
     determined based on a combination of 'speed' & 'duplex'.
@@ -87,9 +87,9 @@ if debug:\n\
     print(f'switch_name = {switch_name}')\n",
             
             'meraki': {
-                'skip': 'post-process',
+                'skip': 'post_process',
                 'default': 'Auto negotiate',
-                'post-process': "\
+                'post_process': "\
 \
 urls = list()\n\
 blurb = 'This was a conversion from a Catalyst IOSXE config.'\n\
@@ -136,7 +136,7 @@ else:\n\
             print(f'error = {e.message}')\n\
         if not e.message['errors'][0] == 'Cannot stack switches that are already part of a switch stack':\n\
             print(f'Cannot create switch stack {switch_name} with {sw_list}.')\n\
-return_vals = ['urls']\n\
+return_vals = ['urls','networkId']\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n"
             }
@@ -721,19 +721,19 @@ if len(stack) == 1:\n\
             'iosxe': "",
             'regex': '',
             'meraki': {
-                'skip': 'post-process',
+                'skip': 'post_process',
                 'default': 'Auto negotiate',
-                'post-process': "\
+                'post_process': "\
 \
 linkNegotiation = ''\n\
 try:\n\
-    speed = int(m['speed'])\n\
+    speed = int(interface_settings['speed'])\n\
     if speed < 1000:\n\
         linkNegotiation += str(speed)+' Megabit '\n\
     else:\n\
         linkNegotiation += str(int(speed/1000))+' Gigabit '\n\
     try:\n\
-        duplex = m['duplex']\n\
+        duplex = interface_settings['duplex']\n\
         match duplex:\n\
             case 'half':\n\
                 linkNegotiation += 'half duplex (forced)'\n\
@@ -872,22 +872,22 @@ except:\n\
             'iosxe': "",
             'regex': '',
             'meraki': {
-                'skip': 'post-process',
-                'post-process': "\
+                'skip': 'post_process',
+                'post_process': "\
 \
 stpGuard = 'disabled'\n\
 try:\n\
-    if m['root_guard'] == 'yes':\n\
+    if interface_settings['root_guard'] == 'yes':\n\
         stpGuard = 'root guard'\n\
 except:\n\
     pass\n\
 try:\n\
-    if m['loop_guard'] == 'yes':\n\
+    if interface_settings['loop_guard'] == 'yes':\n\
         stpGuard = 'loop guard'\n\
 except:\n\
     pass\n\
 try:\n\
-    if m['bpdu_guard'] == 'yes':\n\
+    if interface_settings['bpdu_guard'] == 'yes':\n\
         stpGuard = 'bpdu guard'\n\
 except:\n\
     pass\n\
@@ -1047,7 +1047,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
-
+        
         'directed_broadcast': {
             'name': "IP Directed Broadcast",
             'support':"",
@@ -1057,19 +1057,106 @@ if debug:\n\
                 'skip': True
             },
             'iosxe': "directed_broadcast = child.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')\n"
-            },
+        },
         
-        'etherchannel': {
-            'name': "Etherchannel",
+        'etherchannel_cisco': {
+            'name': "Etherchannel Classic",
             'support':"",
             'translatable':"",
-            'regex': r'^\schannel-group\s\d\smode\s+(\S.+)',
+            'regex': r'^\schannel-group\s\d+\smode\s(on)',
             'meraki': {
                 'skip': True
             },
-            'iosxe': "etherchannel = child.re_match_typed('^\schannel-group\s\d\smode\s+(\S.+)')\n",
+            'iosxe': "etherchannel_cisco = 'on'\n",
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Link_Aggregation_and_Load_Balancing",
             'note':"Only LACP is supported"
+        },
+        
+        'etherchannel_pagp': {
+            'name': "Etherchannel PAgP",
+            'support':"",
+            'translatable':"",
+            'regex': r'^\schannel-group\s\d+\smode\s(auto|desirable)',
+            'meraki': {
+                'skip': True
+            },
+            'iosxe': "etherchannel_pagp = child.re_match_typed('^\schannel-group\s\d+\smode\s(auto|desirable)')\n",
+            'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Link_Aggregation_and_Load_Balancing",
+            'note':"Only LACP is supported"
+        },
+        
+        'etherchannel_lacp': {
+            'name': "Etherchannel LACP",
+            'support':"✓",
+            'translatable':"✓",
+            'regex': r'^\schannel-group\s\d+\smode\s(active|passive)',
+            'meraki': {
+                'skip': True
+            },
+            'iosxe': "etherchannel_lacp = child.re_match_typed('^\schannel-group\s(\d+)')\n"
+        },
+        
+        'etherchannel': {
+            'iosxe': "",
+            'regex': '',
+            'meraki': {
+                'skip': 'post_post',
+                'post_process': "\
+if 'etherchannel_lacp' in interface_settings:\n\
+    if debug:\n\
+        print('etherchannel_lacp = ' + interface_settings['etherchannel_lacp'])\n\
+    group = interface_settings['etherchannel_lacp']\n\
+    serial = sw_list[switch_num]\n\
+    portId = interface_settings['port']\n\
+    if debug:\n\
+        print('group = ' + group + ', serial = ' + serial + ', portId = ' + portId)\n\
+    etherchannel = {'group': group, 'switch_num': switch_num, 'interface_descriptor': interface_descriptor, 'serial': serial, 'portId': portId}\n\
+    if debug:\n\
+        print(etherchannel)\n\
+    return_vals = ['etherchannel']\n\
+    if debug:\n\
+        print(return_vals)\n",
+            'post_post_process': "\
+if debug:\n\
+    print(f'In post_post_process, post_post_list = {post_post_list}')\n\
+    print(f'Length of post_post_list is {len(post_post_list)}')\n\
+# Get a list of array positions where 'etherchannel' appears in our post_post_list \n\
+channel_positions = [i for i in range(len(post_post_list)) if post_post_list[i][0] == 'etherchannel']\n\
+if debug:\n\
+    print(f'channel_positions = {channel_positions}')\n\
+# Create a dictionary of lists to hold the data needed to create each etherchannel \n\
+channel_dict = dict(list())\n\
+x = 0\n\
+# Loop through the relevant positions in the post_post_list, and append the required data \n\
+# to the dictionary of lists that holds the data for each etherchannel \n\
+while x < len(channel_positions):\n\
+    group = post_post_list[channel_positions[x]][1]['group']\n\
+    # We need to remove 'group' from the dictionary of values now before adding the \n\
+    # other dictionary entries to the list that Dashboard will process for this \n\
+    # etherchannel group \n\
+    post_post_list[channel_positions[x]][1].pop('group')\n\
+    post_post_list[channel_positions[x]][1].pop('switch_num')\n\
+    post_post_list[channel_positions[x]][1].pop('interface_descriptor')\n\
+    if debug:\n\
+        print(f'group = {group}')\n\
+    if group not in channel_dict.keys():\n\
+        channel_dict[group] = []\n\
+    # Append the 'serial' and 'port' key, value pairs to the switchPorts list for this \n\
+    # etherchannel group \n\
+    channel_dict[group].extend([post_post_list[channel_positions[x]][1]])\n\
+    if debug:\n\
+        print(f'In loop x = {x}, channel_dict = {channel_dict}')\n\
+    x+=1\n\
+if debug:\n\
+    print(f'channel_dict = {channel_dict}')\n\
+for key in channel_dict:\n\
+    if debug:\n\
+        print(f'key = {key}, channel_dict[{key}] = {channel_dict[key]}')\n\
+        print(f'switchPorts = {channel_dict[key]}')\n\
+    r = dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key])\n\
+    if debug:\n\
+        print(f'Dashboard response was {r}')\n"
+            }
         }
     }
 }

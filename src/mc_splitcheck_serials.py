@@ -1,4 +1,5 @@
 import re
+from collections import Counter
 from mc_user_info import *
 
 
@@ -43,4 +44,7 @@ def Split_check_serials(user_text,search_type):
         if not len(serials[x]) == 14:
             return([],"I'm sorry, but {} is not a list of Meraki serial numbers delimited by commas, spaces or semicolons.".format(maybe_serials))
         x+=1
+    duplicated_serials = [k for k, v in Counter(serials).items() if v > 1]
+    if not len(duplicated_serials) == 0:
+        return([],"I'm sorry, but {} cannot be repeated in the list of Meraki serial numbers.".format(', '.join(duplicated_serials)))
     return(serials,"")
