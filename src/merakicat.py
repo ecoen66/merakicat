@@ -412,7 +412,6 @@ def greeting(incoming_msg):
                   response.markdown = "Syntax is **check (host <_fqdn or ip address_> | file <_filespec_>)**"
         
         case "register":
-                          response.markdown = "I was unable to ping that host."
             # If the only thing the user typed was register...
             if user_text.lower() == 'register':
                 # Check and see if we have a global stateful host to work with
