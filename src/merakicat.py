@@ -708,7 +708,7 @@ def check_switch(incoming_msg,config="",host=""):
         timing = ""
         if times == True:
             timing =  "\n=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
-        fname = check_report_writer(switch_name,an_list_doc,not_list_doc)
+        fname = check_report_writer(switch_name,can_list_doc,not_list_doc)
         return(report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
 
 
