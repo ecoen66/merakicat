@@ -1,9 +1,14 @@
 # History
 
+## 0.0.11 (03-12-2024)
+
+  - New reporting in checker.
+  - Port-channel LACP is working and fast.
+  - Still not yet released on PyPI.
+  
 ## 0.0.10 (03-08-2024)
 
   - Using a single mc_pedia.
-  - Still not yet released on PyPI.
   
 ## 0.0.9 (03-07-2024)
 

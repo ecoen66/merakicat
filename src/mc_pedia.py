@@ -676,8 +676,6 @@ if len(stack) == 1:\n\
             'name': "Port Description",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sdescription\s+(\S.+)',
             'meraki': {
                 'skip': False,
@@ -686,12 +684,24 @@ if len(stack) == 1:\n\
             'iosxe': "name = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')\n"
         },
         
+        'active': {
+            'name': "Port Status",
+            'support':"✓",
+            'translatable':"✓",
+            'regex': r'\s(shutdown)',
+            'meraki': {
+                'skip': False,
+                'default': 'true'
+            },
+            'iosxe': "\
+shut = child.re_match_typed(regex=r'\s(shutdown)')\n\
+active = 'true' if shut == '' else 'false'\n"
+        },
+        
         'speed': {
             'name': "Port Speed",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sspeed\s+(\S.*)',
             'meraki': {
                 'skip': True,
@@ -704,8 +714,6 @@ if len(stack) == 1:\n\
             'name': "Port Duplex",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sduplex\s+(\S.+)',
             'meraki': {
                 'skip': True,
@@ -716,8 +724,6 @@ if len(stack) == 1:\n\
         },
         
         'linkNegotiation': {
-            'uplink':"✓",
-            'downlink':"✓",
             'iosxe': "",
             'regex': '',
             'meraki': {
@@ -750,8 +756,6 @@ except:\n\
             'name': "Port Type",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sswitchport\smode\s+(\S.+)',
             'meraki': {
                 'skip': False,
@@ -765,7 +769,6 @@ except:\n\
             'support':"✓",
             'translatable':"✓",
             'uplink':"",
-            'downlink':"✓",
             'regex': r'\spower\sinline\s+(\S.+)',
             'meraki': {
                 'skip': False,
@@ -778,8 +781,6 @@ except:\n\
             'name': "Allowed VLANs",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)',
             'meraki': {
                 'skip': False,
@@ -792,8 +793,6 @@ except:\n\
             'name': "Native VLAN",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sswitchport\strunk\snative\svlan\s+(\S.*)',
             'meraki': {
                 'skip': False,
@@ -806,8 +805,6 @@ except:\n\
             'name': "Data VLAN",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sswitchport\svlan\s+(\S.*)',
             'meraki': {
                 'skip': False,
@@ -820,8 +817,6 @@ except:\n\
             'name': "Voice VLAN",
             'support':"✓",
             'translatable':"✓",
-            'uplink':"✓",
-            'downlink':"✓",
             'regex': r'\sswitchport\svoice\svlan\s+(\S.*)',
             'meraki': {
                 'skip': False,
@@ -843,7 +838,7 @@ except:\n\
         
         'root_guard': {
             'iosxe': "root_guard = 'yes'\n",
-            'regex': r'\sspanning-tree\sguard\sroot?(\S.*)',
+            'regex': r'\sspanning-tree\sguard\sroot?(\S.+)',
             'meraki': {
                 'skip': True,
                 'default': ''
@@ -852,7 +847,7 @@ except:\n\
         
         'loop_guard': {
             'iosxe': "loop_guard = 'yes'\n",
-            'regex': r'\sspanning-tree\sguard\sloop?(\S.*)',
+            'regex': r'\sspanning-tree\sguard\sloop?(\S.+)',
             'meraki': {
                 'skip': True,
                 'default': ''
@@ -861,7 +856,7 @@ except:\n\
         
         'bpdu_guard': {
             'iosxe': "bpdu_guard =  'yes'\n",
-            'regex': r'\sspanning-tree\sbpduguard?(\S.*)',
+            'regex': r'\sspanning-tree\sbpduguard?(\S.+)',
             'meraki': {
                 'skip': True,
                 'default': ''
@@ -1100,7 +1095,7 @@ if debug:\n\
             'iosxe': "",
             'regex': '',
             'meraki': {
-                'skip': 'post_post',
+                'skip': 'post_ports',
                 'post_process': "\
 if 'etherchannel_lacp' in interface_settings:\n\
     if debug:\n\
@@ -1109,53 +1104,76 @@ if 'etherchannel_lacp' in interface_settings:\n\
     serial = sw_list[switch_num]\n\
     portId = interface_settings['port']\n\
     if debug:\n\
-        print('group = ' + group + ', serial = ' + serial + ', portId = ' + portId)\n\
-    etherchannel = {'group': group, 'switch_num': switch_num, 'interface_descriptor': interface_descriptor, 'serial': serial, 'portId': portId}\n\
+        print('group = ' + group + ', switch_num = ' + str(switch_num) + ', serial = ' + serial + ', portId = ' + portId)\n\
+    etherchannel = {'group': group, 'switch_num': switch_num, 'serial': serial, 'portId': portId}\n\
     if debug:\n\
         print(etherchannel)\n\
     return_vals = ['etherchannel']\n\
     if debug:\n\
         print(return_vals)\n",
-            'post_post_process': "\
+            'post_ports_process': "\
 if debug:\n\
-    print(f'In post_post_process, post_post_list = {post_post_list}')\n\
-    print(f'Length of post_post_list is {len(post_post_list)}')\n\
-# Get a list of array positions where 'etherchannel' appears in our post_post_list \n\
-channel_positions = [i for i in range(len(post_post_list)) if post_post_list[i][0] == 'etherchannel']\n\
+    print(f'In post_ports_process, post_ports_list = {post_ports_list}')\n\
+    print(f'Length of post_ports_list is {len(post_ports_list)}')\n\
+# Get a list of array positions where 'etherchannel' appears in our post_ports_list \n\
+channel_positions = [i for i in range(len(post_ports_list)) if post_ports_list[i][0] == 'etherchannel']\n\
 if debug:\n\
     print(f'channel_positions = {channel_positions}')\n\
 # Create a dictionary of lists to hold the data needed to create each etherchannel \n\
 channel_dict = dict(list())\n\
+channel_port_dict = {}\n\
+#action_list = list()\n\
 x = 0\n\
-# Loop through the relevant positions in the post_post_list, and append the required data \n\
+# Loop through the relevant positions in the post_ports_list, and append the required data \n\
 # to the dictionary of lists that holds the data for each etherchannel \n\
 while x < len(channel_positions):\n\
-    group = post_post_list[channel_positions[x]][1]['group']\n\
+    if debug:\n\
+        print(f'post_ports_list[channel_positions[x]][1] = {post_ports_list[channel_positions[x]][1]}')\n\
+    group = post_ports_list[channel_positions[x]][1]['group']\n\
     # We need to remove 'group' from the dictionary of values now before adding the \n\
     # other dictionary entries to the list that Dashboard will process for this \n\
     # etherchannel group \n\
-    post_post_list[channel_positions[x]][1].pop('group')\n\
-    post_post_list[channel_positions[x]][1].pop('switch_num')\n\
-    post_post_list[channel_positions[x]][1].pop('interface_descriptor')\n\
+    post_ports_list[channel_positions[x]][1].pop('group')\n\
+    post_ports_list[channel_positions[x]][1].pop('switch_num')\n\
     if debug:\n\
         print(f'group = {group}')\n\
     if group not in channel_dict.keys():\n\
         channel_dict[group] = []\n\
     # Append the 'serial' and 'port' key, value pairs to the switchPorts list for this \n\
     # etherchannel group \n\
-    channel_dict[group].extend([post_post_list[channel_positions[x]][1]])\n\
+    channel_dict[group].extend([post_ports_list[channel_positions[x]][1]])\n\
     if debug:\n\
         print(f'In loop x = {x}, channel_dict = {channel_dict}')\n\
     x+=1\n\
 if debug:\n\
     print(f'channel_dict = {channel_dict}')\n\
-for key in channel_dict:\n\
+return_vals = list()\n\
+if debug:\n\
+    print(f'len(channel_dict) = {len(channel_dict)}')\n\
+key_list =list(channel_dict.keys())\n\
+x = 0\n\
+while x < len(key_list):\n\
     if debug:\n\
-        print(f'key = {key}, channel_dict[{key}] = {channel_dict[key]}')\n\
-        print(f'switchPorts = {channel_dict[key]}')\n\
-    r = dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key])\n\
-    if debug:\n\
-        print(f'Dashboard response was {r}')\n"
+        print(f'key = {key_list[x]}, channel_dict[{key_list[x]}] = {channel_dict[key_list[x]]}')\n\
+        print(f'switchPorts = {channel_dict[key_list[x]]}')\n\
+        print('networkId = ' + returns_dict['networkId'])\n\
+    interface_descriptor = 'Port-channel' + key_list[x]\n\
+    channel_port_dict[interface_descriptor] = port_dict[interface_descriptor]\n\
+    channel_port_dict[interface_descriptor]['meraki_args'] = [returns_dict['networkId'],channel_dict[key_list[x]]]\n\
+    try:\n\
+        #action_list.append(dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key]))\n\
+        r = dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key_list[x]])\n\
+        if debug:\n\
+            print(f'channel_port_dict = {channel_port_dict}')\n\
+        channel_port_dict[interface_descriptor]['id'] = r['id']\n\
+        if debug:\n\
+            print(f'channel_port_dict[{interface_descriptor}] = {channel_port_dict[interface_descriptor]}')\n\
+            print(f'Dashboard response was {r}')\n\
+    except:\n\
+        print(f'Exception in port-channel')\n\
+        continue\n\
+    x+=1\n\
+return_vals = ['channel_port_dict']\n"
             }
         }
     }

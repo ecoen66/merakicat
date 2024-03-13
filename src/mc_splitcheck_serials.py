@@ -26,7 +26,8 @@ def Split_check_serials(user_text,search_type):
             maybe_serials = regex2.split(the_rest)[1]
     elif search_type == "Translate":
         maybe_serials = regex.split(user_text)[1]
-
+    if not re.search(',', maybe_serials, re.IGNORECASE) == None:
+        maybe_serials = maybe_serials.replace(" ", "")
     if debug:
         print(f"maybe_serials = {maybe_serials}")
         
@@ -34,6 +35,7 @@ def Split_check_serials(user_text,search_type):
         return([],"I'm sorry, but {} is not a list of Meraki serial numbers delimited by commas, spaces or semicolons.".format(the_rest))
         
     serials = re.split(';|,|\s',maybe_serials)
+    
     if debug:
         print(f"serials = {serials}")
     x = 0

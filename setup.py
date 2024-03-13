@@ -24,7 +24,7 @@ requirements = [
     "ciscoconfparse2==0.5",
     "meraki==1.42.0",
     "ngrok==1.1.0",
-    "fpdf2==2.7.8"
+    "python-docx==1.1.0"
     ]
 
 setup_requirements = [ ]

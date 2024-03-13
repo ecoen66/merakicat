@@ -2,7 +2,7 @@
 
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.  
 
-Below is the list of configurations the tool can currently migrate:
+Below is the list of configurations the tool can currently translate:
 switch:
  - Hostname
  - Spanning Tree RSTP
@@ -10,6 +10,7 @@ switch:
 
 port:
  - Port Description
+ - Port Status
  - Port Speed
  - Port Duplex
  - Port Type
@@ -20,6 +21,7 @@ port:
  - STP RootGuard
  - STP Loop Guard
  - STP BPDU Guard
+ - Etherchannel LACP
 
  
 Once installed, you can print the entire index of this encyclopedia, or to print the index based on either supported and translatable items or both, enter:
@@ -109,23 +111,23 @@ python merakicat.py
     ```
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
-    check [host <FQDN or IP address> | file <filespec>]
+    check [host <FQDN or IP address> | file <filespec>] [with timing]
     ```
     Register a Catalyst switch to the Meraki Dashboard:
     ```
-    register [host <FQDN or IP address>]
+    register [host <FQDN or IP address>] [with timing]
     ```
     Claim Catalyst switches to a Meraki Network:
     ```
-    claim [<Meraki serial numbers>] [to <Meraki network name>]
+    claim [<Meraki serial numbers>] [to <Meraki network name>] [with timing]
     ```
     Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers:
     ```
-    translate [host <FQDN or IP address> | file <filespec>] [to <Meraki serial numbers>]
+    translate [host <FQDN or IP address> | file <filespec>] [to <Meraki serial numbers>] [with timing]
     ```
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
     ```
-    migrate [host <FQDN or IP address>] [to <Meraki network name>]
+    migrate [host <FQDN or IP address>] [to <Meraki network name>] [with timing]
     ```
 
 
@@ -133,23 +135,23 @@ python merakicat.py
 
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
-    check host <FQDN or IP address> | file <filespec> 
+    check host <FQDN or IP address> | file <filespec> [with timing]
     ```
     Register a Catalyst switch or stack to the Meraki Dashboard:
     ```
-    register host <FQDN or IP address>
+    register host <FQDN or IP address> [with timing]
     ```
     Claim Catalyst switches to a Meraki Network:
     ```
-    claim <Meraki serial numbers> to <Meraki network name>
+    claim <Meraki serial numbers> to <Meraki network name> [with timing]
     ```
     Translate a Catalyst switch or stack config from a file or host to claimed Meraki serial numbers:
     ```
-    translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers>
+    translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers> [with timing]
     ```
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
     ```
-    migrate host <FQDN or IP address> to <Meraki network name>
+    migrate host <FQDN or IP address> to <Meraki network name> [with timing]
     ```
 
 

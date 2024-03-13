@@ -17,4 +17,4 @@ tabulate==0.9.0
 pyadaptivecards==0.1.1
 ciscoconfparse2==0.5
 ngrok==1.1.0
-fpdf2==2.7.8
+python-docx==1.1.0
