@@ -15,6 +15,7 @@ from pyadaptivecards.card import AdaptiveCard
 from pyadaptivecards.components import TextBlock, Column
 from pyadaptivecards.container import ColumnSet, Container
 from pyadaptivecards.options import Colors, FontSize, HorizontalAlignment
+from docx2pdf import convert
 import docx
 from docx.enum.table import WD_TABLE_ALIGNMENT,WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -248,6 +249,8 @@ def greeting(incoming_msg):
     # Grab the first word from the user's input.
     command = user_text.split()[0].lower()
     
+    print(f"command = {command}")
+    
     # If the user asked for a report, we will try to give it to them
     report = False
     if not re.search('\swith\sreports|\swith\sreport|\swith\sreporting', user_text, re.IGNORECASE) == None:
@@ -303,7 +306,7 @@ def greeting(incoming_msg):
                   response.markdown = "You need to enter a Meraki network to register into."
               host = host_id
               # Did they type "translate host <something>" ?
-              if re.search('host', user_text, re.IGNORECASE):
+              if re.search('host ', user_text, re.IGNORECASE):
                   if debug:
                       print(f"I made it to host...")
                   if not user_text.split("host ",1)[1] == "":
@@ -356,7 +359,7 @@ def greeting(incoming_msg):
                           response.markdown = r
                           return(response)
               # Did they type "translate file <something>" ?
-              if re.search('file', user_text, re.IGNORECASE):
+              if re.search('file ', user_text, re.IGNORECASE):
                   if not user_text.split("file ",1)[1] == "":
                       # They did, so translate it!
                       maybe_file = user_text.split("file ",1)[1].split()[0]
@@ -371,7 +374,7 @@ def greeting(incoming_msg):
                       # They did not, so BUMP the user.
                       response.markdown = "I'm sorry, but I don't have a config that we are working with.  Use the **/check** command."
               # Did they type "translate host <something>" ?
-              elif re.search('host', user_text, re.IGNORECASE):
+              elif re.search('host ', user_text, re.IGNORECASE):
                   if debug:
                       print(f"I made it to host...")
                   if not user_text.split("host ",1)[1] == "":
@@ -420,7 +423,7 @@ def greeting(incoming_msg):
                             response.markdown = check_switch(incoming_msg,config=maybe_file)
                     else:
                         response.markdown = "I'm sorry, but I don't have a config that we are working with.  Use the **/check** command."
-                elif re.search('host', user_text, re.IGNORECASE):
+                elif re.search('host ', user_text, re.IGNORECASE):
                     if not user_text.lower().split("host ",1)[1] == "":
                         host_id = user_text.lower().split("host ",1)[1]
                         if debug:
@@ -450,7 +453,7 @@ def greeting(incoming_msg):
             # Well, did they type more after "register" ?
             elif user_text.lower().startswith('register'):
                 # Did they type "register file <something>" ?
-                if re.search('host', user_text, re.IGNORECASE):
+                if re.search('host ', user_text, re.IGNORECASE):
                     if not user_text.split("host ",1)[1] == "":
                         # They did, so register it!
                         host_id = user_text.split("host ",1)[1]
@@ -486,7 +489,7 @@ def greeting(incoming_msg):
             elif user_text.lower().startswith('claim'):
                 # Did they enter a Meraki network after "to" ?
                 dest_net = meraki_net
-                if re.search('to', user_text, re.IGNORECASE):
+                if re.search('to ', user_text, re.IGNORECASE):
                     regex = re.compile(r"\s*to\s *", flags=re.I)
                     if not regex.split(user_text)[1] == "":
                         # They did, so let's grab and test it
@@ -533,8 +536,9 @@ def greeting(incoming_msg):
             if BOT:
                 # Lookup details about sender for our default response
                 sender = bot.teams.people.get(incoming_msg.personId)
-                response.markdown = "Hello {}, I'm really just a glorified chat bot. ".format(sender.firstName)
-                response.markdown += "See what I can do by asking for **/help**."
+                response.markdown = "Well {}, here's a list of commands that I understand. ".format(sender.firstName)
+                for line in bot_commands:
+                    response.markdown += "\n" + line[0] + ": " + line[1]
             else:
                 response.markdown = "\n\n" + tabulate(command_list,headers=["Command Format","Function"]) + "\n"
         
@@ -544,14 +548,14 @@ def greeting(incoming_msg):
                 sender = bot.teams.people.get(incoming_msg.personId)
                 response.markdown = "Hi, {}! ".format(sender.firstName)
                 response.markdown += "What do you want me to do today?\n"
-                response.markdown += "See what I can do by asking for **/help**."
+                response.markdown += "See what I can do by asking for **help**."
         
         case _:
             if BOT:
                 # Lookup details about sender for our default response
                 sender = bot.teams.people.get(incoming_msg.personId)
                 response.markdown = "Hello {}, I'm really just a glorified chat bot. ".format(sender.firstName)
-                response.markdown += "See what I can do by asking for **/help**."
+                response.markdown += "See what I can do by asking for **help**."
             else:
                 response.markdown = "Hello, I'm really just a glorified chat bot. "
                 response.markdown += "See what I can do by asking for help."
@@ -585,21 +589,7 @@ def check_switch(incoming_msg,config="",host=""):
         
         # Since we weren't passed a config filespec, check for a hostname or IP address
         if host == "":
-            
-            # Since we weren't passed a a hostname or IP address,
-            # maybe we came here from a card? check the card params
-            m = get_attachment_actions(incoming_msg["id"])
-            
-            # If there is nothing in the card either, than BUMP the user
-            if m["inputs"]["host"] == "" and m["inputs"]["file"] == "":
-                return "You need to enter either a host or a filename."
-            
-            # Grab the config filespec
-            config = m["inputs"]["file"]
-            
-            # If there was also a hostname or IP address in the card use that
-            if not m["inputs"]["host"] == "":
-                host_id = m["inputs"]["host"]
+            return "You need to enter either a host or a filename."
         
         # We were passed a hostname or IP address...
         else:
@@ -640,27 +630,31 @@ def check_switch(incoming_msg,config="",host=""):
     
     # Clear some variables for the next step
     can_list = list()
+    can_list_doc = list()
     not_list = list()
+    not_list_doc = list()
     more = dict()
     # Go through the outcome from the read_conf functions and split the supported and
     # unsupported features as well as the additional text and links for the unsupported
     
+    x = 0
+    not_notes = list()
+    while x < (len(the_list)):
+        if not the_list[x][1] == "":
+            can_list_doc.append(the_list[x])
+            can_list.append([the_list[x][0],the_list[x][1],the_list[x][2]])
+        else:
+            not_list_doc.append(the_list[x])
+            not_list.append([the_list[x][0]," "," "])
+            not_notes.append([the_list[x][3],the_list[x][4]])
+        x +=1
+    all_list = list(list())
+    all_list.extend(can_list)
+    all_list.extend(not_list)
+    
     if BOT: 
         tabulate.PRESERVE_WHITESPACE = True
-        x = 0
-        not_notes = list()
-        while x < (len(the_list)):
-            if not the_list[x][1] == "":
-                can_list.append([the_list[x][0],the_list[x][1],the_list[x][2]])
-            else:
-                not_list.append([the_list[x][0]," "," "])
-                not_notes.append([the_list[x][3],the_list[x][4]])
-                print(f"not_list = {not_list}")
-            x +=1
         # Build the report.
-        all_list = list(list())
-        all_list.extend(can_list)
-        all_list.extend(not_list)
         if debug:
             print(f"all_list = {all_list}")
         report=tabulate(all_list,colalign=["left","center","center"],headers=["Feature","Available","Translatable"])
@@ -699,7 +693,7 @@ def check_switch(incoming_msg,config="",host=""):
         new_report = '<br>'.join(report_lines)
         new_report = "<p>" + new_report+ "</p>"
         new_report = '<h3>Merakicat Feature Report for ' + switch_name + '</h3><br>' + new_report
-        fname = docx_check_report(switch_name,can_list,not_list)
+        fname = check_report_writer(switch_name,can_list_doc,not_list_doc)
         return(new_report + '''<br><br><b>Please review the results above.</b>
 <br>If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type <b>translate</b> and a Meraki switch serial number.
 <br>If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type <b>migrate [to <i>meraki network</i>]</b>.
@@ -707,28 +701,18 @@ def check_switch(incoming_msg,config="",host=""):
     
     # Not a BOT
     else:
-        x = 0
-        while x < (len(the_list)):
-            if not the_list[x][1] == "":
-                can_list.append(the_list[x])
-            else:
-                not_list.append(the_list[x])
-            x +=1
         # Build the report
-        all_list = list(list())
-        all_list.extend(can_list)
-        all_list.extend(not_list)
         if debug:
             print(f"all_list = {all_list}")
         report=tabulate(all_list,headers=["Feature","Available","Translatable","Notes","For more info, see this URL"])
         timing = ""
         if times == True:
             timing =  "\n=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
-        fname = docx_check_report(switch_name,can_list,not_list)
+        fname = check_report_writer(switch_name,an_list_doc,not_list_doc)
         return(report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
 
 
-def docx_check_report(switch_name,can_list,not_list):
+def check_report_writer(switch_name,can_list_doc,not_list_doc, pdf=False):
     document = docx.Document()
     section = document.sections[0]
     header = section.header
@@ -739,8 +723,6 @@ def docx_check_report(switch_name,can_list,not_list):
     col_count = len(table.columns)
     headers=["Feature","Available","Translatable","More Information"]
     heading_cells = table.rows[0].cells
-    #heading_cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    #heading_cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     set_col_widths(table.rows[0])
 
     x = 0
@@ -750,7 +732,7 @@ def docx_check_report(switch_name,can_list,not_list):
         x += 1
     heading_cells[3].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     set_repeat_table_header(table.rows[0])
-    for line in can_list:
+    for line in can_list_doc:
         row = table.add_row()
         set_col_widths(row)
         cells = row.cells
@@ -760,7 +742,7 @@ def docx_check_report(switch_name,can_list,not_list):
             x += 1
         cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for line in not_list:
+    for line in not_list_doc:
         row = table.add_row()
         set_col_widths(row)
         cells = row.cells
@@ -770,19 +752,22 @@ def docx_check_report(switch_name,can_list,not_list):
             cells[x].text = line[x]
             x += 1
         p_table = cells[2].paragraphs[0]
-        #cells[2].paragraphs[0].paragraph_format.space_before = None
-        #cells[2].paragraphs[0].paragraph_format.space_after = None
-        cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
-        #cells[2].paragraphs[0].paragraph_format.alignment = WD_TABLE_ALIGNMENT.RIGHT
-        #cells[2].vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
     dir = os.path.join(os.getcwd(),"../files")
     fname = switch_name+".docx"
+    fname_pdf = switch_name+".pdf"
     document.save(os.path.join(dir,fname))
+    if pdf:
+        convert(os.path.join(dir,fname), (os.path.join(dir,fname_pdf)))
+        os.remove(os.path.join(dir,fname))
+        fname = fname_pdf
     return(fname)
 
 #document.tables[0].rows[0].cells[0].paragraphs[0].runs[0].font.color.rgb = RGBColor(50, 0, 255)  # Blue Color
 #document.tables[0].rows[0].cells[0].paragraphs[0].runs[0].font.blod = True  # Bold
+
+
 def add_table_cell(table, row, col, text, fontSize=8, r=0, g=0, b=0, width=-1):
     cell = table.cell(row,col)
     if (width!=-1):
@@ -1027,18 +1012,6 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
     # Clear some variables for the next step
     switch_name = ""
     # Check whether or not we were passed a list of up to 8 Meraki serial numbers
-    try:
-        m = get_attachment_actions(incoming_msg["id"])
-        if debug:
-            print(f"m['inputs']['sw_list'] = {m['inputs']['sw_list']}")
-        if m["inputs"]["sw_list"] == []:
-            if len(serials) == 0:
-                return "You need to enter a list of Meraki switch serial numbers 1."
-        else:
-            serials = re.split(',',m["inputs"]["sw_list"])
-    except:
-        if len(serials) == 0:
-            return "You need to enter a list of Meraki switch serial numbers 2."
     if len(serials) > 8:
         return "A switch stack can contain a maximum of 8 switches."
     # Update the global stateful variable for later
@@ -1047,29 +1020,6 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         print(f"meraki_serials = {meraki_serials}")
     # Check whether or not we were passed a config filespec
     
-    try:
-        # Since we weren't passed a a hostname or IP address,
-        # maybe we came here from a card? check the card params
-        m = get_attachment_actions(incoming_msg["id"])
-        
-        # If there is nothing in the card either, than BUMP the user
-        try:
-            if not m["inputs"]["file"] == "":
-                config = m["inputs"]["file"]
-                config, exists = File_exists(config)
-                if not exists:
-                    return("I'm sorry, but I could not find that file.")
-        except:
-            pass
-        try:
-            if not m["inputs"]["host"] == "":
-                host = m["inputs"]["host"]
-                if not Ping(host):
-                    return("I was unable to ping that host.")
-        except:
-            pass
-    except:
-        pass
     switch_name = ""
     if not config == "":
         ext = os.path.splitext(config)[1]
@@ -1195,8 +1145,6 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
             r += "\nFor the switch ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
         else:
             r += "\nFor switch "+str(switch+1)+" ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
-        if debug:
-            print(f"\nswitch={switch}, and r = {r}")
         if len(configured_ports[switch]) > 0:
             if BOT:
                 r += "We were able to **successfully** " + verb + " ports: "
@@ -1205,12 +1153,8 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
             c_port = 0
             while c_port <= len(configured_ports[switch])-2:
                 r += configured_ports[switch][c_port] + ", "
-                if debug:
-                    print(f"\nc_port={c_port}, and r = {r}")
                 c_port+=1
             r += configured_ports[switch][c_port] + "\n\n"
-            if debug:
-                print(f"\nc_port={c_port}, and r = {r}")
         if len(unconfigured_ports[switch]) > 0:
             if BOT:
                 r += "We were **unable** to " + verb + " ports: "
@@ -1219,12 +1163,8 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
             u_port = 0
             while u_port <= len(unconfigured_ports[switch])-2:
                 r += unconfigured_ports[switch][u_port] + ", "
-                if debug:
-                    print(f"\nu_port={u_port}, and r = {r}")
                 u_port+=1
             r += unconfigured_ports[switch][u_port] + "\n\n"
-            if debug:
-                print(f"\nu_port={u_port}, and r = {r}")
         switch+=1
     if verb == "translate" and times:
         r += "\n--- Pushing to Dashboard took %s seconds" % str(round((time.time() - port_cfg_start_time), 2))
@@ -1397,77 +1337,6 @@ def migrate_switch(incoming_msg,host=host_id,dest_net=meraki_net):
     return (r)
 
 
-
-# These functions generate basic adaptive cards and sends them to the user.
-# I am using pre-configured cards stored in the cards.py file in this project directory.
-
-def show_check_card(incoming_msg):
-    backupmessage = "Adaptive Card to check a switch configuration for Meraki compatible settings."
-    
-    # Display the report card    
-    c = create_message_with_attachment(
-        incoming_msg.roomId, msgtxt=backupmessage, attachment=json.loads(CHECK_CARD)
-    )
-    
-    # Log a copy of the check card to the terminal    
-    if debug:
-        print(c)
-    return ""
-
-def show_translate_card(incoming_msg):
-    backupmessage = "Adaptive Card to translate a switch."
-    
-    # Display the translate card    
-    c = create_message_with_attachment(
-        incoming_msg.roomId, msgtxt=backupmessage, attachment=json.loads(TRANSLATE_CARD)
-    )
-    
-    # Log a copy of the translate card to the terminal    
-    if debug:
-        print(c)
-    return ""
-
-def show_migrate_card(incoming_msg):
-    backupmessage = "Adaptive Card to migrate a switch stack."
-
-    # Display the report card    
-    c = create_message_with_attachment(
-        incoming_msg.roomId, msgtxt=backupmessage, attachment=json.loads(MIGRATE_CARD)
-    )
-    
-    # Log a copy of the translate card to the terminal    
-    print(c)
-    return ""
-
-
-# This function is called to process card actions (the user clicked a button...)
-def handle_cards(api, incoming_msg):
-    if debug:
-        print(f"incoming_msg = {incoming_msg}")
-    
-    """
-    Sample function to handle card actions.
-    :param api: webexteamssdk object
-    :param incoming_msg: The incoming message object from Teams
-    :return: A text or markdown based reply
-    """
-    m = get_attachment_actions(incoming_msg["data"]["id"])    
-    
-    r = ""
-    data = m["inputs"]["data"]
-    
-    match data: 
-      case "check":
-          r = check_switch(incoming_msg['data'])
-      case "translate":
-          r = translate_switch(incoming_msg['data'])
-      case "migrate":
-          r = migrate_switch(incoming_msg['data'])
-      case "cancel":
-          r = "No problem."
-    return r
-
-
 def create_message(rid, msgtxt):
     headers = {
         "content-type": "application/json; charset=utf-8",
@@ -1495,19 +1364,6 @@ def create_message_with_attachment(rid, msgtxt, attachment):
     return response.json()
 
 
-# Temporary function to get card attachment actions (not yet supported
-# by webexteamssdk, but there are open PRs to add this functionality)
-def get_attachment_actions(attachmentid):
-    headers = {
-        "content-type": "application/json; charset=utf-8",
-        "authorization": "Bearer " + teams_token,
-    }
-    
-    url = "https://api.ciscospark.com/v1/attachment/actions/" + attachmentid
-    response = requests.get(url, headers=headers)
-    return response.json()
-
-
 ## If we are in BOT mode, set up some bot stuff
 if BOT:
     
@@ -1515,14 +1371,19 @@ if BOT:
     bot.set_greeting(greeting)
     
     # Add new commands to the bot.
-    #bot.add_command("attachmentActions", "*", handle_cards)
-    #bot.add_command("/check", "Check a Catalyst switch config for Meraki compatible settings", show_check_card)
-    #bot.add_command("/translate", "Translate a Catalyst switch config to a Meraki switch with translatable settings", show_translate_card)
+    bot_commands = list(list())
+    bot_commands.extend([["* **help**", "Get help."],
+    ["* **check [host _FQDN or IP address_ | file _filespec_] [with timing]**", "Check a Catalyst switch config for both translatable and possible Meraki features"],
+    ["* **register [host _FQDN or IP address_] [with timing]**", "Register a Catalyst switch to the Meraki Dashboard"],
+    ["* **claim [_Meraki serial numbers_] [to _Meraki network name_] [with timing]**", "Claim Catalyst switches to a Meraki Network"],
+    ["* **translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_] [with timing]**", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers"],
+    ["* **migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]**", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]])
+    bot.add_command("help", "This list of commands", greeting)
     bot.add_command("check [host _FQDN or IP address_ | file _filespec_] [with timing]", "Check a Catalyst switch config for both translatable and possible Meraki features", greeting)
-    bot.add_command("translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_] [with timing]", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers", greeting)
-    bot.add_command("migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate", greeting)
     bot.add_command("register [host _FQDN or IP address_] [with timing]", "Register a Catalyst switch to the Meraki Dashboard", greeting)
     bot.add_command("claim [_Meraki serial numbers_] [to _Meraki network name_] [with timing]", "Claim Catalyst switches to a Meraki Network", greeting)
+    bot.add_command("translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_] [with timing]", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers", greeting)
+    bot.add_command("migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate", greeting)
     
     # Every bot includes a default "/echo" command.  You can remove it, or any
     # other command with the remove_command(command) method.
@@ -1530,6 +1391,7 @@ if BOT:
 else:
     command_list = list(list())
     command_list.extend([
+      ["help", "This list of commands"],
       ["check host <FQDN or IP address> | file <filespec> [with timing]", "Check a Catalyst switch config for both translatable and possible Meraki features"],
       ["register host <FQDN or IP address> [with timing]", "Register a Catalyst switch to the Meraki Dashboard"],
       ["claim <Meraki serial numbers> to <Meraki network name> [with timing]", "Claim Catalyst switches to a Meraki Network"],
