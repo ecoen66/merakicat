@@ -322,7 +322,7 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
     
     # create a batch action lists
     action_list = list()
-    #all_actions = list()
+    all_actions = list()
     returns_dict = {}
     post_ports_list = list()
     # create good and bad port lists 
@@ -350,7 +350,6 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
         :return: NONE - modifies global variables in the parent function
         """
         
-        loop_action_list = list()
         
         # create a place to hold the Dashboard URL for each switch
         ## Configure the switch_name in the Dashboard
@@ -447,9 +446,26 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
             
             ## Append args to the port_dict as meraki_args
             port_dict[interface_descriptor]['meraki_args'] = args[y]
+            if debug:
+                print(f"serial = {args[y][0]}")
+                print(f"portId = {args[y][1]}")
+                print(f"settings = {args[y][2]}")
             
+            ## Append the port update call to Dashboard to the batch list
+            if debug:
+                print(f"Number of sub lists in action_list is {len(action_list)}")
+                try:
+                    print(f"Number of batch actions in action_list[{switch_num}] is {len(action_list[switch_num])}")
+                except:
+                    pass
+                print(f"About to append action for port {interface_settings['port']}")
+            
+            if not len(action_list) == switch_num+1:
+                # We are on to the next switch, so I want a new sublist
+                action_list.append([])
+            # Add this action to the action_list sublist for the switch
             try:
-                loop_action_list.append(dashboard.batch.switch.updateDeviceSwitchPort(
+                action_list[switch_num].append(dashboard.batch.switch.updateDeviceSwitchPort(
                 args[y][0],
                 args[y][1],
                 **args[y][2]
@@ -494,16 +510,17 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
                 #    file.write(json.dumps(loop_action_list)) # use `json.loads` to do the reverse
                 #    file.close()
                 item += 1
-        return loop_action_list
-    
-    action_list = loop_configure_meraki(port_dict,Downlink_list,switch_dict)
+        if debug:
+            print(f"\n\naction_list = {action_list}\n\n")
+    loop_configure_meraki(port_dict,Downlink_list,switch_dict)
     
     # Combine all of the action_list sublists into a larger set for batching
-    #x = 0
-    #while x <= len(action_list)-1:
-    #    all_actions.extend(action_list[x])
-    #    x += 1
-    #print(f"all_actions = {all_actions}")
+    x = 0
+    while x <= len(action_list)-1:
+       all_actions.extend(action_list[x])
+       x += 1
+    if debug:
+        print(f"all_actions = {all_actions}")
     
     # Save an action batch file for the port features
     dir = os.path.join(os.getcwd(),"../files")
@@ -516,7 +533,7 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
         print(f"Args listdict is: {args}\n")
     
     issues = list()
-    test_helper = batch_helper.BatchHelper(dashboard, organization_id, action_list, linear_new_batches=False, actions_per_new_batch=100)
+    test_helper = batch_helper.BatchHelper(dashboard, organization_id, all_actions, linear_new_batches=False, actions_per_new_batch=100)
     test_helper.prepare()
     test_helper.generate_preview()
     test_helper.execute()

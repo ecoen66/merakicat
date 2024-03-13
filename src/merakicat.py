@@ -249,7 +249,8 @@ def greeting(incoming_msg):
     # Grab the first word from the user's input.
     command = user_text.split()[0].lower()
     
-    print(f"command = {command}")
+    if debug:
+        print(f"command = {command}")
     
     # If the user asked for a report, we will try to give it to them
     report = False
@@ -651,6 +652,9 @@ def check_switch(incoming_msg,config="",host=""):
     all_list = list(list())
     all_list.extend(can_list)
     all_list.extend(not_list)
+    all_list_doc = list(list())
+    all_list_doc.extend(can_list_doc)
+    all_list_doc.extend(not_list_doc)
     
     if BOT: 
         tabulate.PRESERVE_WHITESPACE = True
@@ -704,12 +708,12 @@ def check_switch(incoming_msg,config="",host=""):
         # Build the report
         if debug:
             print(f"all_list = {all_list}")
-        report=tabulate(all_list,headers=["Feature","Available","Translatable","Notes","For more info, see this URL"])
+        report=tabulate(all_list_doc,headers=["Feature","Available","Translatable","Notes","For more info, see this URL"])
         timing = ""
         if times == True:
             timing =  "\n=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
         fname = check_report_writer(switch_name,can_list_doc,not_list_doc)
-        return(report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
+        return("\n\n" + report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
 
 
 def check_report_writer(switch_name,can_list_doc,not_list_doc, pdf=False):
