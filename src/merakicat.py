@@ -1547,9 +1547,9 @@ if BOT:
     bot.set_greeting(greeting)
     
     # Add new commands to the bot.
-    bot.add_command("attachmentActions", "*", handle_cards)
-    bot.add_command("/check", "Check a Catalyst switch config for Meraki compatible settings", show_check_card)
-    bot.add_command("/translate", "Translate a Catalyst switch config to a Meraki switch with translatable settings", show_translate_card)
+    #bot.add_command("attachmentActions", "*", handle_cards)
+    #bot.add_command("/check", "Check a Catalyst switch config for Meraki compatible settings", show_check_card)
+    #bot.add_command("/translate", "Translate a Catalyst switch config to a Meraki switch with translatable settings", show_translate_card)
     bot.add_command("check [host _FQDN or IP address_ | file _filespec_] [with timing]", "Check a Catalyst switch config for both translatable and possible Meraki features", greeting)
     bot.add_command("translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_] [with timing]", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers", greeting)
     bot.add_command("migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate", greeting)
