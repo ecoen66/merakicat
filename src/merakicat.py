@@ -18,6 +18,9 @@ from pyadaptivecards.options import Colors, FontSize, HorizontalAlignment
 import docx
 from docx.enum.table import WD_TABLE_ALIGNMENT,WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Cm, Inches
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from collections import defaultdict
 from functools import reduce
 from mc_cfg_check import CheckFeatures
@@ -425,7 +428,10 @@ def greeting(incoming_msg):
                         if not Ping(host_id):
                             response.markdown = "I was unable to ping that host."
                             return(response)
-                        response.html = check_switch(incoming_msg,host=host_id)
+                        if BOT:
+                            response.html = check_switch(incoming_msg,host=host_id)
+                        else:
+                            response.markdown = check_switch(incoming_msg,host=host_id)
                     else:
                         response.markdown = "I'm sorry, but I don't have a host that we are working with.  Use the **/check** command."
             else:
@@ -640,156 +646,64 @@ def check_switch(incoming_msg,config="",host=""):
     # unsupported features as well as the additional text and links for the unsupported
     
     if BOT: 
-        if NEW_BOT_REPORT == False:
-            x = 0
-            while x < (len(the_list)):
-                if not the_list[x][1] == "":
-                    can_list.append(the_list[x])
-                else:
-                    not_list.append(the_list[x])
-                x +=1
-            
-            # Create the columns with headers for the report card
-            c1_items = [TextBlock(text="Feature", size=FontSize.SMALL, color=Colors.ACCENT)]
-            c2_items = [TextBlock(text="Available", size=FontSize.SMALL, color=Colors.ACCENT)]
-            c3_items = [TextBlock(text="Translatable", size=FontSize.SMALL, color=Colors.ACCENT)]
-            c4_items = [TextBlock(text="Notes", size=FontSize.SMALL, color=Colors.ACCENT)]
-            
-            # Add the supported features to the report card.
-            # Highlight the Available(Meraki supported) and Translatable (supported by this Bot)
-            # features with a green ✓, while highlighting unavailable features with a red X.
-            
-            y = 0
-            while y < (len(can_list)-1):
-                item4 = " " if can_list[y][3] == "" else can_list[y][3]
-                c1_items.append(TextBlock(text=can_list[y][0],horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-                c2_items.append(TextBlock(text=can_list[y][1],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.GOOD))
-                coloring = Colors.GOOD if can_list[y][2]=='✓' else Colors.ATTENTION
-                c3_items.append(TextBlock(text=can_list[y][2],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=coloring))
-                c4_items.append(TextBlock(text=item4,horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-                y +=1
-            
-            # Add the unavailable (Meraki unsupported) features to the report card.
-            # Highlight them with a red X, and indicate any additional notes and links.
-            
-            z = 0
-            while z < (len(not_list)-1):
-                c1_items.append(TextBlock(text=not_list[z][0],horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-                c2_items.append(TextBlock(text=not_list[z][1],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.ATTENTION))
-                c3_items.append(TextBlock(text=not_list[z][2],horizontalAlignment=HorizontalAlignment.CENTER,size=FontSize.SMALL,color=Colors.ATTENTION))
-                c4_items.append(TextBlock(text='['+not_list[z][3]+']('+not_list[z][4]+')',horizontalAlignment=HorizontalAlignment.LEFT,size=FontSize.SMALL))
-                z +=1
-    
-            card = AdaptiveCard()
-            card.body = [
-                TextBlock(text='Configuration Report for '+host_name, horizontalAlignment='Center', wrap=True, size='Large', weight='Default'),
-                ColumnSet(columns=[
-                    Column(
-                        width='stretch',
-                        items=c1_items
-                    ),
-                    Column(
-                        width='stretch',
-                        items=c2_items
-                    ),
-                    Column(
-                        width='stretch',
-                        items=c3_items
-                    ),
-                    Column(
-                        width='stretch',
-                        items=c4_items
-                    )
-                ])
-            ]
-            attachment = {
-                "contentType": "application/vnd.microsoft.card.adaptive",
-                "content": card.to_dict()
-            }
-            backupmessage = "Report on the features used in the switch."
-            
-            # Display the report card    
-            c = create_message_with_attachment(
-                incoming_msg.roomId, msgtxt=backupmessage, attachment=attachment
-            )
-            
-            # Log a copy of the report card to the terminal    
-            if debug:
-                print(c)
-            
-            return ('''**Please review the results above.**
-If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type **translate** and a Meraki switch serial number.
-If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type **migrate [to _meraki network_]**.
+        tabulate.PRESERVE_WHITESPACE = True
+        x = 0
+        not_notes = list()
+        while x < (len(the_list)):
+            if not the_list[x][1] == "":
+                can_list.append([the_list[x][0],the_list[x][1],the_list[x][2]])
+            else:
+                not_list.append([the_list[x][0]," "," "])
+                not_notes.append([the_list[x][3],the_list[x][4]])
+                print(f"not_list = {not_list}")
+            x +=1
+        # Build the report.
+        all_list = list(list())
+        all_list.extend(can_list)
+        all_list.extend(not_list)
+        if debug:
+            print(f"all_list = {all_list}")
+        report=tabulate(all_list,colalign=["left","center","center"],headers=["Feature","Available","Translatable"])
+        report_lines = report.splitlines()
+        report_line_len = len(report_lines[1])
+        x = 0
+        bad_start = len(can_list) + 2
+        while x < len(report_lines):
+            results = [(m.start(), m.end()-1) for m in re.finditer(r'\S+', report_lines[x])]
+            fix_line = ""
+            last_word = 0
+            for result in results:
+                if not last_word == 0:
+                    num = result[0] - last_word
+                    if num > 1:
+                        fix_line += "".join(['&nbsp'*num])
+                    fix_line += " "
+                fix_line+= report_lines[x][result[0]:result[1]+1]
+                last_word = result[1]+1
+            num = report_line_len - last_word
+            fix_line += "".join(['&nbsp'*num])
+            report_lines[x] = fix_line
+            if x > 1:
+                if all_list[x-2][1] in [" ",""]:
+                    report_lines[x] += "&nbsp"
+                if all_list[x-2][2] in [" ",""]:
+                    report_lines[x] += "&nbsp"
+            report_lines[x] = "<code>" + report_lines[x] + "</code>"
+            x+=1
+        x = 0
+        while x < len(not_list):
+            if not not_notes[x][0] == "":
+                hotlink = '<a href =\"'+not_notes[x][1]+'" rel="nofollow\">'+not_notes[x][0]+'</a>'
+                report_lines[bad_start + x]+=hotlink
+            x+=1
+        new_report = '<br>'.join(report_lines)
+        new_report = "<p>" + new_report+ "</p>"
+        new_report = '<h3>Merakicat Feature Report for ' + switch_name + '</h3><br>' + new_report
+        fname = docx_check_report(switch_name,can_list,not_list)
+        return(new_report + '''<br><br><b>Please review the results above.</b>
+<br>If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type <b>translate</b> and a Meraki switch serial number.
+<br>If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type <b>migrate [to <i>meraki network</i>]</b>.
 ''')
-            
-        else:
-            tabulate.PRESERVE_WHITESPACE = True
-            x = 0
-            not_notes = list()
-            while x < (len(the_list)):
-                if not the_list[x][1] == "":
-                    can_list.append([the_list[x][0],the_list[x][1],the_list[x][2]])
-                else:
-                    not_list.append([the_list[x][0]," "," "])
-                    not_notes.append([the_list[x][3],the_list[x][4]])
-                    print(f"not_list = {not_list}")
-                x +=1
-            # Build the dynamic report card.
-            all_list = list(list())
-            all_list.extend(can_list)
-            all_list.extend(not_list)
-            if debug:
-                print(f"all_list = {all_list}")
-            #report=tabulate(all_list,headers=["Feature","Available","Translatable"],tablefmt="github")
-            report=tabulate(all_list,headers=["Feature","Available","Translatable"])
-            #report = report.replace(" ", "\&nbsp")
-            report_lines = report.splitlines()
-            report_line_len = len(report_lines[1])
-            x = 0
-            bad_start = len(can_list) + 2
-            while x < len(report_lines):
-                #report_lines[x] = "```\n" + re.sub('[|]',"",report_lines[x])
-                results = [(m.start(), m.end()-1) for m in re.finditer(r'\S+', report_lines[x])]
-                fix_line = ""
-                last_word = 0
-                for result in results:
-                    if not last_word == 0:
-                        num = result[0] - last_word
-                        if num > 1:
-                            fix_line += "".join(['&nbsp'*num])
-                        fix_line += " "
-                    fix_line+= report_lines[x][result[0]:result[1]+1]
-                    last_word = result[1]+1
-                num = report_line_len - last_word
-                fix_line += "".join(['&nbsp'*num])
-                report_lines[x] = fix_line
-                print(f"report_line = {report_lines[x]}")
-                print(f"result = {result}")
-                if the_list[x][1]=="":
-                    report_lines[x] += "&nbsp"
-                if the_list[x][2]=="":
-                    report_lines[x] += "&nbsp"
-                report_lines[x] = "<code>" + report_lines[x] + "</code>"
-                print(report_lines[x])
-                x+=1
-            x = 0
-            while x < len(not_list):
-                if not not_notes[x][0] == "":
-                    hotlink = '<a href =\"'+not_notes[x][1]+'" rel="nofollow\">'+not_notes[x][0]+'</a>'
-                    #report_lines[bad_start + x] = report_lines[bad_start + x].replace("</pre>",hotlink)
-                    report_lines[bad_start + x]+=hotlink
-                x+=1
-            new_report = '<br>'.join(report_lines)
-            new_report = "<p>" + new_report+ "</p>"
-            print(new_report)
-            
-            #return(new_report + "\n" + '''\n\n**Please review the results above.**
-            #return("```\n" + new_report)
-            return(new_report)
-            
-#If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type **translate** and a Meraki switch serial number.
-#If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type **migrate [to _meraki network_]**.
-#''')
     
     # Not a BOT
     else:
@@ -800,7 +714,7 @@ If you prefer, I can prepare for the switch to become a Meraki managed switch, k
             else:
                 not_list.append(the_list[x])
             x +=1
-        # Build the dynamic report card.
+        # Build the report
         all_list = list(list())
         all_list.extend(can_list)
         all_list.extend(not_list)
@@ -810,38 +724,93 @@ If you prefer, I can prepare for the switch to become a Meraki managed switch, k
         timing = ""
         if times == True:
             timing =  "\n=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
-        
-        document = docx.Document()
-        table = document.add_table(rows=1,cols=4)
-        col_count = len(table.columns)
-        headers=["Feature","Available","Translatable","More Information"]
-        heading_cells = table.rows[0].cells
+        fname = docx_check_report(switch_name,can_list,not_list)
+        return(report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
+
+
+def docx_check_report(switch_name,can_list,not_list):
+    document = docx.Document()
+    section = document.sections[0]
+    header = section.header
+    header.paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    header.paragraphs[0].text = "Merakicat Feature Check Report for "+switch_name
+    table = document.add_table(rows=1,cols=4)
+    table.autofit = False
+    col_count = len(table.columns)
+    headers=["Feature","Available","Translatable","More Information"]
+    heading_cells = table.rows[0].cells
+    #heading_cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    #heading_cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    set_col_widths(table.rows[0])
+
+    x = 0
+    while x< col_count:
+        heading_cells[x].text = headers[x]
+        heading_cells[x].paragraphs[0].runs[0].font.bold = True  # Bold
+        x += 1
+    heading_cells[3].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    set_repeat_table_header(table.rows[0])
+    for line in can_list:
+        row = table.add_row()
+        set_col_widths(row)
+        cells = row.cells
         x = 0
-        while x< col_count:
-            heading_cells[x].text = headers[x]
+        while x< col_count-1:
+            cells[x].text = line[x]
             x += 1
-        for line in can_list:
-            cells = table.add_row().cells
-            x = 0
-            while x< col_count-1:
-                cells[x].text = line[x]
-                x += 1
-            cells[1].paragraphs[0].paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
-            cells[2].paragraphs[0].paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
-        for line in not_list:
-            cells = table.add_row().cells
-            x = 0
-            while x< col_count-1:
-                cells[x].text = line[x]
-                x += 1
-            cells[2].merge(cells[3])
-            p_table = cells[2].add_paragraph()
-            hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
-            cells[2].paragraphs[0].paragraph_format.alignment = WD_TABLE_ALIGNMENT.RIGHT
-            cells[2].vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
-        document.save('demo_hyperlink.docx')
-        
-        return(report + "\n\nPlease review the results above.\nIf you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
+        cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for line in not_list:
+        row = table.add_row()
+        set_col_widths(row)
+        cells = row.cells
+        cells[2].merge(cells[3])
+        x = 0
+        while x< col_count-1:
+            cells[x].text = line[x]
+            x += 1
+        p_table = cells[2].paragraphs[0]
+        #cells[2].paragraphs[0].paragraph_format.space_before = None
+        #cells[2].paragraphs[0].paragraph_format.space_after = None
+        cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
+        #cells[2].paragraphs[0].paragraph_format.alignment = WD_TABLE_ALIGNMENT.RIGHT
+        #cells[2].vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+    dir = os.path.join(os.getcwd(),"../files")
+    fname = switch_name+".docx"
+    document.save(os.path.join(dir,fname))
+    return(fname)
+
+#document.tables[0].rows[0].cells[0].paragraphs[0].runs[0].font.color.rgb = RGBColor(50, 0, 255)  # Blue Color
+#document.tables[0].rows[0].cells[0].paragraphs[0].runs[0].font.blod = True  # Bold
+def add_table_cell(table, row, col, text, fontSize=8, r=0, g=0, b=0, width=-1):
+    cell = table.cell(row,col)
+    if (width!=-1):
+        cell.width = Inches(width)
+    para = cell.add_paragraph(style=None)
+    para.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run = para.add_run(text)
+    run.bold = False
+    run.font.size = Pt(fontSize)
+    run.font.color.type == MSO_COLOR_TYPE.RGB
+    run.font.color.rgb = RGBColor(r, g, b)
+
+
+def set_col_widths(row):
+    widths = (Inches(2), Inches(1), Inches(1.1), Inches(2))
+    for idx, width in enumerate(widths):
+        row.cells[idx].width = width
+
+
+def set_repeat_table_header(row):
+    """ set repeat table row on every new page
+    """
+    tr = row._tr
+    trPr = tr.get_or_add_trPr()
+    tblHeader = OxmlElement('w:tblHeader')
+    tblHeader.set(qn('w:val'), "true")
+    trPr.append(tblHeader)
+    return row
 
 
 def add_hyperlink(paragraph, text, url, color, underline):
@@ -900,7 +869,6 @@ def get_or_create_hyperlink_style(d):
         hs.font.color.rgb = docx.shared.RGBColor(0x05, 0x63, 0xC1)
         hs.font.underline = True
         del hs
-
     return "Hyperlink"
 
 def register_switch(incoming_msg,host="",called=""):
