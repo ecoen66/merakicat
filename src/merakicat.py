@@ -268,6 +268,15 @@ def greeting(incoming_msg):
     
     # Test if it is equivalent to a /command.
     match command: 
+        case "demo":
+            # If the only thing the user typed was "demo report""...
+            if user_text.lower() == 'demo report':
+                # We did not...
+                response.markdown = "I'm sorry, but I don't know what you mean."
+            else:
+                # We did, so check it!
+                response.markdown = check_switch(incoming_msg,demo=True)
+				
         case "migrate":
           # If the only thing the user typed was "migrate""...
           if user_text.lower() == 'migrate':
@@ -572,12 +581,13 @@ def greeting(incoming_msg):
 
 # This function will check a Catalyst switch config for compatible Meraki features
 #
-def check_switch(incoming_msg,config="",host=""):
+def check_switch(incoming_msg,config="",host="",demo=False):
     """
     This function will check a Catalyst switch config for feature mapping to Meraki.
     :param incoming_msg: The incoming message object from Teams
     :param config: The incoming config filespec from the check_card Teams card
     :param host: The incoming hostname or IP address from the check_card Teams card
+    :param demo: Indicates whether or not we are creating a fake demo report
     :return: A text or markdown based reply
     """
     
@@ -586,48 +596,67 @@ def check_switch(incoming_msg,config="",host=""):
     # Import the global stateful variables
     global config_file, host_id, times
     
-    if config == "":
+    if not demo:
+        if config == "":
+            
+            # Since we weren't passed a config filespec, check for a hostname or IP address
+            if host == "":
+                return "You need to enter either a host or a filename."
+            
+            # We were passed a hostname or IP address...
+            else:
+                host_id = host
+            
+            # SSH to the switch with netmiko, read the config, grab the hostname,
+            # write the config out to a file using the hostname as part of the filespec
+            session_info = {
+                'device_type': 'cisco_xe',
+                'host': host_id,
+                'username': ios_username,
+                'password': ios_password,
+                'port' : ios_port,          # optional, defaults to 22
+                'secret': ios_secret,     # optional, defaults to ''
+            }
+            net_connect = ConnectHandler(**session_info)
+            switch_name = net_connect.find_prompt()
+            net_connect.enable()
+            switch_name = net_connect.find_prompt()
+            switch_name = switch_name[:len(switch_name) - 1]
+            net_connect.send_command('term len 0')
+            config = net_connect.send_command('show running-config')
+            net_connect.send_command('term len 24')
+            net_connect.disconnect()
+            dir = os.path.join(os.getcwd(),"../files")
+            file = open(os.path.join(dir,switch_name+".cfg"), "w")
+            file.writelines(config)
+            file.close()
+            config = os.path.join(dir,switch_name+".cfg")
         
-        # Since we weren't passed a config filespec, check for a hostname or IP address
-        if host == "":
-            return "You need to enter either a host or a filename."
+        # Update the global stateful variable for later
+        config_file = config
         
-        # We were passed a hostname or IP address...
-        else:
-            host_id = host
-        
-        # SSH to the switch with netmiko, read the config, grab the hostname,
-        # write the config out to a file using the hostname as part of the filespec
-        session_info = {
-            'device_type': 'cisco_xe',
-            'host': host_id,
-            'username': ios_username,
-            'password': ios_password,
-            'port' : ios_port,          # optional, defaults to 22
-            'secret': ios_secret,     # optional, defaults to ''
-        }
-        net_connect = ConnectHandler(**session_info)
-        switch_name = net_connect.find_prompt()
-        net_connect.enable()
-        switch_name = net_connect.find_prompt()
-        switch_name = switch_name[:len(switch_name) - 1]
-        net_connect.send_command('term len 0')
-        config = net_connect.send_command('show running-config')
-        net_connect.send_command('term len 24')
-        net_connect.disconnect()
-        dir = os.path.join(os.getcwd(),"../files")
-        file = open(os.path.join(dir,switch_name+".cfg"), "w")
-        file.writelines(config)
-        file.close()
-        config = os.path.join(dir,switch_name+".cfg")
-    
-    # Update the global stateful variable for later
-    config_file = config
-    
-    # Run the function in config_checker to get the list of features configured on
-    # the switch (supported and not)
-    # host_name,the_list,unsupported_features,More_info = CheckFeatures(config_file)
-    host_name,the_list = CheckFeatures(config_file)
+        # Run the function in config_checker to get the list of features configured on
+        # the switch (supported and not)
+        # host_name,the_list,unsupported_features,More_info = CheckFeatures(config_file)
+        host_name,the_list = CheckFeatures(config_file)
+    else:
+        # Prep for a demo report
+        host_name = "Demonstration"
+        the_list = list()
+        for key,value in mc_pedia['switch']:
+            the_list.append(
+            	[value['name'],
+                value['available'],
+                value['translatable'],
+                value['note'],
+                value['url'])
+        for key,value in mc_pedia['port']:
+            the_list.append(
+            	[value['name'],
+                value['available'],
+                value['translatable'],
+                value['note'],
+                value['url'])
     
     # Clear some variables for the next step
     can_list = list()
@@ -635,9 +664,9 @@ def check_switch(incoming_msg,config="",host=""):
     not_list = list()
     not_list_doc = list()
     more = dict()
+    
     # Go through the outcome from the read_conf functions and split the supported and
     # unsupported features as well as the additional text and links for the unsupported
-    
     x = 0
     not_notes = list()
     while x < (len(the_list)):
