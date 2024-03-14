@@ -202,7 +202,9 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe':"snmp = parse.find_objects('^snmp')\n"
+            'iosxe':"snmp = parse.find_objects('^snmp')\n",
+            'url': "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/SNMP_Overview_and_Configuration",
+            'note': "Configured network-wide"
         },
         
         'logging_host':{
@@ -213,7 +215,9 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe':"logging_host = parse.find_objects('^logging')\n"
+            'iosxe':"logging_host = parse.find_objects('^logging')\n",
+            'url': "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/Syslog_Server_Overview_and_Configuration",
+            'note': "Configured network-wide"
         },
         
         'ntp':{
@@ -290,7 +294,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
         
         'dhcp':{
             'name':"DHCP server",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': '^ip\sdhcp\spool',
             'meraki': {
@@ -518,7 +522,9 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "logging = parse.find_objects('^logging')\n"
+            'iosxe': "logging = parse.find_objects('^logging')\n",
+            'url': "https://documentation.meraki.com/General_Administration/Cross-Platform_Content/Meraki_Event_Log",
+            'note':"Configured by default"
         },
         
         'ip_sla':{
@@ -981,7 +987,7 @@ if debug:\n\
             },
             'iosxe': "storm_control = child.re_match_typed(regex=r'\sstorm-control?(\S.*)')\n",
             'url':"https://documentation.meraki.com/MS/Other_Topics/Storm_Control_for_MS",
-            'note':"Network-wide"
+            'note':"Configured network-wide"
         },
         
         'protected': {

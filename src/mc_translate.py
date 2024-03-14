@@ -66,7 +66,7 @@ def Evaluate(config_file):
         intf_for_test[:] = [y for y in intf_for_test if not (
             y.re_match_typed('^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("Loopback") or
-            y.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
+            #y.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
             #y.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
             y.re_match_typed('^interface\s+(\S.*)$').startswith("AppGig"))]
         ## Test the remaining interfaces for shutdown and add to shut list
@@ -82,7 +82,7 @@ def Evaluate(config_file):
         intf[:] = [x for x in intf if not (
             x.re_match_typed('^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("Loopback") or
-            x.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
+            #x.re_match_typed('^interface\s+(\S.*)$').startswith("Vlan") or
             #x.re_match_typed('^interface\s+(\S.*)$').startswith("Port-channel") or
             x.re_match_typed('^interface\s+(\S.*)$').startswith("AppGig"))]
         
@@ -94,93 +94,101 @@ def Evaluate(config_file):
             
             #Only interface name will be used to catogrize different types of interfaces (downlink and uplink)
             only_intf_name = re.sub("\d+|\\/","",intf_name)
-            if only_intf_name == "Port-channel":
-                Switch_module = "0"
-            else:
-                Switch_module = intf_obj.re_match_typed('^interface\s\S+?thernet+(\d)')
-                if Switch_module == "":
-                    Switch_module = intf_obj.re_match_typed('^interface\s\S+?GigE+(\d)')
-            
-            All_interfaces[only_intf_name].append(intf_name)
-            
-            port_dict[intf_name] = {}
-            port_dict[intf_name]['sw_module'] = "1"
-            port_dict[intf_name]['sub_module'] = "0"
-            #port_dict[intf_name]['desc'] = ""
-            port_dict[intf_name]['port'] = ""
-            #[intf_name]['mode'] = ""
-            port_dict[intf_name]['mac'] = []
-            port_dict[intf_name]['active'] = "true"
-            #try:
-            port,sub_module = check(intf_name)
-            port_dict[intf_name]['sub_module'] = sub_module
-            if sub_module == "1":
-                if re.search(r'^GigabitEthernet',intf_name):
-                    Gig_uplink.append(intf_name)
-                elif re.search(r'^TenGigabitEthernet',intf_name):
-                    Ten_Gig_uplink.append(intf_name)
-                elif re.search(r'^TwentyFiveGigE',intf_name):
-                    Twenty_Five_Gig_uplink.append(intf_name)
-                elif re.search(r'^FortyGigabitEthernet',intf_name):
-                    Forty_Gig_uplink.append(intf_name)
-                elif re.search(r'^HundredGigabitEthernet',intf_name):
-                    Hundred_Gig_uplink.append(intf_name)
-            
-            if debug:
-                print(f"Made it to Switch_module test")
-            if Switch_module == "0":
+            if not only_intf_name == "Vlan":
+                if only_intf_name == "Port-channel":
+                    Switch_module = "0"
+                else:
+                    Switch_module = intf_obj.re_match_typed('^interface\s\S+?thernet+(\d)')
+                    if Switch_module == "":
+                        Switch_module = intf_obj.re_match_typed('^interface\s\S+?GigE+(\d)')
+                
+                All_interfaces[only_intf_name].append(intf_name)
+                
+                port_dict[intf_name] = {}
                 port_dict[intf_name]['sw_module'] = "1"
-            if not Switch_module == "" and not Switch_module == "0":
-                port_dict[intf_name]['sw_module'] = Switch_module
-            
-            port_dict[intf_name]['port'] = port
-            port_dict[intf_name]['mac'].clear()
-            ## check if the interface in the shutdown list then mark it as shutdown
-            if intf_name in shut_interfaces:
-                port_dict[intf_name]['active'] = "false"
-            
-            if debug:
-                print("Checking children")
-            int_fx = intf_obj.children
-            if debug:
-                print(f"Children are: {int_fx}")
-            
-            ## Capture the configuration of the interface
-            port_sec_raw = max_mac = ""
-            for child in int_fx:
-                ### Try out our mc_pedia
-                if debug:
-                    print(f"child = {child}")
-                for key,val in mc_pedia['port'].items():
-                    newvals = {}
-                    if debug:
-                        print(f"key,val = {key},{val}")
-                    if not val['regex'] == "":
-                        if not child.re_match_typed(regex=val['regex']) == "":
-                            if not val['iosxe'] == "":
-                                exec(val.get('iosxe'),locals(),newvals)
-                                if debug:
-                                    print(f"newvals[{key}] = {newvals[key]}")
-                                if not newvals[key] == "":
-                                    port_dict[intf_name][key] = newvals[key]
-                try:
-                    port_sec_raw = child.re_match_typed(regex=r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)')
-                except:
-                    pass
+                port_dict[intf_name]['sub_module'] = "0"
+                #port_dict[intf_name]['desc'] = ""
+                port_dict[intf_name]['port'] = ""
+                #[intf_name]['mode'] = ""
+                port_dict[intf_name]['mac'] = []
+                port_dict[intf_name]['active'] = "true"
                 #try:
-                #    port_channel = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
-                #except:
-                #    pass
-                try:
-                    max_mac = child.re_match_typed(regex=r'\sswitchport\sport-security\smaximum\s+(\d)')
-                except:
-                    pass
-                if not port_sec_raw == "":
-                    port_dict[intf_name]['mac'].append(mac_build(port_sec_raw))
-                #if not port_channel == "":
-                #    port_dict[intf_name]['LACP_Group'] = port_channel
-                if not max_mac == "":
-                    port_dict[intf_name]['Port_Sec'] = max_mac
+                port,sub_module = check(intf_name)
+                port_dict[intf_name]['sub_module'] = sub_module
+                if sub_module == "1":
+                    if re.search(r'^GigabitEthernet',intf_name):
+                        Gig_uplink.append(intf_name)
+                    elif re.search(r'^TenGigabitEthernet',intf_name):
+                        Ten_Gig_uplink.append(intf_name)
+                    elif re.search(r'^TwentyFiveGigE',intf_name):
+                        Twenty_Five_Gig_uplink.append(intf_name)
+                    elif re.search(r'^FortyGigabitEthernet',intf_name):
+                        Forty_Gig_uplink.append(intf_name)
+                    elif re.search(r'^HundredGigabitEthernet',intf_name):
+                        Hundred_Gig_uplink.append(intf_name)
+                
+                if debug:
+                    print(f"Made it to Switch_module test")
+                if Switch_module == "0":
+                    port_dict[intf_name]['sw_module'] = "1"
+                if not Switch_module == "" and not Switch_module == "0":
+                    port_dict[intf_name]['sw_module'] = Switch_module
+                
+                port_dict[intf_name]['port'] = port
+                port_dict[intf_name]['mac'].clear()
+                ## check if the interface in the shutdown list then mark it as shutdown
+                if intf_name in shut_interfaces:
+                    port_dict[intf_name]['active'] = "false"
+                
+                if debug:
+                    print("Checking children")
+                int_fx = intf_obj.children
+                if debug:
+                    print(f"Children are: {int_fx}")
+                
+                ## Capture the configuration of the interface
+                port_sec_raw = max_mac = ""
+                for child in int_fx:
+                    ### Try out our mc_pedia
+                    if debug:
+                        print(f"child = {child}")
+                    for key,val in mc_pedia['port'].items():
+                        newvals = {}
+                        if debug:
+                            print(f"key,val = {key},{val}")
+                        if not val['regex'] == "":
+                            if not child.re_match_typed(regex=val['regex']) == "":
+                                if not val['iosxe'] == "":
+                                    exec(val.get('iosxe'),locals(),newvals)
+                                    if debug:
+                                        print(f"newvals[{key}] = {newvals[key]}")
+                                    if not newvals[key] == "":
+                                        port_dict[intf_name][key] = newvals[key]
+                    try:
+                        port_sec_raw = child.re_match_typed(regex=r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)')
+                    except:
+                        pass
+                    #try:
+                    #    port_channel = child.re_match_typed(regex=r'\schannel-group\s+(\d)')
+                    #except:
+                    #    pass
+                    try:
+                        max_mac = child.re_match_typed(regex=r'\sswitchport\sport-security\smaximum\s+(\d)')
+                    except:
+                        pass
+                    if not port_sec_raw == "":
+                        port_dict[intf_name]['mac'].append(mac_build(port_sec_raw))
+                    #if not port_channel == "":
+                    #    port_dict[intf_name]['LACP_Group'] = port_channel
+                    if not max_mac == "":
+                        port_dict[intf_name]['Port_Sec'] = max_mac
+            else:
+                # interface Vlan#
+                All_interfaces[only_intf_name].append(intf_name)
+                port_dict[intf_name] = {}
+                port_dict[intf_name]['active'] = "true"
+                port_dict[intf_name]['vlan'] = intf_obj.re_match_typed('^interface\sVlan(\d+)')
+                print(f"for {intf_name}, vlan is {port_dict[intf_name]['vlan']}")
         
         Uplink_list, Downlink_list, Other_list = split_down_up_link(All_interfaces,Gig_uplink)
         if debug:
