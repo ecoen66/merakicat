@@ -644,19 +644,21 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         host_name = "Demonstration"
         the_list = list()
         for key,value in mc_pedia['switch']:
-            the_list.append(
-            	[value['name'],
-                value['available'],
-                value['translatable'],
-                value['note'],
-                value['url'])
+            if not value['regex'] == '':
+                the_list.append(
+                	[value['name'],
+                    value['available'],
+                    value['translatable'],
+                    value['note'],
+                    value['url'])
         for key,value in mc_pedia['port']:
-            the_list.append(
-            	[value['name'],
-                value['available'],
-                value['translatable'],
-                value['note'],
-                value['url'])
+            if not value['regex'] == '':
+                the_list.append(
+                	[value['name'],
+                    value['available'],
+                    value['translatable'],
+                    value['note'],
+                    value['url'])
     
     # Clear some variables for the next step
     can_list = list()
