@@ -124,19 +124,26 @@ else:\n\
         print(f'networkId = {networkId}')\n\
     try:\n\
         ## Create the switch stack\n\
-        response = dashboard.switch.createNetworkSwitchStack(networkId=networkId, serials=sw_list, name=switch_name)\n\
+        r = dashboard.switch.getNetworkSwitchStacks(networkId=networkId)\n\
+        for stack in r:\n\
+            for serial in sw_list:\n\
+                if serial in stack['serials'][0]:\n\
+                    response = dashboard.switch.deleteNetworkSwitchStack(networkId,stack['id'])\n\
+                    break\n\
+        switchStackId = dashboard.switch.createNetworkSwitchStack(networkId=networkId, serials=sw_list, name=switch_name)['id']\n\
         if debug:\n\
+            print(f'switchStackId = {switchStackId}')\n\
             print(f'Dashboard response to Create Stack was: {response}')\n\
-        # Oops, we got a Dashboard ERROR while claiming the switches to the network\n\
+    # Oops, we got a Dashboard ERROR while claiming the switches to the network\n\
     except Exception as e:\n\
-        if debug:\n\
-            print(f'Meraki API error: {e}')\n\
-            print(f'status code = {e.status}')\n\
-            print(f'reason = {e.reason}')\n\
-            print(f'error = {e.message}')\n\
-        if not e.message['errors'][0] == 'Cannot stack switches that are already part of a switch stack':\n\
-            print(f'Cannot create switch stack {switch_name} with {sw_list}.')\n\
-return_vals = ['urls','networkId']\n\
+       if debug:\n\
+           print(f'Meraki API error: {e}')\n\
+           print(f'status code = {e.status}')\n\
+           print(f'reason = {e.reason}')\n\
+           print(f'error = {e.message}')\n\
+       if not e.message['errors'][0] == 'Cannot stack switches that are already part of a switch stack':\n\
+           print(f'Cannot create switch stack {switch_name} with {sw_list}.')\n\
+return_vals = ['urls','networkId','switchStackId']\n\
 if debug:\n\
     print(f'dir() = {dir()}')\n"
             }
@@ -565,12 +572,39 @@ if len(stack) == 1:\n\
         'static_routing':{
             'name': "Static routing",
             'support':"✓",
-            'translatable':"",
+            'translatable':"✓",
             'regex': '^ip\sroute',
+            'iosxe': "\
+print('I have arrived at IOSXE for static_routing')\n\
+static_routing = list()\n\
+route_obj_list = parse.find_objects('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
+for route_obj in route_obj_list:\n\
+    net = route_obj.re_match_typed('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')\n\
+    mask = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')\n\
+    gw = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
+    import ipaddress\n\
+    subnet = str(ipaddress.ip_network(net + '/' + mask, strict=False))\n\
+    print(f'subnet = {subnet}')\n\
+    static_routing.append({'net': net, 'mask': mask, 'gw': gw, 'subnet': subnet})\n\
+    print(f'net, mask, gw, subnet = {net}, {mask}, {gw}, {subnet}')\n\
+print(f'static_routing is now {static_routing}')\n",
             'meraki': {
-                'skip': True
-            },
-            'iosxe': "static_routing = parse.find_objects('^ip\sroute')\n"
+                'skip': 'post_ports',
+                'post_process': "\
+for route in switch_dict['static_routing']:\n\
+    if route['subnet'] == '0.0.0.0/0':\n\
+        default_route = route\n\
+        return_vals = ['default_route']\n",
+                'post_ports_process': "\
+print(f'In static_routing post_ports_process')\n\
+for route in switch_dict['static_routing']:\n\
+    if not route['subnet'] == '0.0.0.0/0':\n\
+        if 'switchStackId' in switch_dict.keys():\n\
+            dashboard.switch.createNetworkSwitchStackRoutingStaticRoute(switch_dict['networkId'],switch_dict['switchStackId'],route['subnet'],route['gw'])\n\
+        else:\n\
+            #dashboard.switch.createDeviceSwitchRoutingStaticRoute(switch_dict['networkId'],switch_dict['switchStackId'],route['subnet'],route['gw'])\n\
+            pass\n"
+            }
         },
         
         'ipv6':{
@@ -833,6 +867,8 @@ except:\n\
         
         'private_vlan': {
             'name': "Private VLAN",
+            'support':"",
+            'translatable':"",
             'regex': r'\sswitchport\smode\sprivate-vlan?(\S.*)',
             'meraki': {
                 'skip': True
@@ -842,7 +878,46 @@ except:\n\
             'note':"Port Isolation can be used"
         },
         
+        'l3_interface': {
+            'name': "Layer 3 Interface",
+            'support':"✓",
+            'translatable':"✓",
+            'regex': r'\sip\saddress\s(\S.*)',
+            'meraki': {
+                'skip': 'post_ports',
+                'post_process':"l3_interface = True\n\
+return_vals=['l3_interface']\n",
+                'post_ports_process': "\
+print(f'switch_dict = {switch_dict}')\n\
+print()\n\
+print(f'port_dict = {port_dict}')\n\
+ports = [v for k, v in port_dict.items() if 'Vlan' in k]\n\
+print(f'ports = {ports}')\n\
+x = 0\n\
+while x < len(ports):\n\
+    print(f'ports[{x}] = {ports[x]}')\n\
+    print(f'ports[{x}][meraki_args] = ')\n\
+    print(ports[x]['meraki_args'])\n\
+    ma = ports[x]['meraki_args']\n\
+    if 'defaultGateway' in ma[4].keys():\n\
+        dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
+        dg = x\n\
+        break\n\
+    x+=1\n\
+x = 0\n\
+while x < len(ports):\n\
+    if not x == dg:\n\
+        ma = ports[x]['meraki_args']\n\
+        dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
+    x+=1\n"
+            },
+            'iosxe': "l3_interface = child.re_match_typed(regex=r'\sip\saddress\s(\S.*)')\n"
+        },
+        
         'root_guard': {
+            'name': "STP Root Guard",
+            'support':"✓",
+            'translatable':"✓",
             'iosxe': "root_guard = 'yes'\n",
             'regex': r'\sspanning-tree\sguard\sroot?(\S.+)',
             'meraki': {
@@ -852,6 +927,9 @@ except:\n\
         },
         
         'loop_guard': {
+            'name': "STP Loop Guard",
+            'support':"✓",
+            'translatable':"✓",
             'iosxe': "loop_guard = 'yes'\n",
             'regex': r'\sspanning-tree\sguard\sloop?(\S.+)',
             'meraki': {
@@ -861,6 +939,9 @@ except:\n\
         },
         
         'bpdu_guard': {
+            'name': "STP BPDU Guard",
+            'support':"✓",
+            'translatable':"✓",
             'iosxe': "bpdu_guard =  'yes'\n",
             'regex': r'\sspanning-tree\sbpduguard?(\S.+)',
             'meraki': {
@@ -931,39 +1012,6 @@ if debug:\n\
                 'skip': True
             },
             'iosxe': "portfast = child.re_match_typed(regex=r'\sspanning-tree\sportfast?(\S.*)')\n"
-        },
-        
-        'root_guard': {
-            'name': "STP RootGuard",
-            'support':"✓",
-            'translatable':"✓",
-            'regex': r'\sspanning-tree\sguard\sroot?(\S.*)',
-            'meraki': {
-                'skip': True
-            },
-            'iosxe': "root_guard = child.re_match_typed(regex=r'\sspanning-tree\sguard\sroot?(\S.*)')\n"
-        },
-        
-        'loop_guard': {
-            'name': "STP Loop Guard",
-            'support':"✓",
-            'translatable':"✓",
-            'regex': r'\sspanning-tree\sguard\sloop?(\S.*)',
-            'meraki': {
-                'skip': True
-            },
-            'iosxe': "loop_guard = child.re_match_typed(regex=r'\sspanning-tree\sguard\sloop?(\S.*)')\n"
-        },
-        
-        'bpdu_guard': {
-            'name': "STP BPDU Guard",
-            'support':"✓",
-            'translatable':"✓",
-            'regex': r'\sspanning-tree\sbpduguard?(\S.*)',
-            'meraki': {
-                'skip': True
-            },
-            'iosxe': "bpdu_guard = child.re_match_typed(regex=r'\sspanning-tree\sbpduguard?(\S.*)')\n"
         },
         
         'flex_links': {
@@ -1180,6 +1228,41 @@ while x < len(key_list):\n\
         continue\n\
     x+=1\n\
 return_vals = ['channel_port_dict']\n"
+            }
+        }
+    },
+    'layer3': {
+        
+        'interfaceIp': {
+            'iosxe': "",
+            'regex': '',
+            'meraki': {
+                'skip': 'post_process',
+                'post_process': "\
+interfaceIp = ''\n\
+if 'l3_interface' in interface_settings.keys():\n\
+    import re\n\
+    if not interface_settings['l3_interface'] == '':\n\
+        interfaceIp = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', interface_settings['l3_interface'])[0]\n"
+            }
+        },
+        
+        'subnet': {
+            'iosxe': "",
+            'regex': '',
+            'meraki': {
+                'skip': 'post_process',
+                'post_process': "\
+if 'l3_interface' in interface_settings.keys():\n\
+        import re\n\
+        subnet = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', interface_settings['l3_interface'])[0]\n\
+        import ipaddress\n\
+        print(f'interface_settings = {interface_settings}')\n\
+        subnet = str(ipaddress.ip_network(interface_settings['interfaceIp'] + '/' + subnet, strict=False))\n\
+        defaultGateway = switch_dict['default_route']['gw']\n\
+        if ipaddress.ip_address(defaultGateway) in ipaddress.ip_network(subnet):\n\
+            print(f'defaultGateway = {defaultGateway}')\n\
+            return_vals = ['defaultGateway']\n"
             }
         }
     }

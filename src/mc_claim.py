@@ -39,6 +39,11 @@ def Claim(dashboard,dest_net,serials):
     ]}
     '''
 
+    for serial in serials:
+        try:
+            r = (dashboard.networks.removeNetworkDevices(networkId=dest_net,serial=serial))
+        except:
+            pass
     try:
         r = (dashboard.networks.claimNetworkDevices(networkId=dest_net,serials=serials))
         if debug:

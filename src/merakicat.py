@@ -32,8 +32,7 @@ from mc_splitcheck_serials import Split_check_serials
 from mc_ping import Ping
 from mc_file_exists import File_exists
 from mc_user_info import *
-from mc_cards import *
-
+from mc_pedia import *
 from tabulate import tabulate
 tabulate.PRESERVE_WHITESPACE = True
 import os, platform, requests, json, pprint, re, sys, time
@@ -271,12 +270,12 @@ def greeting(incoming_msg):
         case "demo":
             # If the only thing the user typed was "demo report""...
             if user_text.lower() == 'demo report':
-                # We did not...
-                response.markdown = "I'm sorry, but I don't know what you mean."
-            else:
-                # We did, so check it!
+                # It was so check it!
                 response.markdown = check_switch(incoming_msg,demo=True)
-				
+            else:
+                # It was not...?!
+                response.markdown = "I'm sorry, but I don't know what you mean."
+        
         case "migrate":
           # If the only thing the user typed was "migrate""...
           if user_text.lower() == 'migrate':
@@ -641,24 +640,34 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         host_name,the_list = CheckFeatures(config_file)
     else:
         # Prep for a demo report
-        host_name = "Demonstration"
+        host_name = switch_name = "Demonstration"
         the_list = list()
-        for key,value in mc_pedia['switch']:
+        for k in mc_pedia['switch'].keys():
+            print(f"mc_pedia['switch'].keys() = {mc_pedia['switch'].keys()}")
+            print()
+            print(f"mc_pedia['switch'][k] = {mc_pedia['switch'][k]}")
+            value = mc_pedia['switch'][k]
             if not value['regex'] == '':
-                the_list.append(
-                	[value['name'],
-                    value['available'],
+                the_list.append([
+                    value['name'],
+                    value['support'],
                     value['translatable'],
-                    value['note'],
-                    value['url'])
-        for key,value in mc_pedia['port']:
+                    value['note'] if 'note' in value.keys() else "",
+                    value['url'] if 'url' in value.keys() else ""
+                ])
+        for k in mc_pedia['port'].keys():
+            print(f"mc_pedia['port'].keys() = {mc_pedia['port'].keys()}")
+            print()
+            print(f"mc_pedia['port'][k] = {mc_pedia['port'][k]}")
+            value = mc_pedia['port'][k]
             if not value['regex'] == '':
-                the_list.append(
-                	[value['name'],
-                    value['available'],
+                the_list.append([
+                    value['name'],
+                    value['support'],
                     value['translatable'],
-                    value['note'],
-                    value['url'])
+                    value['note'] if 'note' in value.keys() else "",
+                    value['url'] if 'url' in value.keys() else ""
+                ])
     
     # Clear some variables for the next step
     can_list = list()
