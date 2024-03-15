@@ -640,9 +640,6 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         host_name = switch_name = "Demonstration"
         the_list = list()
         for k in mc_pedia['switch'].keys():
-            print(f"mc_pedia['switch'].keys() = {mc_pedia['switch'].keys()}")
-            print()
-            print(f"mc_pedia['switch'][k] = {mc_pedia['switch'][k]}")
             value = mc_pedia['switch'][k]
             if not value['regex'] == '':
                 the_list.append([
@@ -653,9 +650,6 @@ def check_switch(incoming_msg,config="",host="",demo=False):
                     value['url'] if 'url' in value.keys() else ""
                 ])
         for k in mc_pedia['port'].keys():
-            print(f"mc_pedia['port'].keys() = {mc_pedia['port'].keys()}")
-            print()
-            print(f"mc_pedia['port'][k] = {mc_pedia['port'][k]}")
             value = mc_pedia['port'][k]
             if not value['regex'] == '':
                 the_list.append([
@@ -750,7 +744,7 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         if times == True:
             timing =  "\n=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
         fname = check_report_writer(switch_name,can_list_doc,not_list_doc)
-        return("\n\n" + report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
+        return("\n\n" + report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing+'\n')
 
 
 def check_report_writer(switch_name,can_list_doc,not_list_doc):
