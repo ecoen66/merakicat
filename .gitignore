@@ -3,6 +3,11 @@ src/mc_user_info.py
 
 # App-created files and logs
 files/*.cfg
+files/*.pdf
+files/*.docx
+files/*.ab0
+files/*.ab1
+files/*.pd
 *.log
 
 # webexteamsbot
