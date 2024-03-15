@@ -769,8 +769,9 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
     
     # Footer with date and time of the report
     footer = section.footer
-    footer.paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    footer.paragraphs[0].text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    paragraph = footer.paragraphs[0]
+    paragraph.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     
     # Report as a table
     table = document.add_table(rows=1,cols=4)
