@@ -371,8 +371,8 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
         
         # create a place to hold the Dashboard URL for each switch
         ## Configure the switch_name in the Dashboard
-        #if debug:
-        print(f"switch_dict = {switch_dict}")
+        if debug:
+            print(f"switch_dict = {switch_dict}")
         for key,val in mc_pedia['switch'].items():
             if (val['translatable'] == "✓" and val['meraki']['skip'] == "post_process") or val['meraki']['skip'] == "post_ports":
                 if val['meraki']['skip'] == "post_ports":
@@ -388,16 +388,17 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
                 while n < len(return_vals):
                     returns_dict[return_vals[n]] = switch_dict[return_vals[n]] = newvals[return_vals[n]]
                     n += 1
-                print(f"switch_dict = {switch_dict}")
+                if debug:
+                    print(f"switch_dict = {switch_dict}")
                 
         ## Loop to get all the interfaces in the port_dict
         y = 0
         while y <= len(Downlink_list)-1:
             interface_descriptor = Downlink_list[y]
             interface_settings = port_dict[interface_descriptor]
-            #if debug:
-            print("\n----------- "+interface_descriptor+" -----------")
-            pprint.pprint(interface_settings)
+            if debug:
+                print("\n----------- "+interface_descriptor+" -----------")
+                pprint.pprint(interface_settings)
             
             ## Check the switch that mapped to those catalyst ports
             try:
@@ -473,12 +474,13 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
                     if not val['meraki']['skip'] == True:
                         if val['meraki']['skip'] in ['post_process','post_ports']:
                             exec(val['meraki'].get('post_process'),locals(),newvals)
-                            #if debug:
-                            print(f"newvals = {newvals}")
+                            if debug:
+                                print(f"newvals = {newvals}")
                             if val['meraki']['skip'] == 'post_process':
                                 if not newvals[key] == "":
                                     interface_settings[key] = newvals[key]
-                        print(f"key = {key}, newvals[key] = {newvals[key]}")
+                        if debug:
+                            print(f"key = {key}, newvals[key] = {newvals[key]}")
                         try:
                             args[y][4].update({key: interface_settings[key]})
                         except:
@@ -498,7 +500,8 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
                                 if debug:
                                     print(f"args for {interface_descriptor} = {args[y][4]}")
                                 n += 1
-                print(f"args[{y}] = {args[y]}")
+                if debug:
+                    print(f"args[{y}] = {args[y]}")
             ## Append args to the port_dict as meraki_args
             port_dict[interface_descriptor]['meraki_args'] = args[y]
             
@@ -529,15 +532,17 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
                     configured_ports[switch_num].append(interface_settings['port'])
             y +=1
         
-        ## post_ports
-        print(f"At post_ports, port_dict = {port_dict}")
+        ## post_ports processing
         if debug:
+            print(f"At post_ports, port_dict = {port_dict}")
             print(f"Length of post_ports_list = {len(post_ports_list)}")
             print(f"post_ports_list = {post_ports_list}")
         if not len(post_ports_list) == 0:
             short_list = list(set(map(lambda x: x[0], post_ports_list)))
             if debug:
                 print(f"short_list = {short_list}")
+
+            # This is the processing loop for port-level post ports processes
             item = 0
             while item < len(short_list):
                 if debug:
@@ -557,7 +562,24 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
                                 port_dict[a_port] = newvals['channel_port_dict'][a_port]
                                 if debug:
                                     print(f"port_dict[a_port] = {port_dict[a_port]}")
+                        if 'configured_ports' in return_vals:
+                            cp_list = newvals['configured_ports']
+                            if debug:
+                                print(f"cp_list = {cp_list}")
+                            for port in cp_list:
+                                switch_num = "stack" if len(sw_list) > 1 else 1
+                                configured_ports[switch_num].append(port) 
+                        if 'unconfigured_ports' in return_vals:
+                            up_list = newvals['unconfigured_ports']
+                            if debug:
+                                print(f"up_list = {up_list}")
+                            for port in up_list:
+                                switch_num = "stack" if len(sw_list) > 1 else 1
+                                unconfigured_ports[switch_num].append(port) 
                 item += 1
+            
+            # This is not used yet, but I left this here in case we need it later for
+            # switch-level post ports processes
             item = 0
             while item < len(short_list):
                 if debug:
@@ -566,10 +588,12 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
                 newvals = {}
                 if short_list[item] in mc_pedia['switch'].keys():
                     exec(mc_pedia['switch'][short_list[item]]['meraki'].get('post_ports_process'),locals(),newvals)
+                    print(f"return_vals = {return_vals}")
                     if "return_vals" in newvals:
                         return_vals = newvals['return_vals']
                         pass
                 item += 1
+        
         if debug:
             print(f"\n\naction_list = {action_list}\n\n")
     loop_configure_meraki(port_dict,Downlink_list,switch_dict)
@@ -579,8 +603,8 @@ def Meraki_config_down(dashboard,organization_id,switch_path,sw_list,port_dict,D
     while x <= len(action_list)-1:
        all_actions.extend(action_list[x])
        x += 1
-    #if debug:
-    print(f"all_actions = {all_actions}")
+    if debug:
+        print(f"all_actions = {all_actions}")
     
     # Save an action batch file for the port features
     #dir = os.path.join(os.getcwd(),"../files")

@@ -11,10 +11,6 @@ from ciscoconfparse2 import CiscoConfParse
 from webexteamsbot import TeamsBot
 from webexteamsbot.models import Response
 from netmiko import ConnectHandler
-from pyadaptivecards.card import AdaptiveCard
-from pyadaptivecards.components import TextBlock, Column
-from pyadaptivecards.container import ColumnSet, Container
-from pyadaptivecards.options import Colors, FontSize, HorizontalAlignment
 from docx2pdf import convert
 import docx
 from docx.enum.table import WD_TABLE_ALIGNMENT,WD_CELL_VERTICAL_ALIGNMENT
@@ -35,6 +31,7 @@ from mc_user_info import *
 from mc_pedia import *
 from tabulate import tabulate
 tabulate.PRESERVE_WHITESPACE = True
+from datetime import datetime
 import os, platform, requests, json, pprint, re, sys, time
 
 # Retrieve required Meraki details from environment variables
@@ -738,7 +735,7 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         new_report = "<p>" + new_report+ "</p>"
         new_report = '<h3>Merakicat Feature Report for ' + switch_name + '</h3><br>' + new_report
         fname = check_report_writer(switch_name,can_list_doc,not_list_doc)
-        return(new_report + '''<br><br><b>Please review the results above.</b>
+        return(new_report + '<br><br><b>Please review the results above</b>, or in the file ' + fname + ''' on the system where I'm running.
 <br>If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type <b>translate</b> and a Meraki switch serial number.
 <br>If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type <b>migrate [to <i>meraki network</i>]</b>.
 ''')
@@ -756,12 +753,15 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         return("\n\n" + report + "\n\nPlease review the results above, or in the file " + fname + ".\nIf you wish, I can translate or migrate the Translatable features to an existing switch in the Meraki Dashboard."+timing)
 
 
-def check_report_writer(switch_name,can_list_doc,not_list_doc, pdf=False):
+def check_report_writer(switch_name,can_list_doc,not_list_doc):
     document = docx.Document()
     section = document.sections[0]
     header = section.header
     header.paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     header.paragraphs[0].text = "Merakicat Feature Check Report for "+switch_name
+    footer = section.footer
+    footer.paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    footer.paragraphs[0].text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     table = document.add_table(rows=1,cols=4)
     table.autofit = False
     col_count = len(table.columns)
@@ -802,7 +802,7 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc, pdf=False):
     fname = switch_name+".docx"
     fname_pdf = switch_name+".pdf"
     document.save(os.path.join(dir,fname))
-    if pdf:
+    if PDF:
         convert(os.path.join(dir,fname), (os.path.join(dir,fname_pdf)))
         os.remove(os.path.join(dir,fname))
         fname = fname_pdf
@@ -1180,15 +1180,23 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
         file.write(json.dumps(port_dict)) # use `json.loads` to do the reverse
         file.close()
 
-    switch = 0
+    x = 0
     r = ""
     if debug:
+        print(f"configured_ports = {configured_ports}")
+        print(f"unconfigured_ports = {unconfigured_ports}")
+    if debug:
         print(f"meraki_serials = {meraki_serials}")
-    while switch <= len(meraki_serials)-1:
-        if len(meraki_serials) == 1:
+    last_sw = 1 if len(meraki_serials) == 1 else len(meraki_serials)+1
+    while x <= last_sw - 1:
+        switch = "stack" if (len(meraki_serials) > 1 and x == last_sw-1) else x
+        if last_sw == 1:
             r += "\nFor the switch ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
         else:
-            r += "\nFor switch "+str(switch+1)+" ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
+            if len(meraki_serials) > 1 and x == last_sw-1:
+                r += "\nFor switch stack "+switch_name+":\n"
+            else:
+                r += "\nFor switch "+str(x+1)+" ["+meraki_serials[switch]+"]("+meraki_urls[switch]+"):\n"
         if len(configured_ports[switch]) > 0:
             if BOT:
                 r += "We were able to **successfully** " + verb + " ports: "
@@ -1209,7 +1217,8 @@ def translate_switch(incoming_msg,config=config_file,host=host_id,serials=meraki
                 r += unconfigured_ports[switch][u_port] + ", "
                 u_port+=1
             r += unconfigured_ports[switch][u_port] + "\n\n"
-        switch+=1
+        x+=1
+        
     if verb == "translate" and times:
         r += "\n--- Pushing to Dashboard took %s seconds" % str(round((time.time() - port_cfg_start_time), 2))
         r += "\n=== That entire translation took %s seconds" % str(round((time.time() - start_time), 2))

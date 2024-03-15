@@ -575,7 +575,6 @@ if len(stack) == 1:\n\
             'translatable':"✓",
             'regex': '^ip\sroute',
             'iosxe': "\
-print('I have arrived at IOSXE for static_routing')\n\
 static_routing = list()\n\
 route_obj_list = parse.find_objects('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
 for route_obj in route_obj_list:\n\
@@ -584,10 +583,7 @@ for route_obj in route_obj_list:\n\
     gw = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
     import ipaddress\n\
     subnet = str(ipaddress.ip_network(net + '/' + mask, strict=False))\n\
-    print(f'subnet = {subnet}')\n\
-    static_routing.append({'net': net, 'mask': mask, 'gw': gw, 'subnet': subnet})\n\
-    print(f'net, mask, gw, subnet = {net}, {mask}, {gw}, {subnet}')\n\
-print(f'static_routing is now {static_routing}')\n",
+    static_routing.append({'net': net, 'mask': mask, 'gw': gw, 'subnet': subnet})\n",
             'meraki': {
                 'skip': 'post_ports',
                 'post_process': "\
@@ -596,14 +592,13 @@ for route in switch_dict['static_routing']:\n\
         default_route = route\n\
         return_vals = ['default_route']\n",
                 'post_ports_process': "\
-print(f'In static_routing post_ports_process')\n\
 for route in switch_dict['static_routing']:\n\
     if not route['subnet'] == '0.0.0.0/0':\n\
         if 'switchStackId' in switch_dict.keys():\n\
             dashboard.switch.createNetworkSwitchStackRoutingStaticRoute(switch_dict['networkId'],switch_dict['switchStackId'],route['subnet'],route['gw'])\n\
         else:\n\
             if len(sw_list) == 1:\n\
-            dashboard.switch.createDeviceSwitchRoutingStaticRoute(swlist[0],route['subnet'],route['gw'])\n"
+                dashboard.switch.createDeviceSwitchRoutingStaticRoute(swlist[0],route['subnet'],route['gw'])\n"
             }
         },
         
@@ -888,34 +883,46 @@ except:\n\
                 'post_process':"l3_interface = True\n\
 return_vals=['l3_interface']\n",
                 'post_ports_process': "\
-print(f'switch_dict = {switch_dict}')\n\
-print()\n\
-print(f'port_dict = {port_dict}')\n\
-ports = [v for k, v in port_dict.items() if 'Vlan' in k]\n\
-print(f'ports = {ports}')\n\
+configured_ports = list()\n\
+unconfigured_ports = list()\n\
+l3_ports = [v for k, v in port_dict.items() if 'Vlan' in k]\n\
+if debug:\n\
+    print(f'l3_ports = {l3_ports}')\n\
 x = 0\n\
-while x < len(ports):\n\
-    print(f'ports[{x}] = {ports[x]}')\n\
-    print(f'ports[{x}][meraki_args] = ')\n\
-    print(ports[x]['meraki_args'])\n\
-    ma = ports[x]['meraki_args']\n\
+while x < len(l3_ports):\n\
+    if debug:\n\
+        print(f'l3_ports[{x}] = {l3_ports[x]}')\n\
+        print(f'l3_ports[{x}][meraki_args] = ')\n\
+        print(l3_ports[x]['meraki_args'])\n\
+    ma = l3_ports[x]['meraki_args']\n\
     if 'defaultGateway' in ma[4].keys():\n\
-        if 'switchStackId' in switch_dict.keys():\n\
-            dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
-        else:\n\
-            dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
+        try:\n\
+            if 'switchStackId' in switch_dict.keys():\n\
+                dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
+            else:\n\
+                dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
+            configured_ports.append(ma[2])\n\
+        except:\n\
+            print(f'We had an issue creating {ma[2]}.')\n\
+            unconfigured_ports.append(ma[2])\n\
         dg = x\n\
         break\n\
     x+=1\n\
 x = 0\n\
-while x < len(ports):\n\
+while x < len(l3_ports):\n\
     if not x == dg:\n\
-        ma = ports[x]['meraki_args']\n\
-        if 'switchStackId' in switch_dict.keys():\n\
-            dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
-        else:\n\
-            dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
-    x+=1\n"
+        ma = l3_ports[x]['meraki_args']\n\
+        try:\n\
+            if 'switchStackId' in switch_dict.keys():\n\
+                dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
+            else:\n\
+                dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
+            configured_ports.append(ma[2])\n\
+        except:\n\
+            print(f'We had an issue creating {ma[2]}.')\n\
+            unconfigured_ports.append(ma[2])\n\
+    x+=1\n\
+return_vals = ['l3_ports','configured_ports','unconfigured_ports']\n"
             },
             'iosxe': "l3_interface = child.re_match_typed(regex=r'\sip\saddress\s(\S.*)')\n"
         },
@@ -1263,11 +1270,13 @@ if 'l3_interface' in interface_settings.keys():\n\
         import re\n\
         subnet = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', interface_settings['l3_interface'])[0]\n\
         import ipaddress\n\
-        print(f'interface_settings = {interface_settings}')\n\
+        if debug:\n\
+            print(f'interface_settings = {interface_settings}')\n\
         subnet = str(ipaddress.ip_network(interface_settings['interfaceIp'] + '/' + subnet, strict=False))\n\
         defaultGateway = switch_dict['default_route']['gw']\n\
         if ipaddress.ip_address(defaultGateway) in ipaddress.ip_network(subnet):\n\
-            print(f'defaultGateway = {defaultGateway}')\n\
+            if debug:\n\
+                print(f'defaultGateway = {defaultGateway}')\n\
             return_vals = ['defaultGateway']\n"
             }
         }

@@ -7,6 +7,7 @@ switch:
  - Hostname
  - Spanning Tree RSTP
  - Stack
+ - Static Routing
 
 port:
  - Port Description
@@ -18,6 +19,7 @@ port:
  - Allowed VLANs
  - Data VLAN
  - Voice VLAN
+ - Layer 3 Interface
  - STP RootGuard
  - STP Loop Guard
  - STP BPDU Guard
@@ -92,6 +94,7 @@ python merakicat.py
     export IOS_PORT=<the ssh port number for the Catalyst switches - usually 22>
     export MERAKI_API_KEY=<your meraki dashboard API key>
     ```
+In addition to these settings, various debugs and a choice of PDF vs. DOCX report format can be enabled in the mc_user_info.py file.
 
 1. This app can be run either as a Webex Teams bot or as a standalone command line program.  To run it as a bot, just start it without any parameters:  
 
