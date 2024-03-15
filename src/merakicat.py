@@ -756,19 +756,31 @@ def check_switch(incoming_msg,config="",host="",demo=False):
 def check_report_writer(switch_name,can_list_doc,not_list_doc):
     document = docx.Document()
     section = document.sections[0]
+    
+    # Header with graphics and the switch/stack name
     header = section.header
-    header.paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    header.paragraphs[0].text = "Merakicat Feature Check Report for "+switch_name
+    paragraph = header.paragraphs[0]
+    logo_run = paragraph.add_run()
+    logo_run.add_picture("merakicat.png", width=Inches(1))
+    text_run = paragraph.add_run()
+    text_run.text = '\t' + "Merakicat Feature Check Report for "+switch_name + '\t' # For center align of text
+    logo_run = paragraph.add_run()
+    logo_run.add_picture("cisco_meraki.png", width=Inches(1))
+    
+    # Footer with date and time of the report
     footer = section.footer
     footer.paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     footer.paragraphs[0].text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    
+    # Report as a table
     table = document.add_table(rows=1,cols=4)
     table.autofit = False
     col_count = len(table.columns)
     headers=["Feature","Available","Translatable","More Information"]
     heading_cells = table.rows[0].cells
     set_col_widths(table.rows[0])
-
+    
+    # Setup a repeating heading row for the table
     x = 0
     while x< col_count:
         heading_cells[x].text = headers[x]
@@ -776,6 +788,8 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
         x += 1
     heading_cells[3].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     set_repeat_table_header(table.rows[0])
+    
+    # Loop through the can_list_doc items and add to the table
     for line in can_list_doc:
         row = table.add_row()
         set_col_widths(row)
@@ -786,6 +800,8 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
             x += 1
         cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    # Loop through the not_list_doc items and add to the table, creating any hyperlinks
     for line in not_list_doc:
         row = table.add_row()
         set_col_widths(row)
@@ -798,10 +814,15 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
         p_table = cells[2].paragraphs[0]
         p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
+    
+    # Write out the report as a docx file
     dir = os.path.join(os.getcwd(),"../files")
     fname = switch_name+".docx"
     fname_pdf = switch_name+".pdf"
     document.save(os.path.join(dir,fname))
+    
+    # If PDF setting in mc_user_info.py file is True,convert docx to PDF
+    # and delete the docx file
     if PDF:
         convert(os.path.join(dir,fname), (os.path.join(dir,fname_pdf)))
         os.remove(os.path.join(dir,fname))
@@ -812,27 +833,16 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
 #document.tables[0].rows[0].cells[0].paragraphs[0].runs[0].font.blod = True  # Bold
 
 
-def add_table_cell(table, row, col, text, fontSize=8, r=0, g=0, b=0, width=-1):
-    cell = table.cell(row,col)
-    if (width!=-1):
-        cell.width = Inches(width)
-    para = cell.add_paragraph(style=None)
-    para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    run = para.add_run(text)
-    run.bold = False
-    run.font.size = Pt(fontSize)
-    run.font.color.type == MSO_COLOR_TYPE.RGB
-    run.font.color.rgb = RGBColor(r, g, b)
-
-
 def set_col_widths(row):
+    """ adjust column widths for docx
+    """
     widths = (Inches(2), Inches(1), Inches(1.1), Inches(2))
     for idx, width in enumerate(widths):
         row.cells[idx].width = width
 
 
 def set_repeat_table_header(row):
-    """ set repeat table row on every new page
+    """ set repeat table row on every new page for docx
     """
     tr = row._tr
     trPr = tr.get_or_add_trPr()
@@ -843,6 +853,8 @@ def set_repeat_table_header(row):
 
 
 def add_hyperlink(paragraph, text, url, color, underline):
+    """ creates a hyperlink for insertion into a docx file
+    """
     # This gets access to the document.xml.rels file and gets a new relation id value
     part = paragraph.part
     r_id = part.relate_to(url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
@@ -870,35 +882,6 @@ def add_hyperlink(paragraph, text, url, color, underline):
     paragraph._p.append(hyperlink)
     return hyperlink
 
-
-#This is only needed if you're using the builtin style above
-def get_or_create_hyperlink_style(d):
-    """If this document had no hyperlinks so far, the builtin
-       Hyperlink style will likely be missing and we need to add it.
-       There's no predefined value, different Word versions
-       define it differently.
-       This version is how Word 2019 defines it in the
-       default theme, excluding a theme reference.
-    """
-    if "Hyperlink" not in d.styles:
-        if "Default Character Font" not in d.styles:
-            ds = d.styles.add_style("Default Character Font",
-                                    docx.enum.style.WD_STYLE_TYPE.CHARACTER,
-                                    True)
-            ds.element.set(docx.oxml.shared.qn('w:default'), "1")
-            ds.priority = 1
-            ds.hidden = True
-            ds.unhide_when_used = True
-            del ds
-        hs = d.styles.add_style("Hyperlink",
-                                docx.enum.style.WD_STYLE_TYPE.CHARACTER,
-                                True)
-        hs.base_style = d.styles["Default Character Font"]
-        hs.unhide_when_used = True
-        hs.font.color.rgb = docx.shared.RGBColor(0x05, 0x63, 0xC1)
-        hs.font.underline = True
-        del hs
-    return "Hyperlink"
 
 def register_switch(incoming_msg,host="",called=""):
     """
