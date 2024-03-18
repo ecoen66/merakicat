@@ -1460,7 +1460,7 @@ if BOT:
     bot_commands = list(list())
     bot_commands.extend([["* **help**", "Get help."],
     ["* **check [host _FQDN or IP address_ | file _filespec_] [with timing]**", "Check a Catalyst switch config for both translatable and possible Meraki features"],
-    ["* **register [host _FQDN or IP address_] [with timing]**", "Register a Catalyst switch to the Meraki Dashboard"],
+    ["* **register [host _FQDN or IP address_] [with timing] [with details]**", "Register a Catalyst switch to the Meraki Dashboard"],
     ["* **claim [_Meraki serial numbers_] [to _Meraki network name_] [with timing]**", "Claim Catalyst switches to a Meraki Network"],
     ["* **translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_] [with timing]**", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers"],
     ["* **migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]**", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]])
