@@ -25,7 +25,10 @@ def CheckFeatures(sw_file):
         if debug:
             print(f"key,val = {key},{val}\n")
         if not val['regex'] == "":
-            if not parse.find_objects(val['regex']) == []:
+            sample = parse.find_objects(val['regex'])
+            if not sample  == []:
+                if debug:
+                    print(f"sample = {sample}")
                 #print(f"val.get('iosxe') = {val.get('iosxe')}")
                 exec(val.get('iosxe'),locals(),newvals)
                 if debug:
@@ -49,6 +52,9 @@ def CheckFeatures(sw_file):
                         hold_me.extend([val['url']])
                     except:
                         hold_me.extend([""])
+                    if debug:
+                        print(f"hold_me = {hold_me}")
+                    hold_me.extend([sample])
                     if debug:
                         print(f"hold_me = {hold_me}")
                     Features_configured.append(hold_me)

@@ -31,6 +31,7 @@ from mc_user_info import *
 from mc_pedia import *
 from tabulate import tabulate
 tabulate.PRESERVE_WHITESPACE = True
+from itertools import islice
 from datetime import datetime
 import os, platform, requests, json, pprint, re, sys, time
 
@@ -663,8 +664,10 @@ def check_switch(incoming_msg,config="",host="",demo=False):
     # Clear some variables for the next step
     can_list = list()
     can_list_doc = list()
+    can_list_console = list()
     not_list = list()
     not_list_doc = list()
+    not_list_console = list()
     more = dict()
     
     # Go through the outcome from the read_conf functions and split the supported and
@@ -674,15 +677,20 @@ def check_switch(incoming_msg,config="",host="",demo=False):
     while x < (len(the_list)):
         if not the_list[x][1] == "":
             can_list_doc.append(the_list[x])
+            can_list_console.append(list(islice(the_list,5)))
             can_list.append([the_list[x][0],the_list[x][1],the_list[x][2]])
         else:
             not_list_doc.append(the_list[x])
+            not_list_console.append(list(islice(the_list,5)))
             not_list.append([the_list[x][0]," "," "])
             not_notes.append([the_list[x][3],the_list[x][4]])
         x +=1
     all_list = list(list())
     all_list.extend(can_list)
     all_list.extend(not_list)
+    all_list_console = list(list())
+    all_list_console.extend(can_list_console)
+    all_list_console.extend(not_list_console)
     all_list_doc = list(list())
     all_list_doc.extend(can_list_doc)
     all_list_doc.extend(not_list_doc)
@@ -739,7 +747,7 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         # Build the report
         if debug:
             print(f"all_list = {all_list}")
-        report=tabulate(all_list_doc,headers=["Feature","Available","Translatable","Notes","For more info, see this URL"])
+        report=tabulate(all_list_console,headers=["Feature","Available","Translatable","Notes","For more info, see this URL"])
         timing = ""
         if times == True:
             timing =  "\n=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
@@ -757,7 +765,10 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
     logo_run = paragraph.add_run()
     logo_run.add_picture("merakicat.png", width=Inches(1))
     text_run = paragraph.add_run()
-    text_run.text = '\t' + "Merakicat Feature Check Report for "+switch_name + '\t' # For center align of text
+    if DETAILED:
+        text_run.text = '\t' + "Merakicat Detailed Report for "+switch_name + '\t' # For center align of text
+    else:
+        text_run.text = '\t' + "Merakicat Feature Check Report for "+switch_name + '\t' # For center align of text
     logo_run = paragraph.add_run()
     logo_run.add_picture("cisco_meraki.png", width=Inches(1))
     
@@ -767,48 +778,80 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
     paragraph.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     paragraph.text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     
-    # Report as a table
-    table = document.add_table(rows=1,cols=4)
-    table.autofit = False
-    col_count = len(table.columns)
-    headers=["Feature","Available","Translatable","More Information"]
-    heading_cells = table.rows[0].cells
-    set_col_widths(table.rows[0])
-    
-    # Setup a repeating heading row for the table
-    x = 0
-    while x< col_count:
-        heading_cells[x].text = headers[x]
-        heading_cells[x].paragraphs[0].runs[0].font.bold = True  # Bold
-        x += 1
-    heading_cells[3].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    set_repeat_table_header(table.rows[0])
-    
-    # Loop through the can_list_doc items and add to the table
-    for line in can_list_doc:
-        row = table.add_row()
-        set_col_widths(row)
-        cells = row.cells
+    if DETAILED:
+        # Report as a document
+        table = document.add_table(rows=1,cols=4)
+        table.autofit = False
+        col_count = len(table.columns)
+        headers=["Feature","Available","Translatable","More Information"]
+        heading_cells = table.rows[0].cells
+        set_col_widths(table.rows[0])
+        
+        # Loop through the can_list_doc items and add to the table
+        for line in can_list_doc:
+            if len(line) > 5:
+                document.add_heading(line[0], level=2)
+                paragraph = document.add_paragraph()
+                for ios_line in line[5]:
+                    paragraph.text += str(ios_line.linenum) + '\t' + ios_line.text+ '\n'
+        '''
+        # Loop through the not_list_doc items and add to the table, creating any hyperlinks
+        for line in not_list_doc:
+            row = table.add_row()
+            set_col_widths(row)
+            cells = row.cells
+            cells[2].merge(cells[3])
+            x = 0
+            while x< col_count-1:
+                cells[x].text = line[x]
+                x += 1
+            p_table = cells[2].paragraphs[0]
+            p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
+        '''
+    else:
+        # Report as a table
+        table = document.add_table(rows=1,cols=4)
+        table.autofit = False
+        col_count = len(table.columns)
+        headers=["Feature","Available","Translatable","More Information"]
+        heading_cells = table.rows[0].cells
+        set_col_widths(table.rows[0])
+        
+        # Setup a repeating heading row for the table
         x = 0
-        while x< col_count-1:
-            cells[x].text = line[x]
+        while x< col_count:
+            heading_cells[x].text = headers[x]
+            heading_cells[x].paragraphs[0].runs[0].font.bold = True  # Bold
             x += 1
-        cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    # Loop through the not_list_doc items and add to the table, creating any hyperlinks
-    for line in not_list_doc:
-        row = table.add_row()
-        set_col_widths(row)
-        cells = row.cells
-        cells[2].merge(cells[3])
-        x = 0
-        while x< col_count-1:
-            cells[x].text = line[x]
-            x += 1
-        p_table = cells[2].paragraphs[0]
-        p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
+        heading_cells[3].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        set_repeat_table_header(table.rows[0])
+        
+        # Loop through the can_list_doc items and add to the table
+        for line in can_list_doc:
+            row = table.add_row()
+            set_col_widths(row)
+            cells = row.cells
+            x = 0
+            while x< col_count-1:
+                cells[x].text = line[x]
+                x += 1
+            cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        # Loop through the not_list_doc items and add to the table, creating any hyperlinks
+        for line in not_list_doc:
+            row = table.add_row()
+            set_col_widths(row)
+            cells = row.cells
+            cells[2].merge(cells[3])
+            x = 0
+            while x< col_count-1:
+                cells[x].text = line[x]
+                x += 1
+            p_table = cells[2].paragraphs[0]
+            p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
     
     # Write out the report as a docx file
     dir = os.path.join(os.getcwd(),"../files")
