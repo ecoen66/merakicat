@@ -105,14 +105,6 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     **Bot commands include the following:**
 
-    Check a Catalyst switch config for both translatable and possible Meraki features using a card:
-    ```
-    /check
-    ```
-    Translate a Catalyst switch config to a Meraki switch with translatable settings using a card:
-    ```
-    /translate
-    ```
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
     check [host <FQDN or IP address> | file <filespec>] [with timing] [with detail]
