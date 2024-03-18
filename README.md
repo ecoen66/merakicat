@@ -29,6 +29,7 @@ port:
  
 Once installed, you can print the entire index of the feature encyclopedia, or to print the index based on either supported and translatable items or both, enter:
 ```
+cd src
 python mc_pedia [support] [translatable]
 ```
  
