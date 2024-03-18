@@ -8,6 +8,9 @@ DEBUG_CLAIM = False
 DEBUG_SPLIT = False
 DEBUG_FILE = False
 
+# So you want a PDF report generated from the DOCX report (requires MS Word)
+PDF = False
+
 # For ngrok to create a web proxy tunnel for the bot
 NGROK_AUTHTOKEN = "er9usadfj2349uwdfhusdjadu324hjwwdfjksdfu92348ywdf"
 

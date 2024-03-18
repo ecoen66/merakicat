@@ -1,6 +1,6 @@
 # merakicat
 
-This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.  
+This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.
 
 Below is the list of configurations the tool can currently translate:
 
@@ -115,7 +115,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
-    check [host <FQDN or IP address> | file <filespec>] [with timing]
+    check [host <FQDN or IP address> | file <filespec>] [with timing] [with detail]
     ```
     Register a Catalyst switch to the Meraki Dashboard:
     ```
@@ -139,7 +139,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
-    check host <FQDN or IP address> | file <filespec> [with timing]
+    check host <FQDN or IP address> | file <filespec> [with timing] [with detail]
     ```
     Register a Catalyst switch or stack to the Meraki Dashboard:
     ```

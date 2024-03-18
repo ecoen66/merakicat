@@ -29,7 +29,6 @@ def CheckFeatures(sw_file):
             if not sample  == []:
                 if debug:
                     print(f"sample = {sample}")
-                #print(f"val.get('iosxe') = {val.get('iosxe')}")
                 exec(val.get('iosxe'),locals(),newvals)
                 if debug:
                     print(f"newvals = {newvals}\n")
@@ -54,9 +53,12 @@ def CheckFeatures(sw_file):
                         hold_me.extend([""])
                     if debug:
                         print(f"hold_me = {hold_me}")
-                    hold_me.extend([sample])
+                    sub_feature_iterations = list()
+                    for sub_sample in sample:
+                        sub_feature_iterations.append([sub_sample])
+                    hold_me.extend([sub_feature_iterations])
                     if debug:
-                        print(f"hold_me = {hold_me}")
+                        print(f"hold_me = {hold_me}\n")
                     Features_configured.append(hold_me)
 
     port_details = parse.find_objects('^interface')
@@ -69,12 +71,28 @@ def CheckFeatures(sw_file):
         while x < len(check_features):
             Features_configured.append(check_features[x])
             x +=1
-        
     #Only capture unique values in a new list
     for entry in Features_configured:
-        if entry not in aux_features_config:
+        if debug:
+            print(f"entry = {entry}")
+        if len(aux_features_config)== 0:
             aux_features_config.append(entry)
-    
+            if debug:
+                print("Created the first aux entry")
+        else:
+            found = False
+            for i, lst in enumerate(aux_features_config):
+                for j, feature_name in enumerate(lst):
+                    if feature_name == entry[0]:
+                        found = True
+                        if debug:
+                            print(f"aux_features_config[{i}][5] = {aux_features_config[i][5]}")
+                            print(f"entry[5] = {entry[5]}")
+                        aux_features_config[i][5].extend(entry[5])
+            if not found:
+                aux_features_config.append(entry)
+    if debug:
+        print(f"aux_features_config = {aux_features_config}")
     return host_name,aux_features_config
     
 def Interface_detail(interface_value):
@@ -93,6 +111,7 @@ def Interface_detail(interface_value):
     #check the configuration of the interfaces
     interface_children = interface_value.children
     for child in interface_children:
+        parent = child.parent
         #'''
         for key, val in mc_pedia['port'].items():
             newvals = {}
@@ -100,23 +119,30 @@ def Interface_detail(interface_value):
                 print(f"key,val = {key},{val}\n")
             if not val['regex'] == "":
                 if not child.re_match_typed(regex=val['regex']) == "":
+                    if debug:
+                        print(f"child = {child}")
                     exec(val.get('iosxe'),locals(),newvals)
                     if debug:
                         print(f"newvals[{key}] = {newvals[key]}\n")
                     if not newvals[key] == "":
-                        hold_me = list()
-                        hold_me.extend([val['name'],val['support'],val['translatable']])
+                        hold_sub = list()
+                        hold_sub.extend([val['name'],val['support'],val['translatable']])
                         try:
-                            hold_me.extend([val['note']])
+                            hold_sub.extend([val['note']])
                         except:
-                            hold_me.extend([""])
+                            hold_sub.extend([""])
                         try:
-                            hold_me.extend([val['url']])
+                            hold_sub.extend([val['url']])
                         except:
-                            hold_me.extend([""])
+                            hold_sub.extend([""])
                         if debug:
-                            print(f"hold_me = {hold_me}")
-                        feature_list_on_interface.append(hold_me)
+                            print(f"hold_sub = {hold_sub}")
+                        hold_sub.append([[child,parent]])
+                        if debug:
+                            print(f"hold_sub = {hold_sub}")
+                        feature_list_on_interface.append(hold_sub)
+        if debug:
+            print(f"feature_list_on_interface = {feature_list_on_interface}")
     if debug:
         print(f"feature_list_on_interface for {interface_value} = {feature_list_on_interface}\n")
     

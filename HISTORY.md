@@ -1,12 +1,16 @@
 # History
 
+## 0.0.13 (03-18-2024)
+
+  - Option added for detailed check report "with detail".
+  - Still not yet released on PyPI.
+  
 ## 0.0.12 (03-15-2024)
 
   - Option for PDF vs. DOCX reporting in checker.
   - Layer 3 Interfaces (interface VLAN) supported.
   - Static routes supported.
   - Command added for "demo report".
-  - Still not yet released on PyPI.
   
 ## 0.0.11 (03-12-2024)
 

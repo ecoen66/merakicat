@@ -3,7 +3,8 @@
 Meraki Cat webexteamsbot is a chat bot with a swiss army knife
 of functions for checking & translating Catalyst IOSXE to Meraki
 switch configs, registering Catalyst switches to Dashboard and
-claiming them.
+claiming them.  It can also be run from the command line or in
+batch from a shell script.
 """
 import ngrok
 import meraki
@@ -18,8 +19,6 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Inches
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from collections import defaultdict
-from functools import reduce
 from mc_cfg_check import CheckFeatures
 from mc_translate import Evaluate, Meraki_config_down#, Meraki_config_up
 from mc_claim import Claim
@@ -29,6 +28,8 @@ from mc_ping import Ping
 from mc_file_exists import File_exists
 from mc_user_info import *
 from mc_pedia import *
+from collections import defaultdict
+from functools import reduce
 from tabulate import tabulate
 tabulate.PRESERVE_WHITESPACE = True
 from itertools import islice
@@ -112,6 +113,7 @@ unconfigured_ports = defaultdict(list)
 command_line_msg = Response()
 times = False
 report = False
+detailed = False
 
 #Setup some global, stateful variables
 config_file = ""
@@ -226,7 +228,7 @@ if BOT:
 
 def greeting(incoming_msg):
     global config_file, host_id, meraki_net, meraki_net_name, meraki_serials
-    global times, report
+    global times, report, detailed
     
     if debug:
         print(f"incoming_msg = {incoming_msg}")
@@ -260,6 +262,12 @@ def greeting(incoming_msg):
     if not re.search('\swith\stimings|\swith\stiming|\swith\stime|\swith\stimes', user_text, re.IGNORECASE) == None:
         user_text = re.sub('\swith\stimings|\swith\stiming|\swith\stimes|\swith\stime', '', user_text, re.IGNORECASE)
         times = True
+    
+    # If the user asked for detailed reports, we will try to give it to them
+    detailed = False
+    if not re.search('\swith\sdetails|\swith\sdetail', user_text, re.IGNORECASE) == None:
+        user_text = re.sub('\swith\sdetails|\swith\sdetail', '', user_text, re.IGNORECASE)
+        detailed = True
     
     serials = list()
     
@@ -677,11 +685,11 @@ def check_switch(incoming_msg,config="",host="",demo=False):
     while x < (len(the_list)):
         if not the_list[x][1] == "":
             can_list_doc.append(the_list[x])
-            can_list_console.append(list(islice(the_list,5)))
+            can_list_console.append(list(islice(the_list[x],5)))
             can_list.append([the_list[x][0],the_list[x][1],the_list[x][2]])
         else:
             not_list_doc.append(the_list[x])
-            not_list_console.append(list(islice(the_list,5)))
+            not_list_console.append(list(islice(the_list[x],5)))
             not_list.append([the_list[x][0]," "," "])
             not_notes.append([the_list[x][3],the_list[x][4]])
         x +=1
@@ -756,6 +764,9 @@ def check_switch(incoming_msg,config="",host="",demo=False):
 
 
 def check_report_writer(switch_name,can_list_doc,not_list_doc):
+    
+    global detailed
+    
     document = docx.Document()
     section = document.sections[0]
     
@@ -765,7 +776,7 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
     logo_run = paragraph.add_run()
     logo_run.add_picture("merakicat.png", width=Inches(1))
     text_run = paragraph.add_run()
-    if DETAILED:
+    if detailed:
         text_run.text = '\t' + "Merakicat Detailed Report for "+switch_name + '\t' # For center align of text
     else:
         text_run.text = '\t' + "Merakicat Feature Check Report for "+switch_name + '\t' # For center align of text
@@ -778,37 +789,38 @@ def check_report_writer(switch_name,can_list_doc,not_list_doc):
     paragraph.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     paragraph.text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     
-    if DETAILED:
+    if detailed:
         # Report as a document
-        table = document.add_table(rows=1,cols=4)
-        table.autofit = False
-        col_count = len(table.columns)
-        headers=["Feature","Available","Translatable","More Information"]
-        heading_cells = table.rows[0].cells
-        set_col_widths(table.rows[0])
-        
         # Loop through the can_list_doc items and add to the table
+        heading = document.add_heading('Available features in Meraki Dashboard, by line number', level=1)
+        heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for line in can_list_doc:
-            if len(line) > 5:
-                document.add_heading(line[0], level=2)
+            heading = document.add_heading(line[0] + '\t\t', level=2)
+            add_hyperlink(heading,line[3], line[4], '0000FF', False)
+            if len(line[5][0]) == 1:
                 paragraph = document.add_paragraph()
                 for ios_line in line[5]:
-                    paragraph.text += str(ios_line.linenum) + '\t' + ios_line.text+ '\n'
-        '''
-        # Loop through the not_list_doc items and add to the table, creating any hyperlinks
+                        paragraph.text += '\t' + str(ios_line[0].linenum) + '\t' + ios_line[0].text+ '\n'
+            else:
+                for ios_line in line[5]:
+                    heading = document.add_heading('\t' + str(ios_line[1].linenum) + '\t' + ios_line[1].text, level=3)
+                    paragraph = document.add_paragraph()
+                    paragraph.text += '\t' + str(ios_line[0].linenum) + '\t' + ios_line[0].text+ '\n'
+        document.add_page_break()
+        heading = document.add_heading('Features NOT currently availaible in Meraki Dashboard, by line number', level=1)
+        heading.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for line in not_list_doc:
-            row = table.add_row()
-            set_col_widths(row)
-            cells = row.cells
-            cells[2].merge(cells[3])
-            x = 0
-            while x< col_count-1:
-                cells[x].text = line[x]
-                x += 1
-            p_table = cells[2].paragraphs[0]
-            p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            hyperlink = add_hyperlink(p_table, line[3], line[4], '0000FF', False)
-        '''
+            heading = document.add_heading(line[0] + '\t\t', level=2)
+            add_hyperlink(heading,line[3], line[4], '0000FF', False)
+            if len(line[5][0]) == 1:
+                paragraph = document.add_paragraph()
+                for ios_line in line[5]:
+                    paragraph.text += '\t' + str(ios_line[0].linenum) + '\t' + ios_line[0].text+ '\n'
+            else:
+                for ios_line in line[5]:
+                    heading = document.add_heading('\t' + str(ios_line[1].linenum) + '\t' + ios_line[1].text, level=3)
+                    paragraph = document.add_paragraph()
+                    paragraph.text += '\t' + str(ios_line[0].linenum) + '\t' + ios_line[0].text+ '\n'
     else:
         # Report as a table
         table = document.add_table(rows=1,cols=4)
@@ -1466,7 +1478,7 @@ else:
     command_list = list(list())
     command_list.extend([
       ["help", "This list of commands"],
-      ["check host <FQDN or IP address> | file <filespec> [with timing]", "Check a Catalyst switch config for both translatable and possible Meraki features"],
+      ["check host <FQDN or IP address> | file <filespec> [with timing] [with details]", "Check a Catalyst switch config for both translatable and possible Meraki features"],
       ["register host <FQDN or IP address> [with timing]", "Register a Catalyst switch to the Meraki Dashboard"],
       ["claim <Meraki serial numbers> to <Meraki network name> [with timing]", "Claim Catalyst switches to a Meraki Network"],
       ["translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers> [with timing]", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers"],
