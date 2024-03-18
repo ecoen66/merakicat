@@ -3,6 +3,7 @@
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.  
 
 Below is the list of configurations the tool can currently translate:
+
 switch:
  - Hostname
  - Spanning Tree RSTP
@@ -26,12 +27,12 @@ port:
  - Etherchannel LACP
 
  
-Once installed, you can print the entire index of this encyclopedia, or to print the index based on either supported and translatable items or both, enter:
+Once installed, you can print the entire index of the feuture encyclopedia, or to print the index based on either supported and translatable items or both, enter:
 ```
 python mc_pedia [support] [translatable]
 ```
  
-After the configuration is pushed to the Meraki dashboard, the app will present a summary of configured ports and the ones are not.
+After the configuration is pushed to the Meraki dashboard, the app will present a summary of configured ports and those that were not configured.
 
 # Prerequisites
 
@@ -160,7 +161,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 
 # ngrok for usage as a bot
 
-[ngrok](http://ngrok.com) will make easy for you to develop your code with a live bot.
+[ngrok](http://ngrok.com) will make it easy for you to interact with meraki cat as a bot.
 
 You can find account instructions here under `Sign up for free!`: [https://dashboard.ngrok.com/login](https://dashboard.ngrok.com/login)
 
