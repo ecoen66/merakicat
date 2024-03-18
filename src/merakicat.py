@@ -1463,13 +1463,15 @@ if BOT:
     ["* **register [host _FQDN or IP address_] [with timing] [with details]**", "Register a Catalyst switch to the Meraki Dashboard"],
     ["* **claim [_Meraki serial numbers_] [to _Meraki network name_] [with timing]**", "Claim Catalyst switches to a Meraki Network"],
     ["* **translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_] [with timing]**", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers"],
-    ["* **migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]**", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]])
+    ["* **migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]**", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate"],
+    ["* **demo report]**", "Create a demo report for all features currently in the encyclopedia"]])
     bot.add_command("help", "This list of commands", greeting)
     bot.add_command("check [host _FQDN or IP address_ | file _filespec_] [with timing]", "Check a Catalyst switch config for both translatable and possible Meraki features", greeting)
     bot.add_command("register [host _FQDN or IP address_] [with timing]", "Register a Catalyst switch to the Meraki Dashboard", greeting)
     bot.add_command("claim [_Meraki serial numbers_] [to _Meraki network name_] [with timing]", "Claim Catalyst switches to a Meraki Network", greeting)
     bot.add_command("translate [host _FQDN or IP address_ | file _filespec_] [to _Meraki serial numbers_] [with timing]", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers", greeting)
     bot.add_command("migrate [host _FQDN or IP address_] [to _Meraki network name_] [with timing]", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate", greeting)
+    bot.add_command("demo report", "Create a demo report for all features currently in the encyclopedia", greeting)
     
     # Every bot includes a default "/echo" command.  You can remove it, or any
     # other command with the remove_command(command) method.
@@ -1482,7 +1484,8 @@ else:
       ["register host <FQDN or IP address> [with timing]", "Register a Catalyst switch to the Meraki Dashboard"],
       ["claim <Meraki serial numbers> to <Meraki network name> [with timing]", "Claim Catalyst switches to a Meraki Network"],
       ["translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers> [with timing]", "Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers"],
-      ["migrate host <FQDN or IP address> to <Meraki network name> [with timing]", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate"]
+      ["migrate host <FQDN or IP address> to <Meraki network name> [with timing]", "Migrate a Catalyst switch to a Meraki switch - register, claim & translate"],
+      ["demo report", "Create a demo report for all features currently in the encyclopedia"]
     ])
 
 

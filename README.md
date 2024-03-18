@@ -76,7 +76,7 @@ python merakicat.py
 
 # Usage
 
-1. The easiest way to use this module is to set a few environment variables
+* The easiest way to use this module is to set a few environment variables
 
     > Note: As an alternative, you may rename mc_user_sample.py to mc_user_info.py and edit the variables there.
     > Although more convenient, it is less secure.
@@ -125,6 +125,10 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     migrate [host <FQDN or IP address>] [to <Meraki network name>] [with timing]
     ```
+    Create a demo report for all features currently in the encyclopedia:
+    ```
+    demo report
+    ```
 
 
 1. To run it from the command line (or from a shell script), enter any of the following:
@@ -148,6 +152,10 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
     ```
     migrate host <FQDN or IP address> to <Meraki network name> [with timing]
+    ```
+    Create a demo report for all features currently in the encyclopedia:
+    ```
+    demo report
     ```
 
 
