@@ -125,7 +125,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     migrate [host <FQDN or IP address>] [to <Meraki network name>] [with timing]
     ```
-    Create a demo report for all features currently in the encyclopedia:
+    Create a demo report for all features currently in the feature encyclopedia:
     ```
     demo report
     ```
@@ -153,7 +153,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     migrate host <FQDN or IP address> to <Meraki network name> [with timing]
     ```
-    Create a demo report for all features currently in the encyclopedia:
+    Create a demo report for all features currently in the feature encyclopedia:
     ```
     demo report
     ```
