@@ -29,6 +29,7 @@ port:
  
 Once installed, you can print the entire index of the feature encyclopedia, or to print the index based on either supported and translatable items or both, enter:
 ```
+cd src
 python mc_pedia [support] [translatable]
 ```
  
@@ -64,7 +65,7 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
 > Python 3.11+ is recommended.
 
-- Clone the github repository and install the requirements
+ - Clone the github repository and install the requirements
 
 ```
 git clone https://github.com/ecoen66/merakicat
@@ -76,7 +77,7 @@ python merakicat.py
 
 # Usage
 
-- The easiest way to use this module is to set a few environment variables
+ - The easiest way to use this module is to set a few environment variables
 
     > Note: As an alternative, you may rename mc_user_sample.py to mc_user_info.py and edit the variables there.
     > Although more convenient, it is less secure.
