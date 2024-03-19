@@ -110,6 +110,8 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     check [host <FQDN or IP address> | file <filespec>] [with timing] [with detail]
     ```
+    > Note: The check command can also be used with one or more attached files through drag and drop.
+    
     Register a Catalyst switch to the Meraki Dashboard:
     ```
     register [host <FQDN or IP address>] [with timing]

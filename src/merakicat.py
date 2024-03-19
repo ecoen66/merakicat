@@ -11,6 +11,10 @@ import meraki
 from ciscoconfparse2 import CiscoConfParse
 from webexteamsbot import TeamsBot
 from webexteamsbot.models import Response
+import urllib.request
+import requests
+import shutil
+from webexteamssdk import WebexTeamsAPI, ApiError
 from netmiko import ConnectHandler
 from docx2pdf import convert
 import docx
@@ -232,21 +236,34 @@ def greeting(incoming_msg):
     
     if debug:
         print(f"incoming_msg = {incoming_msg}")
-        print(f"type of incoming_msg = {type(incoming_msg)}")
     
     # Create a Response object to later craft a reply in Markdown.
     response = Response()
     
     # This will be our copy of the user input to work with
     user_text = incoming_msg.text
-    
-    # If first word from the user's input was Bot's first name, remove it
-    if BOT:
-        if user_text.split()[0] == bot_fname:
-            user_text = user_text.split(bot_fname + ' ', 1)[1]
+    user_roomId = incoming_msg.roomId
+    user_files = list()
+    user_files = incoming_msg.files
     
     # Grab the first word from the user's input.
     command = user_text.split()[0].lower()
+    
+    if BOT:
+        # If first word from the user's input was Bot's first name, remove it
+        if user_text.split()[0] == bot_fname:
+            user_text = user_text.split(bot_fname + ' ', 1)[1]
+        
+        # If the command is 'check' and the user attached any config files to
+        # the bot message, we will try to use them
+        if command == 'check' and (not user_files == None):
+            x = 0
+            while x < len(user_files)-1:
+                config_file = save(user_files[x])
+                response.markdown = check_switch(incoming_msg,config=config_file)
+                c = create_message(user_roomId, response.markdown)
+                x += 1
+    
     
     if debug:
         print(f"command = {command}")
@@ -579,6 +596,22 @@ def greeting(incoming_msg):
     return response
 
 
+def save(file):
+    """
+    This function will save an attached file from a Webex Teams message.
+    :param file: The file URL from the Teams message
+    :return: The path and filename of the saved file
+    """
+    api = WebexTeamsAPI(access_token=teams_token)
+    headers = {'Authorization': 'Bearer '+teams_token}
+    req = urllib.request.Request(file, headers=headers)
+    dir = os.path.join(os.getcwd(),"../files")
+    with urllib.request.urlopen(req) as response, open(os.path.join(dir,response.info()['Content-Disposition'][21:].replace('"', "")), 'wb') as out_file:
+        f_path = os.path.join(dir,response.info()['Content-Disposition'][21:].replace('"', ""))
+        print('Saving: '+f_path)
+        shutil.copyfileobj(response, out_file)
+    return(f_path)
+
 
 # Create functions that will be linked to bot commands to add capabilities
 # ------------------------------------------------------------------------
@@ -644,6 +677,7 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         # the switch (supported and not)
         # host_name,the_list,unsupported_features,More_info = CheckFeatures(config_file)
         host_name,the_list = CheckFeatures(config_file)
+        switch_name = host_name
     else:
         # Prep for a demo report
         host_name = switch_name = "Demonstration"
@@ -745,10 +779,13 @@ def check_switch(incoming_msg,config="",host="",demo=False):
         new_report = "<p>" + new_report+ "</p>"
         new_report = '<h3>Merakicat Feature Report for ' + switch_name + '</h3><br>' + new_report
         fname = check_report_writer(switch_name,can_list_doc,not_list_doc)
+        timing = ""
+        if times == True:
+            timing =  "<br>=== That config check took %s seconds" % str(round((time.time() - start_time), 2))
         return(new_report + '<br><br><b>Please review the results above</b>, or in the file ' + fname + ''' on the system where I'm running.
 <br>If you wish, I can migrate the Translatable features to an existing switch in the Meraki Dashboard.  Type <b>translate</b> and a Meraki switch serial number.
 <br>If you prefer, I can prepare for the switch to become a Meraki managed switch, keeping the translated config.  Just type <b>migrate [to <i>meraki network</i>]</b>.
-''')
+''' + timing)
     
     # Not a BOT
     else:
@@ -1432,6 +1469,7 @@ def create_message(rid, msgtxt):
     url = "https://api.ciscospark.com/v1/messages"
     data = {"roomId": rid, "markdown": msgtxt}
     response = requests.post(url, json=data, headers=headers)
+    print(f"response from create_massage was: {response}")
     return response.json()
 
 
@@ -1459,6 +1497,7 @@ if BOT:
     # Add new commands to the bot.
     bot_commands = list(list())
     bot_commands.extend([["* **help**", "Get help."],
+    ["* **check _drag-and-drop files_ [with timing]**", "Check one or more Catalyst switch config files for both translatable and possible Meraki features"],
     ["* **check [host _FQDN or IP address_ | file _filespec_] [with timing]**", "Check a Catalyst switch config for both translatable and possible Meraki features"],
     ["* **register [host _FQDN or IP address_] [with timing] [with details]**", "Register a Catalyst switch to the Meraki Dashboard"],
     ["* **claim [_Meraki serial numbers_] [to _Meraki network name_] [with timing]**", "Claim Catalyst switches to a Meraki Network"],

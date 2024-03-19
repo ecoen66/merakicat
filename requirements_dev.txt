@@ -19,3 +19,4 @@ ciscoconfparse2==0.5
 ngrok==1.1.0
 python-docx==1.1.0
 docx2pdf==0.1.8
+requests==2.31.0

@@ -1,9 +1,14 @@
 # History
 
+## 0.0.14 (03-19-2024)
+
+  - Option added for check with drag and drop files in bot mode.
+  - Added missing timing in check report in bot mode.
+  - Still not yet released on PyPI.
+  
 ## 0.0.13 (03-18-2024)
 
   - Option added for detailed check report "with detail".
-  - Still not yet released on PyPI.
   
 ## 0.0.12 (03-15-2024)
 

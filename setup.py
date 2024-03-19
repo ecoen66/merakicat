@@ -25,7 +25,8 @@ requirements = [
     "meraki==1.42.0",
     "ngrok==1.1.0",
     "python-docx==1.1.0",
-    "docx2pdf==0.1.8"
+    "docx2pdf==0.1.8",
+    "requests==2.31.0"
     ]
 
 setup_requirements = [ ]
