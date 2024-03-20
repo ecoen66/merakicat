@@ -147,7 +147,8 @@ def Evaluate(config_file):
                 port_dict[intf_name] = {}
                 port_dict[intf_name]['active'] = "true"
                 port_dict[intf_name]['vlan'] = intf_obj.re_match_typed('^interface\sVlan(\d+)')
-                print(f"for {intf_name}, vlan is {port_dict[intf_name]['vlan']}")
+                if debug:
+                    print(f"for {intf_name}, vlan is {port_dict[intf_name]['vlan']}")
             
             if debug:
                 print("Checking children")
@@ -316,9 +317,10 @@ def Evaluate(config_file):
         return port,Sub_module
     
     Uplink_list, Downlink_list, Other_list, port_dict, switch_name  = read_Cisco_SW()
-    print(f"\nDownlink_list = {Downlink_list}")
-    print(f"\nOther_list = {Other_list}")
-    print(f"\nUplink_list = {Uplink_list}")
+    if debug:
+        print(f"\nDownlink_list = {Downlink_list}")
+        print(f"\nOther_list = {Other_list}")
+        print(f"\nUplink_list = {Uplink_list}")
     return Uplink_list, Downlink_list, Other_list, port_dict, switch_dict
 
 

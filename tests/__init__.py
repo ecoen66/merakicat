@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 
-"""Unit test package for webexteamsbot."""
+"""Unit test package for merakicat."""

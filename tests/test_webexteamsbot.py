@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `webexteamsbot` package."""
+"""Tests for `merakicat` package."""
 
 
 import unittest

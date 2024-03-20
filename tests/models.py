@@ -10,7 +10,7 @@ class ModelTests(unittest.TestCase):
 
     def test_response_files(self):
         r = Response()
-        r.files = "someurl"
+        r.files = ["someurl"]
         self.assertEqual(r.files[0], "someurl")
 
     def test_response_roomid(self):
