@@ -1,19 +1,17 @@
-from mc_user_info import *
 import os
+from mc_user_info import DEBUG, DEBUG_FILE
 
 
 def File_exists(filespec):
     """
     Checks to see if a filespec can be found, and is a file.
-    Also returns True and a new filespec if the file can be found in our files directory
-    Also returns true if it just needs a ".cfg" appended
     :param filespec: The incoming user text from Teams or the command line
     :return :The filespec (possibly modified) and True or False
     """
     debug = DEBUG or DEBUG_FILE
-    
+
     does_exist = False
-    x=0
+    x = 0
     working_file = filespec
     while x <= 1:
         if debug:
@@ -36,7 +34,7 @@ def File_exists(filespec):
             filespec = test_file
             break
         working_file += ".cfg"
-        x +=1
+        x += 1
     if debug:
         print(f"In the end, {filespec} exists = {does_exist}")
     return filespec, does_exist

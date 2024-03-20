@@ -1,6 +1,10 @@
 # My own testing credentials
 src/mc_user_info.py
 
+# Miscellaneous files
+src/batch_helper_preview.json
+src/test.txt
+
 # App-created files and logs
 files/*.cfg
 files/*.pdf
