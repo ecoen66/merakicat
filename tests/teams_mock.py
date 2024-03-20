@@ -67,64 +67,6 @@ class MockTeamsAPI:
         return json.dumps(data)
 
     @classmethod
-    def incoming_membership_fail(cls):
-        data = {
-            'id': 'newwebhook',
-            'name': 'My Awesome Webhook',
-            'targetUrl': 'https://example.com/mywebhook',
-            'resource': 'memberships',
-            'event': 'created',
-            'orgId': 'OTZhYmMyYWEtM2RjYy0xMWU1LWExNTItZmUzNDgxOWNkYzlh',
-            'createdBy': 'fdsafdsf',
-            'appId': 'asdfasdfsadf',
-            'ownedBy': 'creator',
-            'status': 'active',
-            'created': '2018-09-13T19:35:51.248Z',
-            'actorId': 'OTZhYmMyYWEtM2RjYy0xMWU1LWExNTItZmUzNDgxOWNkYzlh',
-            'data': {
-                'id': 'incoming_membership_id',
-                'roomId': 'some_room_id',
-                'personId': 'some_person_id',
-                'personEmail': 'matt@example.com',
-                'personDisplayName': 'Matt',
-                'personOrgId': 'OTZhYmMyYWEtM2RjYy0xMWU1LWExNTItZmUzNDgxOWNk',
-                'isModerator': False,
-                'isMonitor': False,
-                'created': '2018-09-13T19:35:58.803Z'
-            }
-        }
-        return json.dumps(data)
-
-    @classmethod
-    def incoming_membership_pass(cls):
-        data = {
-            'id': 'newwebhook',
-            'name': 'My Awesome Webhook',
-            'targetUrl': 'https://example.com/mywebhook',
-            'resource': 'memberships',
-            'event': 'created',
-            'orgId': 'OTZhYmMyYWEtM2RjYy0xMWU1LWExNTItZmUzNDgxOWNkYzlh',
-            'createdBy': 'fdsafdsf',
-            'appId': 'asdfasdfsadf',
-            'ownedBy': 'creator',
-            'status': 'active',
-            'created': '2018-09-13T19:35:51.248Z',
-            'actorId': 'OTZhYmMyYWEtM2RjYy0xMWU1LWExNTItZmUzNDgxOWNkYzlh',
-            'data': {
-                'id': 'incoming_membership_id',
-                'roomId': 'some_room_id',
-                'personId': 'some_person_id',
-                'personEmail': 'matt@cisco.com',
-                'personDisplayName': 'Matt',
-                'personOrgId': 'OTZhYmMyYWEtM2RjYy0xMWU1LWExNTItZmUzNDgxOWNk',
-                'isModerator': False,
-                'isMonitor': False,
-                'created': '2018-09-13T19:35:58.803Z'
-            }
-        }
-        return json.dumps(data)
-
-    @classmethod
     def get_message_help(cls):
         data = {
             "id": "some_message_id",
@@ -132,7 +74,7 @@ class MockTeamsAPI:
             "roomType": "group",
             "toPersonId": "some_person_id",
             "toPersonEmail": "julie@example.com",
-            "text": "/help",
+            "text": "help",
             "personEmail": "matt@example.com",
             "personId": "some_person_id",
             "created": "2015-10-18T14:26:16+00:00",

@@ -768,13 +768,13 @@ active = 'true' if shut == '' else 'false'\n"
 \
 linkNegotiation = ''\n\
 try:\n\
-    speed = int(interface_settings['speed'])\n\
+    speed = int(intf_settings['speed'])\n\
     if speed < 1000:\n\
         linkNegotiation += str(speed)+' Megabit '\n\
     else:\n\
         linkNegotiation += str(int(speed/1000))+' Gigabit '\n\
     try:\n\
-        duplex = interface_settings['duplex']\n\
+        duplex = intf_settings['duplex']\n\
         match duplex:\n\
             case 'half':\n\
                 linkNegotiation += 'half duplex (forced)'\n\
@@ -883,8 +883,8 @@ except:\n\
                 'post_process':"l3_interface = True\n\
 return_vals=['l3_interface']\n",
                 'post_ports_process': "\
-configured_ports = list()\n\
-unconfigured_ports = list()\n\
+conf_ports = list()\n\
+unconf_ports = list()\n\
 l3_ports = [v for k, v in port_dict.items() if 'Vlan' in k]\n\
 if debug:\n\
     print(f'l3_ports = {l3_ports}')\n\
@@ -901,10 +901,10 @@ while x < len(l3_ports):\n\
                 dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
             else:\n\
                 dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
-            configured_ports.append(ma[2])\n\
+            conf_ports.append(ma[2])\n\
         except:\n\
             print(f'We had an issue creating {ma[2]}.')\n\
-            unconfigured_ports.append(ma[2])\n\
+            unconf_ports.append(ma[2])\n\
         dg = x\n\
         break\n\
     x+=1\n\
@@ -917,12 +917,12 @@ while x < len(l3_ports):\n\
                 dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
             else:\n\
                 dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
-            configured_ports.append(ma[2])\n\
+            conf_ports.append(ma[2])\n\
         except:\n\
             print(f'We had an issue creating {ma[2]}.')\n\
-            unconfigured_ports.append(ma[2])\n\
+            unconf_ports.append(ma[2])\n\
     x+=1\n\
-return_vals = ['l3_ports','configured_ports','unconfigured_ports']\n"
+return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
             },
             'iosxe': "l3_interface = child.re_match_typed(regex=r'\sip\saddress\s(\S.*)')\n"
         },
@@ -972,17 +972,17 @@ return_vals = ['l3_ports','configured_ports','unconfigured_ports']\n"
 \
 stpGuard = 'disabled'\n\
 try:\n\
-    if interface_settings['root_guard'] == 'yes':\n\
+    if intf_settings['root_guard'] == 'yes':\n\
         stpGuard = 'root guard'\n\
 except:\n\
     pass\n\
 try:\n\
-    if interface_settings['loop_guard'] == 'yes':\n\
+    if intf_settings['loop_guard'] == 'yes':\n\
         stpGuard = 'loop guard'\n\
 except:\n\
     pass\n\
 try:\n\
-    if interface_settings['bpdu_guard'] == 'yes':\n\
+    if intf_settings['bpdu_guard'] == 'yes':\n\
         stpGuard = 'bpdu guard'\n\
 except:\n\
     pass\n\
@@ -1164,12 +1164,12 @@ if debug:\n\
             'meraki': {
                 'skip': 'post_ports',
                 'post_process': "\
-if 'etherchannel_lacp' in interface_settings:\n\
+if 'etherchannel_lacp' in intf_settings:\n\
     if debug:\n\
-        print('etherchannel_lacp = ' + interface_settings['etherchannel_lacp'])\n\
-    group = interface_settings['etherchannel_lacp']\n\
+        print('etherchannel_lacp = ' + intf_settings['etherchannel_lacp'])\n\
+    group = intf_settings['etherchannel_lacp']\n\
     serial = sw_list[switch_num]\n\
-    portId = interface_settings['port']\n\
+    portId = intf_settings['port']\n\
     if debug:\n\
         print('group = ' + group + ', switch_num = ' + str(switch_num) + ', serial = ' + serial + ', portId = ' + portId)\n\
     etherchannel = {'group': group, 'switch_num': switch_num, 'serial': serial, 'portId': portId}\n\
@@ -1253,10 +1253,10 @@ return_vals = ['channel_port_dict']\n"
                 'skip': 'post_process',
                 'post_process': "\
 interfaceIp = ''\n\
-if 'l3_interface' in interface_settings.keys():\n\
+if 'l3_interface' in intf_settings.keys():\n\
     import re\n\
-    if not interface_settings['l3_interface'] == '':\n\
-        interfaceIp = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', interface_settings['l3_interface'])[0]\n"
+    if not intf_settings['l3_interface'] == '':\n\
+        interfaceIp = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', intf_settings['l3_interface'])[0]\n"
             }
         },
         
@@ -1266,13 +1266,13 @@ if 'l3_interface' in interface_settings.keys():\n\
             'meraki': {
                 'skip': 'post_process',
                 'post_process': "\
-if 'l3_interface' in interface_settings.keys():\n\
+if 'l3_interface' in intf_settings.keys():\n\
         import re\n\
-        subnet = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', interface_settings['l3_interface'])[0]\n\
+        subnet = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', intf_settings['l3_interface'])[0]\n\
         import ipaddress\n\
         if debug:\n\
-            print(f'interface_settings = {interface_settings}')\n\
-        subnet = str(ipaddress.ip_network(interface_settings['interfaceIp'] + '/' + subnet, strict=False))\n\
+            print(f'intf_settings = {intf_settings}')\n\
+        subnet = str(ipaddress.ip_network(intf_settings['interfaceIp'] + '/' + subnet, strict=False))\n\
         defaultGateway = switch_dict['default_route']['gw']\n\
         if ipaddress.ip_address(defaultGateway) in ipaddress.ip_network(subnet):\n\
             if debug:\n\
