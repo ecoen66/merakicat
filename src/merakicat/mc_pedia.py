@@ -66,7 +66,10 @@ provide a generated value for the element in the meraki config loop.
 
 
 mc_pedia = {
-    
+
+    'version': "v0.1.0",
+    'dated': "03/21/2024",
+
     'switch': {
         
         'switch_name': {

@@ -683,7 +683,7 @@ def Meraki_config_down(dashboard, organization_id, switch_path, sw_list,
                                            linear_new_batches=False,
                                            actions_per_new_batch=100)
     test_helper.prepare()
-    test_helper.generate_preview()
+    # test_helper.generate_preview()
     test_helper.execute()
     if debug:
         print(f'helper status is {test_helper.status}')

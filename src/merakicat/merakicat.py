@@ -911,10 +911,12 @@ def check_switch(incoming_msg, config="", host="", demo=False):
             timing = "<br>=== That config check took %s seconds" % \
                      str(round((time.time() - start_time), 2))
         return (new_report +
-                '<br><br><b>Please review the results above</b>,' +
-                ' or in the file ' + fname + ''' on the system where I'm
- running.<br>If you wish, I can migrate the Translatable features to an
- existing switch in the Meraki Dashboard.  Type <b>translate</b> and
+                "<br><br><b>Please review the results above</b>," +
+                " or in the file " + fname + " on the system where I'm" +
+                " running.<br>Results based on encyclopedia " +
+                mc_pedia['version']+", published on "+mc_pedia['dated'] +
+                '''.<br>If you wish, I can migrate the Translatable features 
+ to an existing switch in the Meraki Dashboard.  Type <b>translate</b> and
  a Meraki switch serial number.<br>If you prefer, I can prepare for the
  switch to become a Meraki managed switch, keeping the translated config.
   Just type <b>migrate [to <i>meraki network</i>]</b>.
@@ -937,9 +939,12 @@ def check_switch(incoming_msg, config="", host="", demo=False):
                 str(round((time.time() - start_time), 2))
         fname = check_report_writer(switch_name, can_list_doc, not_list_doc)
         return ("\n\n" + report + "\n\nPlease review the results above, or " +
-                "in the file " + fname + ".\nIf you wish, I can translate or" +
-                " migrate the Translatable features to an existing switch " +
-                "in the Meraki Dashboard." + timing + '\n')
+                "in the file " + fname + ".\nResults based on encyclopedia " +
+                mc_pedia['version'] + ", published on " + mc_pedia['dated'] +
+                ".\nIf you wish, I can translate or migrate the " +
+                "Translatable features to an existing switch in the Meraki " +
+                "Dashboard." +
+                timing + '\n')
 
 
 def check_report_writer(switch_name, can_list_doc, not_list_doc):
@@ -970,7 +975,9 @@ def check_report_writer(switch_name, can_list_doc, not_list_doc):
     footer = section.footer
     paragraph = footer.paragraphs[0]
     paragraph.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph.text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    t = "Based on encyclopedia "+mc_pedia['version']
+    t += ", published on "+mc_pedia['dated']+"\nReport run on "
+    paragraph.text = t + datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
     if detailed:
         # Report as a document
@@ -1392,7 +1399,8 @@ def translate_switch(
     #
     # Start the meraki config migration after confirmation from the user
     #
-    blurb = "Evaluated the switch config."
+    blurb = "Evaluated the switch config based on encyclopedia "
+    blurb += mc_pedia['version'] + ", published on " + mc_pedia['dated'] + "."
     if times:
         blurb += "\n--- That took "
         blurb += "%s seconds" % str(round((time.time() - start_time), 2))
@@ -1472,9 +1480,6 @@ def translate_switch(
 
     x = 0
     r = ""
-    if debug:
-        print(f"configured_ports = {configured_ports}")
-        print(f"unconfigured_ports = {unconfigured_ports}")
     if debug:
         print(f"meraki_serials = {meraki_serials}")
     last_sw = 1 if len(meraki_serials) == 1 else len(meraki_serials)+1
@@ -1694,7 +1699,8 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
         serials=meraki_serials,
         verb="migrate")
     blurb = "\nTranslated " + switch_name+".cfg to Meraki switches "
-    blurb += string_serials + ".\n"
+    blurb += string_serials + " based on encyclopedia " + mc_pedia['version']
+    blurb += ", published on " + mc_pedia['dated'] + ".\n"
     if times:
         t = "%s seconds" % str(round((time.time() - translate_start_time), 2))
         blurb += "--- That took " + t
