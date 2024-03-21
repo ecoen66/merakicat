@@ -20,7 +20,6 @@ requirements = [
     "Flask>=0.12.1",
     "netmiko==4.3.0",
     "tabulate==0.9.0",
-    "pyadaptivecards==0.1.1",
     "ciscoconfparse2==0.5",
     "meraki==1.42.0",
     "ngrok==1.1.0",
@@ -31,16 +30,9 @@ requirements = [
 
 setup_requirements = [ ]
 
-test_requirements = [
-    "requests_mock",
-    "coverage",
-    "python-coveralls",
-    "flake8"
-    ]
-
 setup(
     author="Ed Coen",
-    author_email='ecoen@yahoo.com',
+    author_email='ecoen@cisco.com',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -50,7 +42,7 @@ setup(
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3 :: Only',
     ],
-    description="A Webex bot to check and translate Catalyst switch configs to Meraki.",
+    description="An app to check and translate Catalyst switch configs to Meraki.",
     install_requires=requirements,
     license="MIT license",
     long_description_content_type="text/markdown",
@@ -62,8 +54,6 @@ setup(
     package_dir={"": "src"},
     python_requires=">=3.10, <4",
     setup_requires=setup_requirements,
-    test_suite='tests',
-    tests_require=test_requirements,
     url='https://github.com/ecoen66/merakicat',
     version='0.0.14',
     zip_safe=False,

@@ -14,7 +14,6 @@ white>=0.1.2
 requests-mock
 netmiko==4.3.0
 tabulate==0.9.0
-pyadaptivecards==0.1.1
 ciscoconfparse2==0.5
 ngrok==1.1.0
 python-docx==1.1.0
