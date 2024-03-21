@@ -54,6 +54,5 @@ setup(
     package_dir={"": "src"},
     setup_requires=setup_requirements,
     url='https://github.com/ecoen66/merakicat',
-    version='0.0.14',
     zip_safe=False,
 )

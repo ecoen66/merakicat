@@ -8,4 +8,4 @@ include README.md
 # recursive-exclude * __pycache__
 # recursive-exclude * *.py[co]
 
-# recursive-include Makefile *.jpg *.png *.gif
+recursive-include Makefile *.jpg *.png *.gif *.sh

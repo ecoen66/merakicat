@@ -71,7 +71,7 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 git clone https://github.com/ecoen66/merakicat
 cd merakicat
 pip install -r requirements_dev.txt
-cd src
+cd src/merakicat
 python merakicat.py
 ```
 
@@ -101,7 +101,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 1. This app can be run either as a Webex Teams bot or as a standalone command line program.  To run it as a bot, just start it without any parameters:  
 
     ```
-    cd src
+    cd src/merakicat
     python merakicat.py
     ```
     **Bot commands include the following:**
