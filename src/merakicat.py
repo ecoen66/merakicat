@@ -19,7 +19,6 @@ import sys
 import time
 from webexteamsbot import TeamsBot
 from webexteamsbot.models import Response
-# from webexteamssdk import WebexTeamsAPI
 from netmiko import ConnectHandler
 from docx2pdf import convert
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -727,7 +726,7 @@ def save(file):
     req = urllib.request.Request(file, headers=headers)
     dir = os.path.join(os.getcwd(), "../files")
     response = urllib.request.urlopen(req)
-    f_path = os.path.join(dir, response.info()['Content-Disposition'][21:]\
+    f_path = os.path.join(dir, response.info()['Content-Disposition'][21:]
              .replace('"', ""))
     out_file = open(f_path, 'wb')
     if debug:
