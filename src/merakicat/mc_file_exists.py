@@ -23,7 +23,7 @@ def File_exists(filespec):
             does_exist = True
             filespec = working_file
             break
-        test_file = "../files/" + os.path.split(working_file)[1]
+        test_file = "../../files/" + os.path.split(working_file)[1]
         if debug:
             print(f"x = {x}")
             print(f"test_file = {test_file}")

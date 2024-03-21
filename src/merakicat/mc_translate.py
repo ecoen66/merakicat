@@ -668,7 +668,7 @@ def Meraki_config_down(dashboard, organization_id, switch_path, sw_list,
         print(f"all_actions = {all_actions}")
 
     # Save an action batch file for the port features
-    # dir = os.path.join(os.getcwd(),"../files")
+    # dir = os.path.join(os.getcwd(),"../../files")
     # with open(os.path.join(dir,switch_path+".ab0"), 'w') as file:
     #    file.write(json.dumps(all_actions)) # use `json.loads` to reverse
     #    file.close()

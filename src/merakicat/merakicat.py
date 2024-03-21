@@ -724,7 +724,7 @@ def save(file):
     """
     headers = {'Authorization': 'Bearer '+teams_token}
     req = urllib.request.Request(file, headers=headers)
-    dir = os.path.join(os.getcwd(), "../files")
+    dir = os.path.join(os.getcwd(), "../../files")
     response = urllib.request.urlopen(req)
     f_path = os.path.join(dir, response.info()['Content-Disposition'][21:]
              .replace('"', ""))
@@ -787,7 +787,7 @@ def check_switch(incoming_msg, config="", host="", demo=False):
             config = net_connect.send_command('show running-config')
             net_connect.send_command('term len 24')
             net_connect.disconnect()
-            dir = os.path.join(os.getcwd(), "../files")
+            dir = os.path.join(os.getcwd(), "../../files")
             file = open(os.path.join(dir, switch_name + ".cfg"), "w")
             file.writelines(config)
             file.close()
@@ -1064,7 +1064,7 @@ def check_report_writer(switch_name, can_list_doc, not_list_doc):
             add_hyperlink(p_table, line[3], line[4], '0000FF', False)
 
     # Write out the report as a docx file
-    dir = os.path.join(os.getcwd(), "../files")
+    dir = os.path.join(os.getcwd(), "../../files")
     fname = switch_name+".docx"
     fname_pdf = switch_name+".pdf"
     document.save(os.path.join(dir, fname))
@@ -1365,7 +1365,7 @@ def translate_switch(
             config = net_connect.send_command('show running-config')
             net_connect.send_command('term len 24')
             net_connect.disconnect()
-            dir = os.path.join(os.getcwd(), "../files")
+            dir = os.path.join(os.getcwd(), "../../files")
             file = open(os.path.join(dir, switch_name+".cfg"), "w")
             file.writelines(config)
             file.close()
@@ -1465,7 +1465,7 @@ def translate_switch(
         print(f"configured_up_ports = {configured_up_ports}")
         print(f"unconfigured_up_ports = {unconfigured_up_ports}")
     '''
-    dir = os.path.join(os.getcwd(), "../files")
+    dir = os.path.join(os.getcwd(), "../../files")
     with open(os.path.join(dir, switch_name+".pd"), 'w') as file:
         file.write(json.dumps(port_dict))  # use `json.loads` to reverse
         file.close()
@@ -1601,7 +1601,7 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     config = net_connect.send_command('show running-config')
     net_connect.send_command('term len 24')
     net_connect.disconnect()
-    dir = os.path.join(os.getcwd(), "../files")
+    dir = os.path.join(os.getcwd(), "../../files")
     file = open(os.path.join(dir, switch_name+".cfg"), "w")
     file.writelines(config)
     file.close()
