@@ -62,9 +62,16 @@ if not os.path.exists(dstFile) or (
     if debug:
         print("It's been at least a day since we updated the encyclopedia.")
         print("Downloading a fresh copy.")
-    urllib.request.urlretrieve(url, dstFile)
-    if debug:
-        print("Done.")
+    try:
+        urllib.request.urlretrieve(url, dstFile)
+        if debug:
+            print("Done.")
+    except HTTPError as error:
+        print(error.status, error.reason)
+    except URLError as error:
+        print(error.reason)
+    except TimeoutError:
+        print("Request timed out")
 else:
     if debug:
         print("Not old enough to update.")
