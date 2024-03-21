@@ -2,8 +2,9 @@
 
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.
  
-After the configuration is pushed to the Meraki dashboard, the app will present a summary of configured ports and those that were not configured.
- 
+[![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/ecoen66/merakicat)
+[![Run in Cisco Cloud IDE](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-runable-icon.svg)](https://developer.cisco.com/codeexchange/devenv/ecoen66/merakicat/)
+  
 Below is the list of configurations the tool can currently translate:
 
 switch:
