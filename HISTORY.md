@@ -1,5 +1,9 @@
 # History
 
+## 0.1.4 (03-21-2024)
+
+  - Downloads a fresh copy of the encyclopedia from my repo if the local copy is over 24 hours old.
+
 ## 0.1.3 (03-21-2024)
 
   - Code beautification with flake8.
