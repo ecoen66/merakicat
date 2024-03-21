@@ -36,7 +36,6 @@ from mc_user_info import DEBUG, DEBUG_MAIN, PDF, NGROK_AUTHTOKEN
 from mc_user_info import IOS_USERNAME, IOS_PASSWORD, IOS_SECRET, IOS_PORT
 from mc_user_info import TEAMS_BOT_TOKEN, TEAMS_BOT_EMAIL
 from mc_user_info import TEAMS_BOT_APP_NAME, TEAMS_EMAILS, MERAKI_API_KEY
-from mc_pedia import mc_pedia
 from collections import defaultdict
 from functools import reduce
 from itertools import islice
@@ -45,6 +44,32 @@ from tabulate import tabulate
 tabulate.PRESERVE_WHITESPACE = True
 
 debug = DEBUG or DEBUG_MAIN
+
+# Check to see if we have the most recent encyclopedia
+# and update it if not
+dstFile = "mc_pedia.py"
+filetime = (time.strftime('%a, %d %b %Y %X GMT',
+            time.gmtime(os.path.getmtime(dstFile))))
+if debug:
+    print("Checking if the local encyclopedia is older than a day.")
+    print("File Last Modified: {0}".format(filetime))
+url = "https://raw.githubusercontent.com/ecoen66/merakicat\
+/main/src/merakicat/mc_pedia.py"
+if debug:
+    print(f"url = {url}")
+if not os.path.exists(dstFile) or (
+       os.path.getmtime(dstFile) < time.time() - 86400):
+    if debug:
+        print("It's been at least a day since we updated the encyclopedia.")
+        print("Downloading a fresh copy.")
+    urllib.request.urlretrieve(url, dstFile)
+    if debug:
+        print("Done.")
+else:
+    if debug:
+        print("Not old enough to update.")
+
+from mc_pedia import mc_pedia
 
 # Retrieve required Meraki details from environment variables
 meraki_api_key = os.getenv("MERAKI_API_KEY")
@@ -915,7 +940,7 @@ def check_switch(incoming_msg, config="", host="", demo=False):
                 " or in the file " + fname + " on the system where I'm" +
                 " running.<br>Results based on encyclopedia " +
                 mc_pedia['version']+", published on "+mc_pedia['dated'] +
-                '''.<br>If you wish, I can migrate the Translatable features 
+                '''.<br>If you wish, I can migrate the Translatable features
  to an existing switch in the Meraki Dashboard.  Type <b>translate</b> and
  a Meraki switch serial number.<br>If you prefer, I can prepare for the
  switch to become a Meraki managed switch, keeping the translated config.
