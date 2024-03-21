@@ -52,7 +52,6 @@ setup(
     name='merakicat',
     packages=find_packages(where="src"),
     package_dir={"": "src"},
-    python_requires=">=3.10, <4",
     setup_requires=setup_requirements,
     url='https://github.com/ecoen66/merakicat',
     version='0.0.14',

@@ -1,0 +1,58 @@
+[metadata]
+name =  merakicat
+description = An app to check and translate Catalyst switch configs to Meraki.
+author = Ed Coen
+author_email = ecoen@cisco.com
+classifiers =
+    Development Status :: 2 - Pre-Alpha
+    Intended Audience :: Developers
+    License :: OSI Approved :: MIT License
+    Natural Language :: English
+    Programming Language :: Python :: 3.10
+    Programming Language :: Python :: 3.11
+    Programming Language :: Python :: 3 :: Only
+
+install_requires = requirements
+license = MIT license
+long_description_content_type = text/markdown
+long_description = readme + '\n\n' + history
+include_package_data = True
+keywords='merakicat,catalyst,meraki,cisco,migration,webexteamsbot',
+setup_requires = setup_requirements
+url = https://github.com/ecoen66/merakicat
+
+[options]
+package_dir =
+    = src
+packages = find:
+python_requires = >=3.10, <4
+
+[options.packages.find]
+where = src
+
+[options.entry_points]
+console_scripts =
+    gha_python_packaging_demo = gha_python_packaging_demo.app:entry_point
+
+[flake8]
+exclude =
+    .git,
+    tests,
+    images,
+    files,
+    src/__pycache__,
+    src/batch_helper,
+    src/mc_pedia.py,
+    src/mc_user_sample.py,
+    src/mc_user_info.py,
+    src/mc_nm_specifics.py
+extend-ignore =
+    # E722 do not use bare 'except'
+    E722,
+    # E128 continuation line under-indented for visual indent
+    E128,
+    # E127 continuation line over-indented for visual indent
+    E127,
+    # W605 invalid escape sequence
+    W605
+
