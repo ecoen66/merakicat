@@ -165,7 +165,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
 
 
-# ngrok for usage as a bot
+# ngrok
 
 [ngrok](http://ngrok.com) will make it easy for you to interact with meraki cat as a bot.
 
