@@ -1,9 +1,9 @@
 # My own testing credentials
-src/mc_user_info.py
+src/merakicat/mc_user_info.py
 
 # Miscellaneous files
-src/batch_helper_preview.json
-src/test.txt
+src/merakicat/batch_helper_preview.json
+src/merakicat/test.txt
 
 # App-created files and logs
 files/*.cfg
