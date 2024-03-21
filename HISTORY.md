@@ -1,5 +1,12 @@
 # History
 
+## 0.1.3 (03-21-2024)
+
+  - Code beautification with flake8.
+  - Setting up for publishing automation.
+  - Changed directory structure for publishing.
+  - Released on PyPI.
+  
 ## 0.0.14 (03-19-2024)
 
   - Option added for check with drag and drop files in bot mode.
