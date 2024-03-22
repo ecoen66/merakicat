@@ -154,7 +154,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     Translate a Catalyst switch or stack config from a file or host to claimed Meraki serial numbers:
     ```
-    tpython merakicat.py ranslate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers> [with timing]
+    python merakicat.py translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers> [with timing]
     ```
     Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
     ```
