@@ -3,7 +3,7 @@
 
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier.
  
-![merakicat](https://github.com/ecoen66/merakicat/raw/main/src/merakicat/mc_quick.gif)
+![merakicat](https://github.com/ecoen66/merakicat/raw/main/images/mc_quick.gif)
  
 Below is the list of configurations the tool can currently translate:
 

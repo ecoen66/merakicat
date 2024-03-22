@@ -990,7 +990,7 @@ def check_report_writer(switch_name, can_list_doc, not_list_doc):
     header = section.header
     paragraph = header.paragraphs[0]
     logo_run = paragraph.add_run()
-    logo_run.add_picture("merakicat.png", width=Inches(1))
+    logo_run.add_picture("../../images/merakicat.png", width=Inches(1))
     text_run = paragraph.add_run()
     if detailed:
         t = "\tMerakicat Detailed Report for " + switch_name
@@ -1001,7 +1001,7 @@ def check_report_writer(switch_name, can_list_doc, not_list_doc):
         t += switch_name + '\t'  # For center align of text
         text_run.text = t
     logo_run = paragraph.add_run()
-    logo_run.add_picture("cisco_meraki.png", width=Inches(1))
+    logo_run.add_picture("../../images/cisco_meraki.png", width=Inches(1))
 
     # Footer with date and time of the report
     footer = section.footer
