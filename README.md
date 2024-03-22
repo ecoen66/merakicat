@@ -168,7 +168,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 
 # ngrok
 
-[ngrok](http://ngrok.com) will make it easy for you to interact with meraki cat as a bot.
+[ngrok](http://ngrok.com) will make it easy for you to interact with merakicat as a bot.
 
 You can find account instructions here under `Sign up for free!`: [https://dashboard.ngrok.com/login](https://dashboard.ngrok.com/login)
 
