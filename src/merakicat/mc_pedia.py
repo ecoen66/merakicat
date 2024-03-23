@@ -67,8 +67,8 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.0",
-    'dated': "03/21/2024",
+    'version': "v0.1.1",
+    'dated': "03/22/2024",
 
     'switch': {
         
@@ -1285,6 +1285,268 @@ if 'l3_interface' in intf_settings.keys():\n\
         }
     }
 }
+
+nm_dict = {
+    "2x40G":
+  {
+    "supported": True,
+    "ports": [
+    r'FortyGigabitEthernet\d/1/1',
+    r'FortyGigabitEthernet\d/1/2'
+    ],
+    "description": ""
+  },
+    "4x10G":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4'
+    ],
+    "description": ""
+  },
+    "8x10G":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4',
+    r'GigabitEthernet\d/1/5',
+    r'GigabitEthernet\d/1/6',
+    r'GigabitEthernet\d/1/7',
+    r'GigabitEthernet\d/1/8',
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/5',
+    r'TenGigabitEthernet\d/1/6',
+    r'TenGigabitEthernet\d/1/7',
+    r'TenGigabitEthernet\d/1/8'
+    ],
+    "description": ""
+  },
+    "C3850-NM-2-10G":
+  {
+    "supported": False,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4'
+    ],
+    "description": "Catalyst 3850 4 x Gigabit Ethernet/2 x 10 Gigabit Ethernet Network Module"
+  },
+    "C3850-NM-2-40G":
+  {
+    "supported": True,
+    "ports": [
+    r'FortyGigabitEthernet\d/1/1',
+    r'FortyGigabitEthernet\d/1/2'
+    ],
+    "description": "Catalyst 3850 2 x 40 Gigabit Ethernet Network Module"
+  },
+    "C3850-NM-4-1G":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4'
+    ],
+    "description": "Catalyst 3850 4 x Gigabit Ethernet Network Module"
+  },
+    "C3850-NM-4-10G":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4'
+    ],
+    "description": "Catalyst 3850 4 x Gigabit Ethernet/4 x 10 Gigabit Ethernet Network Module"
+  },
+    "C3850-NM-8-10G":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4',
+    r'GigabitEthernet\d/1/5',
+    r'GigabitEthernet\d/1/6',
+    r'GigabitEthernet\d/1/7',
+    r'GigabitEthernet\d/1/8',
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/5',
+    r'TenGigabitEthernet\d/1/6',
+    r'TenGigabitEthernet\d/1/7',
+    r'TenGigabitEthernet\d/1/8'
+    ],
+    "description": "Catalyst 3850 8 x Gigabit Ethernet/8 x 10 Gigabit Ethernet Network Module"
+  },
+    "C9300-NM-2C":
+  {
+    "supported": True,
+    "ports": [
+    r'FortyGigabitEthernet\d/1/1',
+    r'FortyGigabitEthernet\d/1/2',
+    r'HundredGigabitEthernet\d/1/1',
+    r'HundredGigabitEthernet\d/1/2'
+    ],
+    "description": "Catalyst 9300 2 x 100G/40G dual rate QSFP Network Module"
+  },
+    "C9300-NM-2Q":
+  {
+    "supported": True,
+    "ports": [
+    r'FortyGigabitEthernet\d/1/1',
+    r'FortyGigabitEthernet\d/1/2'
+    ],
+    "description": "Catalyst 9300 2 x 40GE QSFP Network Module"
+  },
+    "C9300-NM-2Y":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TwentyFiveGigE\d/1/1',
+    r'TwentyFiveGigE\d/1/2'
+    ],
+    "description": "Catalyst 9300 2 x 25G/10G/1G SFP28 Network Module"
+  },
+    "C9300-NM-4C":
+  {
+    "supported": True,
+    "ports": [
+    r'FortyGigabitEthernet\d/1/1',
+    r'FortyGigabitEthernet\d/1/2',
+    r'FortyGigabitEthernet\d/1/3',
+    r'FortyGigabitEthernet\d/1/4',
+    r'HundredGigabitEthernet\d/1/1',
+    r'HundredGigabitEthernet\d/1/2',
+    r'HundredGigabitEthernet\d/1/3',
+    r'HundredGigabitEthernet\d/1/4'
+    ],
+    "description": "Catalyst 9300 4 x 100G/40G dual rate QSFP Network Module"
+  },
+    "C9300-NM-4G":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4'
+    ],
+    "description": "Catalyst 9300 4 x 1GE SFP Network Module"
+  },
+    "C9300-NM-4M":
+  {
+    "supported": True,
+    "ports": [
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4'
+    ],
+    "description": "Catalyst 9300 4 x 10G/mGig copper Network Module"
+  },
+    "C9300-NM-8M":
+  {
+    "supported": True,
+    "ports": [
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/5',
+    r'TenGigabitEthernet\d/1/6',
+    r'TenGigabitEthernet\d/1/7',
+    r'TenGigabitEthernet\d/1/8'
+    ],
+    "description": "Catalyst 9300X 8 x 10G/mGig copper Network Module"
+  },
+    "C9300-NM-8X":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4',
+    r'GigabitEthernet\d/1/5',
+    r'GigabitEthernet\d/1/6',
+    r'GigabitEthernet\d/1/7',
+    r'GigabitEthernet\d/1/8',
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/5',
+    r'TenGigabitEthernet\d/1/6',
+    r'TenGigabitEthernet\d/1/7',
+    r'TenGigabitEthernet\d/1/8'
+    ],
+    "description": "Catalyst 9300 8 x 10G/1G SFP+ Network Module"
+  },
+    "C9300-NM-8Y":
+  {
+    "supported": True,
+    "ports": [
+    r'GigabitEthernet\d/1/1',
+    r'GigabitEthernet\d/1/2',
+    r'GigabitEthernet\d/1/3',
+    r'GigabitEthernet\d/1/4',
+    r'GigabitEthernet\d/1/5',
+    r'GigabitEthernet\d/1/6',
+    r'GigabitEthernet\d/1/7',
+    r'GigabitEthernet\d/1/8',
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/5',
+    r'TenGigabitEthernet\d/1/6',
+    r'TenGigabitEthernet\d/1/7',
+    r'TenGigabitEthernet\d/1/8',
+    r'TwentyFiveGigE\d/1/1',
+    r'TwentyFiveGigE\d/1/2',
+    r'TwentyFiveGigE\d/1/3',
+    r'TwentyFiveGigE\d/1/4',
+    r'TwentyFiveGigE\d/1/5',
+    r'TwentyFiveGigE\d/1/6',
+    r'TwentyFiveGigE\d/1/7',
+    r'TwentyFiveGigE\d/1/8'
+    ],
+    "description": "Catalyst 9300 8 x 25G/10G/1G multi-rate SFP Network Module"
+  }
+}
+
 
 def index_mc_pedia(index_args):
     blurb = "\n\n\

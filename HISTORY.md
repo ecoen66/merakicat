@@ -1,5 +1,10 @@
 # History
 
+## 0.1.5 (03-23-2024)
+
+  - Supports NM ports.
+  - Merged nm-specifics into the encyclopedia.
+
 ## 0.1.4 (03-21-2024)
 
   - Downloads a fresh copy of the encyclopedia from my repo if the local copy is over 24 hours old.

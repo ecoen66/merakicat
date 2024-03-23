@@ -26,7 +26,7 @@ from docx.shared import Inches
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from mc_cfg_check import CheckFeatures
-from mc_translate import Evaluate, Meraki_config_down  # ,Meraki_config_up
+from mc_translate import Evaluate, Meraki_config  # ,Meraki_config_up
 from mc_claim import Claim
 from mc_register import Register
 from mc_splitcheck_serials import Split_check_serials
@@ -1417,14 +1417,14 @@ def translate_switch(
     config_file = config
 
     # Evaluate the Catalyst config and break it into lists we can work with
-    Uplink_list, Downlink_list, Other_list, port_dict, switch_dict = \
-        Evaluate(config_file)
+    Intf_list, Other_list, port_dict, switch_dict = \
+        Evaluate(config_file, nm_list)
 
     # Creating a list of the downlink port configurations to push to Meraki
     ToBeConfigured = {}
     z = 0
-    while z < len(Downlink_list):
-        interface = Downlink_list[z]
+    while z < len(Intf_list):
+        interface = Intf_list[z]
         ToBeConfigured[interface] = port_dict[interface]
         z += 1
 
@@ -1447,64 +1447,19 @@ def translate_switch(
     port_cfg_start_time = time.time()
 
     configured_ports, unconfigured_ports, port_dict, \
-        meraki_urls, meraki_net = Meraki_config_down(dashboard,
+        meraki_urls, meraki_net = Meraki_config(dashboard,
                                                      meraki_org,
                                                      switch_name,
                                                      meraki_serials,
                                                      port_dict,
-                                                     Downlink_list,
+                                                     Intf_list,
                                                      Other_list,
-                                                     switch_dict)
+                                                     switch_dict,
+                                                     nm_list)
 
     if debug:
         print(f"configured_ports = {configured_ports}")
         print(f"unconfigured_ports = {unconfigured_ports}")
-    '''
-    # Creating a list of the uplink port configurations to push to Meraki
-    ToBeConfigured = {}
-    z = 0
-    while z < len(Uplink_list):
-        interface = Uplink_list[z]
-        ToBeConfigured[interface] = port_dict[interface]
-        z +=1
-
-    # Creating a list of the uplink port configurations to push to Meraki
-    ChannelsToBeConfigured = {}
-    z = 0
-    while z < len(Other_list):
-        interface = Other_list[z]
-        ChannelsToBeConfigured[interface] = port_dict[interface]
-        z +=1
-
-    #
-    # Start the meraki uplink config migration after confirmation from the user
-    #
-    if BOT:
-        m = "Pushing the translated uplinks and Port-channels to the "
-        m += "Dashboard, port by port.  This will take a while, but I'll "
-        m += "message you when I'm done..."
-        create_message(incoming_msg.roomId, m)
-    else:
-        print("Pushing the translated uplinks and Port-channels to the "
-              + Dashboard, port by port.  This will take a while, but "
-              + "I'll let you know when I'm done...")
-    configured_up_ports, \
-    unconfigured_up_ports, \
-    configured_channels, \
-    unconfigured_channels = Meraki_config_up(dashboard,
-                                             meraki_org,
-                                             meraki_net,
-                                             meraki_serials,
-                                             ToBeConfigured,
-                                             Uplink_list,
-                                             nm_list,
-                                             ChannelsToBeConfigured,
-                                             Other_list)
-
-    if debug:
-        print(f"configured_up_ports = {configured_up_ports}")
-        print(f"unconfigured_up_ports = {unconfigured_up_ports}")
-    '''
     dir = os.path.join(os.getcwd(), "../../files")
     with open(os.path.join(dir, switch_name+".pd"), 'w') as file:
         file.write(json.dumps(port_dict))  # use `json.loads` to reverse
