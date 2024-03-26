@@ -67,8 +67,8 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.1",
-    'dated': "03/22/2024",
+    'version': "v0.1.2",
+    'dated': "03/26/2024",
 
     'switch': {
         
@@ -167,13 +167,15 @@ if debug:\n\
         
         'mls':{
             'name': "QoS",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': '^mls',
             'meraki': {
                 'skip': True
             },
-            'iosxe': "mls = parse.find_objects('^mls')\n"
+            'iosxe': "mls = parse.find_objects('^mls')\n",
+            'url':"https://documentation.meraki.com/MS/Other_Topics/MS_Switch_Quality_of_Service_Defined",
+            'note':"Network-wide"
         },
         
         'rstp':{
@@ -251,7 +253,9 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "access_list = parse.find_objects('^access-list')\n"
+            'iosxe': "access_list = parse.find_objects('^access-list')\n",
+            'url':"https://documentation.meraki.com/MS/Access_Control/Meraki_MS_Group_Policy_Access_Control_Lists",
+            'note':"Group Policies"
         },
         
         'extended_access_list':{
@@ -262,7 +266,9 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "extended_access_list = parse.find_objects('^ip\saccess-list')\n"
+            'iosxe': "extended_access_list = parse.find_objects('^ip\saccess-list')\n",
+            'url':"https://documentation.meraki.com/MS/Access_Control/Meraki_MS_Group_Policy_Access_Control_Lists",
+            'note':"Group Policies"
         },
         
         'port_mirror':{
@@ -289,17 +295,30 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'note':"Built in Meraki dashboard"
         },
         
+        '802.1x':{
+            'name': "802.1x",
+            'support': "✓",
+            'translatable':"",
+            'regex': '^aaa authentication dot1x',
+            'meraki': {
+                'skip': True
+            },
+            'iosxe': "802.1x = parse.find_objects('^aaa authentication dot1x')\n",
+            'url':"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
+            'note':"Network-wide"
+        },
+        
         'netflow':{
             'name': "NetFlow",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': '^flow\sexporter',
             'meraki': {
                 'skip': True
             },
             'iosxe': "netflow = parse.find_objects('^flow\sexporter')\n",
-            'url':"https://documentation.meraki.com/MX/Monitoring_and_Reporting/NetFlow_Overview",
-            'note':"Currently supported on MX only"
+            'url':"https://documentation.meraki.com/MS/Monitoring_and_Reporting/MS_NetFlow_and_Encrypted_Traffic_Analytics",
+            'note':"Network-wide"
         },
         
         'dhcp':{
@@ -327,25 +346,14 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
         },
         
         'radius':{
-            'name':"radius",
-            'support':"",
+            'name':"Radius",
+            'support':"✓",
             'translatable':"",
-            'regex': '^radius-server',
+            'regex': '^radius-server|^radius\sserver',
             'meraki': {
                 'skip': True
             },
-            'iosxe':"radius = parse.find_objects('^radius-server')\n"
-        },
-        
-        'radius2':{
-            'name':"radius",
-            'support':"",
-            'translatable':"",
-            'regex': '^radius\sserver',
-            'meraki': {
-                'skip': True
-            },
-            'iosxe':"radius2 = parse.find_objects('^radius\sserver')\n"
+            'iosxe':"radius = parse.find_objects('^radius-server|^radius\sserver')\n"
         },
         
         'http_server':{
@@ -358,7 +366,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             },
             'iosxe': "http_server = parse.find_objects('^ip\shttp')\n",
             'url':"https://documentation.meraki.com/MS",
-            'note':"Not Supported"
+            'note':"Not required"
         },
         
         'stack':{
@@ -454,14 +462,15 @@ if len(stack) == 1:\n\
         
         'dhcp_snooping':{
             'name': "DHCP Snooping",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': '^ip\sdhcp\ssnooping',
             'meraki': {
                 'skip': True
             },
             'iosxe': "dhcp_snooping = parse.find_objects('ip\sdhcp\ssnooping')\n",
-            'note':"Not Supported"
+            'url':"https://documentation.meraki.com/MS/Other_Topics/Dynamic_ARP_Inspection",
+            'note':"Network-wide"
         },
         
         'ip_source_guard':{
@@ -477,13 +486,15 @@ if len(stack) == 1:\n\
         
         'arp_inspection':{
             'name': "ARP Inspection",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': '^ip\sarp\sinspection',
             'meraki': {
                 'skip': True
             },
-            'iosxe': "arp_inspection = parse.find_objects('^ip\sarp\sinspection')\n"
+            'iosxe': "arp_inspection = parse.find_objects('^ip\sarp\sinspection')\n",
+            'url':"https://documentation.meraki.com/MS/Other_Topics/Dynamic_ARP_Inspection",
+            'note':"Network-wide"
         },
         
         'arp_acl':{
@@ -558,12 +569,14 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "multicast_igmp = parse.find_objects('^ip\sigmp')\n"
+            'iosxe': "multicast_igmp = parse.find_objects('^ip\sigmp')\n",
+            'url':"https://documentation.meraki.com/MS",
+            'note':"Configured by default"
         },
         
         'multicast_pim':{
             'name': "Multicast PIM",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': '^ip\spim',
             'meraki': {
@@ -644,7 +657,7 @@ for route in switch_dict['static_routing']:\n\
         
         'ospf':{
             'name': "OSPFv2",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': '^router ospf',
             'meraki': {
@@ -1021,24 +1034,15 @@ if debug:\n\
         
         'portfast': {
             'name': "STP Portfast",
-            'support':"",
-            'translatable':"",
+            'support':"✓",
+            'translatable':"✓",
             'regex': r'\sspanning-tree\sportfast?(\S.*)',
             'meraki': {
                 'skip': True
             },
-            'iosxe': "portfast = child.re_match_typed(regex=r'\sspanning-tree\sportfast?(\S.*)')\n"
-        },
-        
-        'flex_links': {
-            'name': "Flex Links",
-            'support':"",
-            'translatable':"",
-            'regex': r'\sswitchport\sbackup\sinterface?(\S.*)',
-            'meraki': {
-                'skip': True
-            },
-            'iosxe': "flex_links = child.re_match_typed(regex=r'\sswitchport\sbackup\sinterface?(\S.*)')\n"
+            'iosxe': "portfast = child.re_match_typed(regex=r'\sspanning-tree\sportfast?(\S.*)')\n",
+            'url':"https://documentation.meraki.com/MS/Deployment_Guides/Advanced_MS_Setup_Guide",
+            'note':"Automatic Edge Port"
         },
         
         'storm_control': {
@@ -1056,13 +1060,15 @@ if debug:\n\
         
         'protected': {
             'name': "Protected",
-            'support':"",
+            'support':"✓",
             'translatable':"",
             'regex': r'\sswitchport\sprotected?(\S.*)',
             'meraki': {
                 'skip': True
             },
-            'iosxe': "protected = child.re_match_typed(regex=r'\sswitchport\sprotected?(\S.*)')\n"
+            'iosxe': "protected = child.re_match_typed(regex=r'\sswitchport\sprotected?(\S.*)')\n",
+            'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
+            'note':"Port Isolation"
         },
         
         'port_security': {

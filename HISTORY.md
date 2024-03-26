@@ -1,5 +1,10 @@
 # History
 
+## 0.1.6 (03-26-2024)
+
+  - Updated encyclopedia.
+  - Migrated batch helper code.
+
 ## 0.1.5 (03-23-2024)
 
   - Supports NM ports.
