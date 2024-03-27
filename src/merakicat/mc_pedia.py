@@ -67,7 +67,7 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.3",
+    'version': "v0.1.4",
     'dated': "03/27/2024",
 
     'switch': {
@@ -1570,27 +1570,30 @@ def index_mc_pedia(index_args):
         blurb+="     Translatable Items\n"
     print(blurb+"==============================\n")
     for key,value in mc_pedia.items():
-        print(key+":\n")
-        for k,v in value.items():
-            skip = 0
-            if "translatable" in index_args:
-                if "translatable" not in v:
-                    skip = 1
-                elif not v['translatable'] == "✓":
-                    skip = 1
-            if "support" in index_args:
-                if "support" not in v:
-                    skip = 1
-                elif not v['support'] == "✓":
-                    skip = 1
-            if skip == 0:
-                if "name" in v:
-                    print(" - "+v['name']+"\n")
-                else:
-                    print(" - "+k+" (for Meraki)\n")
+        if key in ["version","dated"]:
+            print(key+": "+value+"\n")
+        else:
+            print(key+":\n")
+            for k,v in value.items():
+                skip = 0
+                if "translatable" in index_args:
+                    if "translatable" not in v:
+                        skip = 1
+                    elif not v['translatable'] == "✓":
+                        skip = 1
+                if "support" in index_args:
+                    if "support" not in v:
+                        skip = 1
+                    elif not v['support'] == "✓":
+                        skip = 1
+                if skip == 0:
+                    if "name" in v:
+                        print(" - "+v['name']+"\n")
+                    else:
+                        print(" - "+k+" (for Meraki)\n")
     if len(index_args) == 0:
         print("\n\nTo print the index based on either supported and translatable items or both, enter")
-        print("    python mc_pedia [support] [translatable]")
+        print("    python mc_pedia.py [support] [translatable]")
 
 if __name__ == '__main__':
     index_args = list()
