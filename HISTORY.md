@@ -3,7 +3,7 @@
 ## 0.1.6 (03-26-2024)
 
   - Updated encyclopedia.
-  - Migrated batch helper code.
+  - Migrated batch helper code for cleaner installation.
 
 ## 0.1.5 (03-23-2024)
 
