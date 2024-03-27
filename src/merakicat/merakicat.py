@@ -1220,13 +1220,13 @@ def register_switch(incoming_msg, host="", called=""):
         print(f"After registering switches, meraki_serials = {meraki_serials}")
     # Report back on what happened
     if called == "":
+        timing = ""
         if not len(registered_switches) == 0:
             vals = reduce(lambda x, y: x + y, [list(dic.values())
                           for dic in registered_switches])
             header = registered_switches[0].keys()
             rows = [x.values() for x in registered_switches]
             thing = tabulate(rows, header)
-            timing = ""
             if times:
                 t = "\n=== That registraion took "
                 t += "%s seconds" % str(round((time.time() - start_time), 2))
