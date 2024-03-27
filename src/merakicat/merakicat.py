@@ -1420,6 +1420,11 @@ def translate_switch(
     # Update the global stateful variable for later
     config_file = config
 
+    # If we don't have an nm_list, create an empty list 9 switches long
+    # which is larger than a stack so we can test for this later
+    if nm_list == []:
+        nm_list = ["","","","","","","","",""]
+
     # Evaluate the Catalyst config and break it into lists we can work with
     Intf_list, Other_list, port_dict, switch_dict = \
         Evaluate(config_file, nm_list)
@@ -1440,6 +1445,9 @@ def translate_switch(
     if times:
         blurb += "\n--- That took "
         blurb += "%s seconds" % str(round((time.time() - start_time), 2))
+    if len(nm_list) == 9:
+        blurb += "\n\nSKIPPING NM MODULES, because we only had a config file"
+        blurb += " to work with..."
     blurb += "\n\nPushing the translated items to the Dashboard in a large"
     blurb += " batch.\nThis will take a while, but I'll message you"
     blurb += " when I'm done..."
