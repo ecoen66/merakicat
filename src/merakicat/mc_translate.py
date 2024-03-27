@@ -111,6 +111,9 @@ def Evaluate(config_file, nm_list):
                 port, sub_module = check(intf_name)
                 if sub_module == "1":
                     intf_include = False
+                    if debug:
+                        print(f"Switch_module = {Switch_module}")
+                        print(f"nm_list = {nm_list}")
                     if not nm_list[int(Switch_module)-1] == "":
                         if nm_dict[
                               nm_list[int(Switch_module)-1]]['supported']:

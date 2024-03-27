@@ -295,7 +295,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'note':"Built in Meraki dashboard"
         },
         
-        '802.1x':{
+        'dot1x':{
             'name': "802.1x",
             'support': "✓",
             'translatable':"",
@@ -303,7 +303,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "802.1x = parse.find_objects('^aaa authentication dot1x')\n",
+            'iosxe': "dot1x = parse.find_objects('^aaa authentication dot1x')\n",
             'url':"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
             'note':"Network-wide"
         },

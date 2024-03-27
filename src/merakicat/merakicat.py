@@ -29,6 +29,7 @@ from mc_cfg_check import CheckFeatures
 from mc_translate import Evaluate, Meraki_config  # ,Meraki_config_up
 from mc_claim import Claim
 from mc_register import Register
+from mc_get_nms import Get_nm_list
 from mc_splitcheck_serials import Split_check_serials
 from mc_ping import Ping
 from mc_file_exists import File_exists
@@ -393,12 +394,12 @@ def greeting(incoming_msg):
                     r = "You need to enter a Meraki network to register into."
                     response.markdown = r
                 host = host_id
-                # Did they type "translate host <something>" ?
+                # Did they type "migrate host <something>" ?
                 if re.search('host ', user_text, re.IGNORECASE):
                     if debug:
                         print("I made it to host...")
                     if not user_text.split("host ", 1)[1] == "":
-                        # They did, so translate it!
+                        # They did, so migrate it!
                         maybe_host = user_text.split("host ", 1)[1]
                         regex = re.compile(r"\s*to\s *", flags=re.I)
                         the_rest = regex.split(maybe_host)[0]
@@ -1409,6 +1410,9 @@ def translate_switch(
             file.writelines(config)
             file.close()
             config = os.path.join(dir, switch_name+".cfg")
+            # Grab the uplink module in each switch
+            nm_list = Get_nm_list(host_id, ios_username,
+                                  ios_password, ios_port, ios_secret)
     else:
         if config == "":
             config = config_file

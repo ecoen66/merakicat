@@ -1,5 +1,6 @@
 from netmiko import ConnectHandler
 from mc_user_info import DEBUG, DEBUG_REGISTER
+from mc_get_nms import Get_nm_list
 import re
 
 
@@ -53,22 +54,8 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
     qty_switches = len(r.split("\n"))-8
 
     # Grab the uplink module in each switch
-    x = 1
-    while x <= qty_switches:
-        r = net_connect.send_command('show inventory "Switch ' +
-                                     str(x) + ' FRU Uplink Module 1"')
-        if debug:
-            print(f"For switch {x}, r = {r}")
-        if debug:
-            print(f"For switch {x}, len(r) = {len(r)}")
-        if not r[0] == "%":
-            nm_list.append(r.split("\n")[1].split()[1])
-        else:
-            nm_list.append("")
-        x += 1
-    if debug:
-        print(f"For the {qty_switches} switches in the stack, " +
-              f"the NM modules are {nm_list}")
+    nm_list = Get_nm_list(host_id, ios_username,
+                          ios_password, ios_port, ios_secret)
 
     # Check the version of IOSXE running on the switch
     r = net_connect.send_command('show version').split("\n")
