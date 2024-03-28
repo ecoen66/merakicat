@@ -67,8 +67,8 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.4",
-    'dated': "03/27/2024",
+    'version': "v0.1.5",
+    'dated': "03/28/2024",
 
     'switch': {
         
@@ -409,15 +409,15 @@ if len(stack) == 1:\n\
             'note':"Configured by default"
         },
         
-        'vpms':{
-            'name': "VPMS",
+        'vmps':{
+            'name': "VMPS",
             'support':"",
             'translatable':"",
             'regex': '^vpms',
             'meraki': {
                 'skip': True
             },
-            'iosxe': "vpms = parse.find_objects('^vpms')\n",
+            'iosxe': "vmps = parse.find_objects('^vmps')\n",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported as it is dated technology"
         },
