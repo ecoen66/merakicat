@@ -1,5 +1,11 @@
 # History
 
+## 0.1.7 (04-01-2024)
+
+  - Added the ability to Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features.
+  - Included "with timing" and "with details" options on check drag-n-drop.
+  - Renamed some called functions in external modules.
+
 ## 0.1.6 (03-26-2024)
 
   - Updated encyclopedia.

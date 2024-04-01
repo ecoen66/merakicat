@@ -3,7 +3,7 @@ from mc_user_info import DEBUG
 import re
 
 
-def Get_nm_list(host_id, ios_username, ios_password, ios_port, ios_secret):
+def GetNmList(host_id, ios_username, ios_password, ios_port, ios_secret):
     """
     This function will check a Catalyst IOSXE switch for compatibility with
     Meraki management prior to registering the switch (or stack) to Dashboard.

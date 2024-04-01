@@ -1,6 +1,6 @@
 from netmiko import ConnectHandler
 from mc_user_info import DEBUG, DEBUG_REGISTER
-from mc_get_nms import Get_nm_list
+from mc_get_nms import GetNmList
 import re
 
 
@@ -54,7 +54,7 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
     qty_switches = len(r.split("\n"))-8
 
     # Grab the uplink module in each switch
-    nm_list = Get_nm_list(host_id, ios_username,
+    nm_list = GetNmList(host_id, ios_username,
                           ios_password, ios_port, ios_secret)
 
     # Check the version of IOSXE running on the switch

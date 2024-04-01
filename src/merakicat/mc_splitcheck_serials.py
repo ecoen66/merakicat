@@ -3,7 +3,7 @@ from collections import Counter
 from mc_user_info import *
 
 
-def Split_check_serials(user_text,search_type):
+def SplitCheckSerials(user_text,search_type):
     """
     This function will accept of user's input or command line parms and find the serial
     numbers and split them out to a list to return.

@@ -44,7 +44,6 @@ def Evaluate(config_file, nm_list):
         if debug:
             print("-------- Reading <"+config_file+"> Configuration --------")
         parse = CiscoConfParse(config_file, syntax='ios', factory=True)
-
         # Try out our mc_pedia for the switch name
         for key, val in mc_pedia['switch'].items():
             newvals = {}
@@ -302,7 +301,7 @@ def Evaluate(config_file, nm_list):
     return Interfaces, Others, port_dict, switch_dict
 
 
-def Meraki_config(dashboard, organization_id, switch_path, sw_list, port_dict,
+def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
                   Intf_list, Other_list, switch_dict, nm_list):
     """
     This parent function will convert Catalyst switch config features to
@@ -359,6 +358,8 @@ def Meraki_config(dashboard, organization_id, switch_path, sw_list, port_dict,
             if (val['translatable'] == "✓" and
                 val['meraki']['skip'] == "post_process") or \
                  val['meraki']['skip'] == "post_ports":
+                if debug:
+                    print(f"key = {key}, val = {val}")
                 if val['meraki']['skip'] == "post_ports":
                     post_ports_list.append([key, True])
                 newvals = {}

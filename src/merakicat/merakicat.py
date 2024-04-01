@@ -26,13 +26,14 @@ from docx.shared import Inches
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from mc_cfg_check import CheckFeatures
-from mc_translate import Evaluate, Meraki_config  # ,Meraki_config_up
+from mc_translate import Evaluate, MerakiConfig  # ,MerakiConfig_up
 from mc_claim import Claim
 from mc_register import Register
-from mc_get_nms import Get_nm_list
-from mc_splitcheck_serials import Split_check_serials
+from mc_get_nms import GetNmList
+from mc_splitcheck_serials import SplitCheckSerials
 from mc_ping import Ping
-from mc_file_exists import File_exists
+from mc_file_exists import FileExists
+from mc_get_config import GetConfig
 from mc_user_info import DEBUG, DEBUG_MAIN, PDF, NGROK_AUTHTOKEN
 from mc_user_info import IOS_USERNAME, IOS_PASSWORD, IOS_SECRET, IOS_PORT
 from mc_user_info import TEAMS_BOT_TOKEN, TEAMS_BOT_EMAIL
@@ -291,27 +292,8 @@ def greeting(incoming_msg):
         if user_text.split()[0] == bot_fname:
             user_text = user_text.split(bot_fname + ' ', 1)[1]
 
-        # If the command is 'check' and the user attached any config files to
-        # the bot message, we will try to use them
-        if command == 'check' and (user_files is not None):
-            x = 0
-            while x < len(user_files) - 1:
-                config_file = save(user_files[x])
-                response.markdown = check_switch(
-                    incoming_msg,
-                    config=config_file)
-                create_message(user_roomId, response.markdown)
-                x += 1
-
     if debug:
         print(f"command = {command}")
-
-    # If the user asked for a report, we will try to give it to them
-    report = False
-    regex = r'\swith\sreports|\swith\sreports|\swith\sreporting'
-    if re.search(regex, user_text, re.IGNORECASE) is not None:
-        user_text = re.sub(regex, '', user_text, re.IGNORECASE)
-        report = True
 
     # If the user asked for timing, we will try to give it to them
     times = False
@@ -326,6 +308,70 @@ def greeting(incoming_msg):
     if re.search(regex, user_text, re.IGNORECASE) is not None:
         user_text = re.sub(regex, '', user_text, re.IGNORECASE)
         detailed = True
+
+    # If the command is 'check' and the user attached any config files to
+    # the bot message, we will try to use them
+    if user_text.lower() == 'check' and (user_files is not None):
+        x = 0
+        while x < len(user_files) - 1:
+            config_file = save(user_files[x])
+            response.markdown = check_switch(
+                incoming_msg,
+                config=config_file)
+            create_message(user_roomId, response.markdown)
+            x += 1
+
+    # If the user asked for a report, we will try to give it to them
+    if user_text.lower().startswith('check network '):
+        # Now let's see if they specified target models...
+        targets = ['C9300']
+        regex = re.compile(r"\s*target\s *|\s*targets\s *", flags=re.I)
+        if len(regex.split(user_text)) > 1:
+            if not regex.split(user_text)[1] == "":
+                maybe_targets = regex.split(user_text)[1]
+                user_text = regex.split(user_text)[0].strip()
+                if not re.search(',', maybe_targets, re.IGNORECASE) == None:
+                    maybe_targets = maybe_targets.replace(" ", "")
+                if debug:
+                    print(f"maybe_targets = {maybe_targets}")
+                if not len(maybe_targets)==0:
+                    targets = re.split(';|,|\s',maybe_targets)
+                    print(f"regex.split(user_text)[0] = {regex.split(user_text)[0]}")
+        if debug:
+            print(f"targets = {targets}")
+        # Did they enter a network name after "network"?
+        dest_net = meraki_net
+        regex = re.compile(r"\s*network\s *", flags=re.I)
+        if not regex.split(user_text)[1] == "":
+            # They did, so register it!
+            dest_net_name = regex.split(user_text)[1]
+            dest_net = ""
+            test = [d['id'] for d in meraki_networks
+                    if d['name'] == dest_net_name]
+            if not len(test) == 0:
+                dest_net = test[0]
+                meraki_net_name = dest_net_name
+            if dest_net == "":
+                r = "I'm sorry, but {} is ".format(dest_net_name)
+                r += "not in your list of Meraki networks."
+                response.markdown = r
+            else:
+                if debug:
+                    print(f"dest_net = {dest_net}")
+        if dest_net == "":
+            r = "You need to enter a Meraki network to register into."
+            response.markdown = r
+        else:
+            response.markdown = check_network(incoming_msg,
+                                              dest_net,
+                                              targets=targets)
+
+    # If the user asked for a report, we will try to give it to them
+    report = False
+    regex = r'\swith\sreports|\swith\sreports|\swith\sreporting'
+    if re.search(regex, user_text, re.IGNORECASE) is not None:
+        user_text = re.sub(regex, '', user_text, re.IGNORECASE)
+        report = True
 
     serials = list()
 
@@ -460,7 +506,7 @@ def greeting(incoming_msg):
                         print("user_text.split('to ',1)[1] = " +
                               f"{user_text.split('to ',1)[1]}")
                     if not user_text.split("to ", 1)[1] == "":
-                        serials, r = Split_check_serials(user_text,
+                        serials, r = SplitCheckSerials(user_text,
                                                          "Translate")
                         if debug:
                             print(f"serials = {serials}")
@@ -476,7 +522,7 @@ def greeting(incoming_msg):
                         maybe_file = user_text.split("file ", 1)[1].split()[0]
                         if debug:
                             print(f"maybe_file = {maybe_file}")
-                        maybe_file, exists = File_exists(maybe_file)
+                        maybe_file, exists = FileExists(maybe_file)
                         if not exists:
                             r = "I'm sorry, but I could not find that file."
                             response.markdown = r
@@ -549,7 +595,7 @@ def greeting(incoming_msg):
                 if re.search('file', user_text, re.IGNORECASE):
                     if not user_text.split("file ", 1)[1] == "":
                         maybe_file = user_text.split("file ", 1)[1].split()[0]
-                        maybe_file, exists = File_exists(maybe_file)
+                        maybe_file, exists = FileExists(maybe_file)
                         if not exists:
                             r = "I'm sorry, but I could not find that file."
                             response.markdown = r
@@ -671,9 +717,9 @@ def greeting(incoming_msg):
                 serials = list()
                 # Did the user enter a list of serial numbers after "Claim" ?
                 if not user_text.lower() == 'claim':
-                    maybe_serials, r = Split_check_serials(user_text, "Claim")
+                    maybe_serials, r = SplitCheckSerials(user_text, "Claim")
                     if debug:
-                        print("In case: 'claim': after Split_check_serials, " +
+                        print("In case: 'claim': after SplitCheckSerials, " +
                               f"serials = {serials}, maybe_serials = " +
                               f"{maybe_serials}, r = {r}")
                     # If we didn't get back some kind of error response,
@@ -772,6 +818,123 @@ def save(file):
 # ------------------------------------------------------------------------
 
 
+def check_network(incoming_msg, dest_net, targets=['C9300']):
+    """
+    This function will get a list of all switches in a Meraki network, parse
+    it for any cloud-monitored Catalyst switches that cold be cloud-managed.
+    It then grabs their configs one by one and sends them through the
+    check_switch function to generate a report for each.
+    :param incoming_msg: The incoming message object from Teams
+    :param dest_net: The Meraki network to check
+    :return: A text or markdown based reply
+    """
+
+    # Create a Response object to later craft a reply in Markdown.
+    response = Response()
+
+    # This will be our copy of the user input to work with
+    user_roomId = incoming_msg.roomId
+
+    # Grab the list of devices for that Network
+    try:
+        devices = dashboard.networks.getNetworkDevices(dest_net)
+    except meraki.exceptions.APIError:
+        r = "We were unable to get the list of devices for that network."
+        return (r)
+    if debug:
+        print(f"devices = {switches}")
+
+    # Loop through the devices searching for cloud monitored C9300s
+    success_list = list()
+    if targets == []:
+        targets = ['C9300']
+    if debug:
+        print(f"targets = {targets}")
+    x = 0
+    while x <= len(devices) - 1:
+        if debug:
+            print(f"\ndevice = {devices[x]}")
+        if devices[x]['firmware'].startswith('ios-xe'):
+            short_mod = devices[x]['model'][:5]
+            if debug:
+                print(f"short_mod = {short_mod}")
+            if short_mod in targets:
+                # Found one...
+                sw_name = devices[x]['name']
+
+                # Grab the list of config files archived for the switch
+                try:
+                    url = f"https://api.meraki.com/api/v1/devices/{devices[x]['serial']}/switch/configs"
+                    payload = {}
+                    headers = {
+                      'X-Cisco-Meraki-API-Key': meraki_api_key
+                    }
+                    response = requests.request("GET", url, headers=headers, data=payload)
+                except:
+                    print(f"ERROR getting the config list for {sw_name}")
+                    x += 1
+                conf_list = response.json()
+                # If the Python meraki SDK ever supports this it should look
+                # like this:
+                #
+                # conf_list = dashboard.devices.getSwitchConfigs(devices[x]['serial'])
+
+                if debug:
+                    print(f"conf_list = {conf_list}")
+                    print(f"len(conf_list) = {len(conf_list)}")
+                    print(f"conf_list[0] = {conf_list[0]}")
+
+                # Assuming there are and configs in the list, we will grab a copy
+                # of the first (latest) one.
+                if len(conf_list) > 0:
+                    url += "/" + conf_list[0]['id']
+                    if debug:
+                        print(f"url = {url}")
+                    try:
+                        response = requests.request("GET", url, headers=headers, data=payload)
+                    except:
+                        print(f"ERROR getting config for {sw_name}")
+                        x += 1
+                    c = response.json()
+                    # If the Python meraki SDK ever supports this it should look
+                    # like this:
+                    #
+                    # c = dashboard.devices.getSwitchConfigs(devices[x]['serial'],conf_list[0]['id'])
+
+                    # Now that we have the config, let's save a copy
+                    dir = os.path.join(os.getcwd(), "../../files")
+                    config_file = os.path.join(dir, sw_name + ".cfg")
+                    file = open(config_file, "w")
+                    file.writelines(c['config'])
+                    file.close()
+                    success_list.append(sw_name)
+
+                    # Run the Check report on that config file
+                    response.markdown = check_switch(
+                                                     incoming_msg,
+                                                     config=config_file)
+                    if BOT:
+                        create_message(user_roomId, response.markdown)
+                    else:
+                        print("\n\nFor switch "+sw_name+":"+response.markdown)
+        x += 1
+
+    # Prep the overall return status and pass it back
+    if len(success_list) > 0:
+        r = "We successfully downloaded the config file"
+        if len(success_list) == 1:
+            r += " for " + success_list[0] + "."
+        else:
+            r += "s for " + ','.join(success_list) + "."
+    else:
+        r = "We were unsuccessful locating cloud monitored switch model"
+        if len (targets) == 1:
+            r += ": " + ",".join(targets) + "."
+        else:
+            r += "s: " + ",".join(targets) + "."
+    return (r)
+
+
 def check_switch(incoming_msg, config="", host="", demo=False):
     """
     This function will check a Catalyst switch config for feature mapping to
@@ -800,31 +963,12 @@ def check_switch(incoming_msg, config="", host="", demo=False):
             else:
                 host_id = host
 
-            # SSH to the switch with netmiko, read the config, grab the
-            # hostname, write the config out to a file using the hostname
-            # as part of the filespec
-            session_info = {
-                'device_type': 'cisco_xe',
-                'host': host_id,
-                'username': ios_username,
-                'password': ios_password,
-                'port': ios_port,          # optional, defaults to 22
-                'secret': ios_secret,      # optional, defaults to ''
-            }
-            net_connect = ConnectHandler(**session_info)
-            switch_name = net_connect.find_prompt()
-            net_connect.enable()
-            switch_name = net_connect.find_prompt()
-            switch_name = switch_name[:len(switch_name) - 1]
-            net_connect.send_command('term len 0')
-            config = net_connect.send_command('show running-config')
-            net_connect.send_command('term len 24')
-            net_connect.disconnect()
-            dir = os.path.join(os.getcwd(), "../../files")
-            file = open(os.path.join(dir, switch_name + ".cfg"), "w")
-            file.writelines(config)
-            file.close()
-            config = os.path.join(dir, switch_name + ".cfg")
+            # Get the config file from a switch/stack
+            switch_name, config = GetConfig(host_id,
+                                            ios_username,
+                                            ios_password,
+                                            ios_port,
+                                            ios_secret)
 
         # Update the global stateful variable for later
         config_file = config
@@ -1396,22 +1540,15 @@ def translate_switch(
             }
             if debug:
                 print(f"session_info = {session_info}")
-            net_connect = ConnectHandler(**session_info)
-            switch_name = net_connect.find_prompt()
-            net_connect.enable()
-            switch_name = net_connect.find_prompt()
-            switch_name = switch_name[:len(switch_name) - 1]
-            net_connect.send_command('term len 0')
-            config = net_connect.send_command('show running-config')
-            net_connect.send_command('term len 24')
-            net_connect.disconnect()
-            dir = os.path.join(os.getcwd(), "../../files")
-            file = open(os.path.join(dir, switch_name+".cfg"), "w")
-            file.writelines(config)
-            file.close()
-            config = os.path.join(dir, switch_name+".cfg")
+            # Get the config file from a switch/stack
+            switch_name, config = GetConfig(host_id,
+                                            ios_username,
+                                            ios_password,
+                                            ios_port,
+                                            ios_secret)
+
             # Grab the uplink module in each switch
-            nm_list = Get_nm_list(host_id, ios_username,
+            nm_list = GetNmList(host_id, ios_username,
                                   ios_password, ios_port, ios_secret)
     else:
         if config == "":
@@ -1459,7 +1596,7 @@ def translate_switch(
     port_cfg_start_time = time.time()
 
     configured_ports, unconfigured_ports, port_dict, \
-        meraki_urls, meraki_net = Meraki_config(dashboard,
+        meraki_urls, meraki_net = MerakiConfig(dashboard,
                                                      meraki_org,
                                                      switch_name,
                                                      meraki_serials,
@@ -1585,31 +1722,13 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
         if not len(test_net) == 0:
             meraki_net_name = test_net[0]
 
-    # SSH to the switch with netmiko, read the config, grab the switch name,
-    # write the config out to a file using the switch name as part of the
-    # filespec
-    session_info = {
-        'device_type': 'cisco_xe',
-        'host': host_id,
-        'username': ios_username,
-        'password': ios_password,
-        'port': ios_port,          # optional, defaults to 22
-        'secret': ios_secret     # optional, defaults to ''
-    }
-    net_connect = ConnectHandler(**session_info)
-    switch_name = net_connect.find_prompt()
-    net_connect.enable()
-    switch_name = net_connect.find_prompt()
-    switch_name = switch_name[:len(switch_name) - 1]
-    net_connect.send_command('term len 0')
-    config = net_connect.send_command('show running-config')
-    net_connect.send_command('term len 24')
-    net_connect.disconnect()
-    dir = os.path.join(os.getcwd(), "../../files")
-    file = open(os.path.join(dir, switch_name+".cfg"), "w")
-    file.writelines(config)
-    file.close()
-    config = os.path.join(dir, switch_name+".cfg")
+    # Get the config file from a switch/stack
+    switch_name, config = GetConfig(host_id,
+                                    ios_username,
+                                    ios_password,
+                                    ios_port,
+                                    ios_secret)
+
     blurb = "Logged in to " + host_id + ", grabbed a copy of the running "
     blurb += "config and saved it as " + switch_name + ".cfg."
     if times:
@@ -1693,8 +1812,7 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     translate_start_time = time.time()
     r = "\n\n" + translate_switch(
         incoming_msg,
-        config="",
-        host=host_id,
+        config=config_file,
         serials=meraki_serials,
         verb="migrate")
     blurb = "\nTranslated " + switch_name+".cfg to Meraki switches "
@@ -1764,12 +1882,17 @@ if BOT:
     bot_commands.extend([
         ["* **help**", "Get help."],
 
-        ["* **check _drag-and-drop files_ [with timing]**",
+        ["* **check [network _Meraki network name_] [with timing] \
+[with details]**",
+         "Check the configs of cloud monitored Catalyst switches \
+for both translatable and possible Meraki features"],
+
+        ["* **check _drag-and-drop files_ [with timing] [with details]**",
          "Check one or more Catalyst switch config files for both \
 translatable and possible Meraki features"],
 
         ["* **check [host _FQDN or IP address_ | file _filespec_] \
-[with timing]**",
+[with timing] [with details]**",
          "Check a Catalyst switch config for both translatable \
 and possible Meraki features"],
 
@@ -1798,9 +1921,21 @@ encyclopedia"]])
     bot.add_command("help", "This list of commands", greeting)
 
     bot.add_command("check [host _FQDN or IP address_ | file _filespec_] \
-[with timing]",
+[with timing] [with details]",
                     "Check a Catalyst switch config for both translatable \
 and possible Meraki features",
+                    greeting)
+
+    bot.add_command("check _drag-and-drop files_ [with timing] [with details]\
+",
+                    "Check one or more Catalyst switch config files for both \
+translatable and possible Meraki features",
+                    greeting)
+
+    bot.add_command("check [network _Meraki network_] [with timing] \
+[with details]",
+                    "Check the configs of cloud monitored Catalyst switches \
+for both translatable and possible Meraki features",
                     greeting)
 
     bot.add_command("register [host _FQDN or IP address_] [with timing]",
@@ -1836,6 +1971,10 @@ else:
     command_list = list(list())
     command_list.extend([
         ["help", "This list of commands"],
+
+        ["check network <Meraki network name> [with timing] [with details]",
+         "Check the configs of cloud monitored Catalyst switches for both \
+translatable and possible Meraki features"],
 
         ["check host <FQDN or IP address> | file <filespec> [with timing] \
 [with details]",

@@ -2,7 +2,7 @@ import os
 from mc_user_info import DEBUG, DEBUG_FILE
 
 
-def File_exists(filespec):
+def FileExists(filespec):
     """
     Checks to see if a filespec can be found, and is a file.
     :param filespec: The incoming user text from Teams or the command line
