@@ -110,10 +110,16 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
-    check [host <FQDN or IP address> | file <filespec>] [with timing] [with detail]
+    check [host <FQDN or IP address> | file <filespec>] [with timing] [with details]
     ```
-    > Note: The check command can also be used with one or more attached files through drag and drop.
-    
+    Check one or more Catalyst switch config files for both translatable and possible Meraki features:
+    ```
+    check <drag-and-drop files> [with timing] [with details]
+    ```
+    Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features:
+    ```
+    check network <Meraki network name> [with timing] [with details]
+    ```
     Register a Catalyst switch to the Meraki Dashboard:
     ```
     register [host <FQDN or IP address>] [with timing]
@@ -143,7 +149,11 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
-    python merakicat.py check host <FQDN or IP address> | file <filespec> [with timing] [with detail]
+    python merakicat.py check host <FQDN or IP address> | file <filespec> [with timing] [with details]
+    ```
+    Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features:
+    ```
+    python merakicat.py check network <Meraki network name> [with timing] [with details]
     ```
     Register a Catalyst switch or stack to the Meraki Dashboard:
     ```
