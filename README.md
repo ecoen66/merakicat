@@ -102,7 +102,7 @@ pip install -r requirements_dev.txt
     ```
 In addition to these settings, various debugs and a choice of PDF vs. DOCX report format can be enabled in the mc_user_info.py file.
 
-    > Note: For PDF report generation, MS Word must be installed on the same host as merakicat.
+    > Note: For PDF report generation, MS Word must be installed on the host with merakicat.
 
 1. To run merakicat as a Bot, just start it without any parameters:  
 
