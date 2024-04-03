@@ -39,7 +39,7 @@ cd src/merakicat
 python mc_pedia [support] [translatable]
 ```
 
-# Prerequisites for using in bot mode
+# Prerequisites for using in Bot mode
 
 If you don't already have a [Webex Teams](https://www.webex.com/products/teams/index.html) account, go ahead and [register](https://www.webex.com/pricing/free-trial.html) for one.  They are free.
 
@@ -102,7 +102,9 @@ pip install -r requirements_dev.txt
     ```
 In addition to these settings, various debugs and a choice of PDF vs. DOCX report format can be enabled in the mc_user_info.py file.
 
-1. This app can be run either as a Webex Teams Bot or as a standalone command line program.  To run it as a Bot, just start it without any parameters:  
+    > Note: PDF report generation requires an installed, licensed copy of MS Word on the same host as merakicat.
+
+1. To run merakicat as a Bot, just start it without any parameters:  
 
     ```
     cd src/merakicat
@@ -144,7 +146,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
 
 
-1. To run it from the command line (or from a shell script), enter any of the following:
+1. To run merakicat from the command-line (or from a shell script), enter any of the following:
 
     ```
     cd src/merakicat
@@ -179,14 +181,14 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
 
 
-1. To run it in bulk-mode for a shell script, create a script to call merakicat in command line mode.  Examples scripts included in the repo are:
+1. To run merakicat in bulk-mode, create a shell script to call merakicat in command line mode.  Examples scripts included in the repo are:
 
-    Generate Check config reports for a list of Catalyst switches. The list is provided in an input file, one hostname/fqdn/IP address per line:
+    Generate Check config reports for a list of Catalyst switches, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
     ```
     cd src/merakicat
     bulk_ceck.sh <input file>
     ```
-    Migrate a list of Catalyst switches to a Meraki network. The list is provided in an input file, one hostname/fqdn/IP address per line:
+    Migrate a list of Catalyst switches to a Meraki network, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
     ```
     cd src/merakicat
     bulk_migrate.sh <input file> <Meraki network name>
