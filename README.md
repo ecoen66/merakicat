@@ -185,7 +185,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
 
 
-1. To run merakicat in bulk-mode, create a shell script to call merakicat in command line mode.  Examples scripts included in the repo are:
+1. To run merakicat in bulk-mode, create a shell script to call merakicat in command line mode.  Example scripts included in the repo are:
 
     Generate Check config reports for a list of Catalyst switches, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
     ```
