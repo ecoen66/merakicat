@@ -5,6 +5,8 @@ This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to
  
 ![merakicat](https://github.com/ecoen66/merakicat/raw/main/images/mc_quick.gif)
  
+This Python app can be run in Webex bot mode or in command-line mode.  It can also be called from shell scripts for bulk-mode.
+
 Below is the list of configurations the tool can currently translate:
 
 switch:
@@ -73,25 +75,25 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 git clone https://github.com/ecoen66/merakicat
 cd merakicat
 pip install -r requirements_dev.txt
-cd src/merakicat
-python merakicat.py
 ```
 
 # Usage
 
  - The easiest way to use this module is to set a few environment variables
 
-    > Note: As an alternative, you may rename mc_user_sample.py to mc_user_info.py and edit the variables there.
-    > Although more convenient, it is less secure.
+    > Note: As an alternative, you may edit the variables in mc_user_info.py.  Although more convenient, it is less secure.
 
     > Note: See [ngrok](#ngrok) for details on setting up an easy HTTP tunnel for webhooks callbacks.
 
     ```
+    # These exports are used for Webex bot mode:
     export NGROK_AUTHTOKEN=<your ngrok Authtoken>
     export TEAMS_BOT_TOKEN=<your bot's token>
     export TEAMS_BOT_EMAIL=<your bot's email>
     export TEAMS_BOT_APP_NAME=<your bot's name>
     export TEAMS_EMAILS=<a comma delimited list of email addresses the bot will respond to>
+    
+    # These exports are required regardless of mode:
     export IOS_USERNAME=<the ssh username for the Catalyst switches>
     export IOS_PASSWORD=<the ssh password for the Catalyst switches>
     export IOS_SECRET=<the CLI secret password for the Catalyst switches>

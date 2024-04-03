@@ -34,10 +34,6 @@ from mc_splitcheck_serials import SplitCheckSerials
 from mc_ping import Ping
 from mc_file_exists import FileExists
 from mc_get_config import GetConfig
-from mc_user_info import DEBUG, DEBUG_MAIN, PDF, NGROK_AUTHTOKEN
-from mc_user_info import IOS_USERNAME, IOS_PASSWORD, IOS_SECRET, IOS_PORT
-from mc_user_info import TEAMS_BOT_TOKEN, TEAMS_BOT_EMAIL
-from mc_user_info import TEAMS_BOT_APP_NAME, TEAMS_EMAILS, MERAKI_API_KEY
 from collections import defaultdict
 from functools import reduce
 from itertools import islice
@@ -45,6 +41,30 @@ from datetime import datetime
 from tabulate import tabulate
 tabulate.PRESERVE_WHITESPACE = True
 
+try:
+    from mc_user_info import IOS_USERNAME, IOS_PASSWORD, IOS_SECRET, IOS_PORT
+except ImportError:
+    IOS_USERNAME = IOS_PASSWORD = IOS_SECRET = IOS_PORT = None
+try:
+    from mc_user_info import TEAMS_BOT_TOKEN, TEAMS_BOT_EMAIL
+except ImportError:
+    TEAMS_BOT_TOKEN = TEAMS_BOT_EMAIL = None
+try:
+    from mc_user_info import TEAMS_BOT_APP_NAME, TEAMS_EMAILS
+except ImportError:
+    TEAMS_BOT_APP_NAME = TEAMS_EMAILS = None
+try:
+    from mc_user_info import NGROK_AUTHTOKEN
+except ImportError:
+    NGROK_AUTHTOKEN = None
+try:
+    from mc_user_info import MERAKI_API_KEY
+except ImportError:
+    MERAKI_API_KEY = None
+try:
+    from mc_user_info import DEBUG, DEBUG_MAIN, PDF
+except ImportError:
+    DEBUG = DEBUG_MAIN = PDF = False
 debug = DEBUG or DEBUG_MAIN
 
 # Check to see if we have the most recent encyclopedia
@@ -96,6 +116,8 @@ ios_port = os.getenv("IOS_PORT")
 # grab them from the mc_user_info.py file
 if ios_username is None:
     ios_username = IOS_USERNAME
+if ios_username is None:
+    ios_username = IOS_USERNAME
 if ios_password is None:
     ios_password = IOS_PASSWORD
 if ios_secret is None:
@@ -118,7 +140,7 @@ if BOT:
     bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
     teams_token = os.getenv("TEAMS_BOT_TOKEN")
     if not os.getenv("TEAMS_EMAILS") is None:
-        teams_emails.append(os.getenv("TEAMS_EMAILS"))
+        teams_emails = os.getenv("TEAMS_EMAILS")
     ngrok_token = os.getenv("NGROK_AUTHTOKEN")
 
     # If the required details were not in the environment variables

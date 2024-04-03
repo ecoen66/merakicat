@@ -1,5 +1,11 @@
 # History
 
+## 0.1.8 (04-03-2024)
+
+  - Edited README.
+  - Renamed mc_user_sample.py to mc_user_info.py and commented out possible environment variables.
+  - Added logic to merakicat.py to handle missing variables on import from mc_user_info.py.
+
 ## 0.1.7 (04-01-2024)
 
   - Added the ability to Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features.
