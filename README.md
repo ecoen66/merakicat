@@ -108,44 +108,44 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 
 To run merakicat as a Bot, just start it without any parameters:  
 
-    ```
-    cd src/merakicat
-    python merakicat.py
-    ```
-    **Bot commands include the following:**
+```
+cd src/merakicat
+python merakicat.py
+```
+**Bot commands include the following:**
 
-    Check a Catalyst switch config for both translatable and possible Meraki features:
-    ```
-    check [host <FQDN or IP address> | file <filespec>] [with timing] [with details]
-    ```
-    Check one or more Catalyst switch config files for both translatable and possible Meraki features:
-    ```
-    check <drag-and-drop files> [with timing] [with details]
-    ```
-    Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features:
-    ```
-    check network <Meraki network name> [with timing] [with details]
-    ```
-    Register a Catalyst switch to the Meraki Dashboard:
-    ```
-    register [host <FQDN or IP address>] [with timing]
-    ```
-    Claim Catalyst switches to a Meraki Network:
-    ```
-    claim [<Meraki serial numbers>] [to <Meraki network name>] [with timing]
-    ```
-    Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers:
-    ```
-    translate [host <FQDN or IP address> | file <filespec>] [to <Meraki serial numbers>] [with timing]
-    ```
-    Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
-    ```
-    migrate [host <FQDN or IP address>] [to <Meraki network name>] [with timing]
-    ```
-    Create a demo report for all features currently in the feature encyclopedia:
-    ```
-    demo report
-    ```
+Check a Catalyst switch config for both translatable and possible Meraki features:
+```
+check [host <FQDN or IP address> | file <filespec>] [with timing] [with details]
+```
+Check one or more Catalyst switch config files for both translatable and possible Meraki features:
+```
+check <drag-and-drop files> [with timing] [with details]
+```
+Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features:
+```
+check network <Meraki network name> [with timing] [with details]
+```
+Register a Catalyst switch to the Meraki Dashboard:
+```
+register [host <FQDN or IP address>] [with timing]
+```
+Claim Catalyst switches to a Meraki Network:
+```
+claim [<Meraki serial numbers>] [to <Meraki network name>] [with timing]
+```
+Translate a Catalyst switch config from a file or host to claimed Meraki serial numbers:
+```
+translate [host <FQDN or IP address> | file <filespec>] [to <Meraki serial numbers>] [with timing]
+```
+Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
+```
+migrate [host <FQDN or IP address>] [to <Meraki network name>] [with timing]
+```
+Create a demo report for all features currently in the feature encyclopedia:
+```
+demo report
+```
 
 
 # Command-line
