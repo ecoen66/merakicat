@@ -5,7 +5,7 @@ This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to
  
 ![merakicat](https://github.com/ecoen66/merakicat/raw/main/images/mc_quick.gif)
  
-This Python app can be run in Webex bot mode or in command-line mode.  It can also be called from shell scripts for bulk-mode.
+This Python app can be run in Webex Teams Bot mode or in command-line mode.  It can also be called from shell scripts for bulk-mode.
 
 Below is the list of configurations the tool can currently translate:
 
@@ -43,7 +43,7 @@ python mc_pedia [support] [translatable]
 
 If you don't already have a [Webex Teams](https://www.webex.com/products/teams/index.html) account, go ahead and [register](https://www.webex.com/pricing/free-trial.html) for one.  They are free.
 
-1. You'll need to start by adding your bot to the Webex Teams website.
+1. You'll need to start by adding your Bot to the Webex Teams website.
 
     [https://developer.webex.com/my-apps](https://developer.webex.com/my-apps)
 
@@ -55,7 +55,7 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
     ![create-bot](https://github.com/ecoen66/merakicat/raw/main/images/createbot.jpg)
 
-2. Fill out all the details about your bot.  You'll need to set a name, username, icon (either upload one or choose a sample), and provide a description.
+2. Fill out all the details about your Bot.  You'll need to set a name, username, icon (either upload one or choose a sample), and provide a description.
 
     ![add-bot](https://github.com/ecoen66/merakicat/raw/main/images/newbot.jpg)
 
@@ -83,7 +83,7 @@ pip install -r requirements_dev.txt
 
     > Note: As an alternative, you may edit the variables in mc_user_info.py.  Although more convenient, it is less secure.
 
-    > Note: See [ngrok](#ngrok) for details on setting up an easy HTTP tunnel for webhooks callbacks.
+    > Note: See [ngrok](#ngrok) for details on setting up an easy HTTP tunnel for webhooks callbacks for Bot mode.
 
     ```
     # These exports are used for Webex bot mode:
@@ -102,7 +102,7 @@ pip install -r requirements_dev.txt
     ```
 In addition to these settings, various debugs and a choice of PDF vs. DOCX report format can be enabled in the mc_user_info.py file.
 
-1. This app can be run either as a Webex Teams bot or as a standalone command line program.  To run it as a bot, just start it without any parameters:  
+1. This app can be run either as a Webex Teams Bot or as a standalone command line program.  To run it as a Bot, just start it without any parameters:  
 
     ```
     cd src/merakicat
@@ -176,6 +176,20 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     Create a demo report for all features currently in the feature encyclopedia:
     ```
     python merakicat.py demo report
+    ```
+
+
+1. To run it in bulk-mode for a shell script, create a script to call merakicat in command line mode.  Examples scripts included in the repo are:
+
+    Generate Check config reports for a list of Catalyst switches. The list is provided in an input file, one hostname/fqdn/IP address per line:
+    ```
+    cd src/merakicat
+    bulk_ceck.sh <input file>
+    ```
+    Migrate a list of Catalyst switches to a Meraki network. The list is provided in an input file, one hostname/fqdn/IP address per line:
+    ```
+    cd src/merakicat
+    bulk_migrate.sh <input file> <Meraki network name>
     ```
 
 
