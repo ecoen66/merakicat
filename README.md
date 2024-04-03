@@ -190,7 +190,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     Generate Check config reports for a list of Catalyst switches, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
     ```
     cd src/merakicat
-    bulk_ceck.sh <input file>
+    bulk_check.sh <input file>
     ```
     Migrate a list of Catalyst switches to a Meraki network, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
     ```
