@@ -152,57 +152,57 @@ demo report
 
 To run merakicat from the command-line (or from a shell script), enter any of the following:
 
-    Check a Catalyst switch config for both translatable and possible Meraki features:
-    ```
-    cd src/merakicat
-    python merakicat.py check host <FQDN or IP address> | file <filespec> [with timing] [with details]
-    ```
-    Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features:
-    ```
-    cd src/merakicat
-    python merakicat.py check network <Meraki network name> [with timing] [with details]
-    ```
-    Register a Catalyst switch or stack to the Meraki Dashboard:
-    ```
-    cd src/merakicat
-    python merakicat.py register host <FQDN or IP address> [with timing]
-    ```
-    Claim Catalyst switches to a Meraki Network:
-    ```
-    cd src/merakicat
-    python merakicat.py claim <Meraki serial numbers> to <Meraki network name> [with timing]
-    ```
-    Translate a Catalyst switch or stack config from a file or host to claimed Meraki serial numbers:
-    ```
-    cd src/merakicat
-    python merakicat.py translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers> [with timing]
-    ```
-    Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
-    ```
-    cd src/merakicat
-    python merakicat.py migrate host <FQDN or IP address> to <Meraki network name> [with timing]
-    ```
-    Create a demo report for all features currently in the feature encyclopedia:
-    ```
-    cd src/merakicat
-    python merakicat.py demo report
-    ```
+Check a Catalyst switch config for both translatable and possible Meraki features:
+```
+cd src/merakicat
+python merakicat.py check host <FQDN or IP address> | file <filespec> [with timing] [with details]
+```
+Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features:
+```
+cd src/merakicat
+python merakicat.py check network <Meraki network name> [with timing] [with details]
+```
+Register a Catalyst switch or stack to the Meraki Dashboard:
+```
+cd src/merakicat
+python merakicat.py register host <FQDN or IP address> [with timing]
+```
+Claim Catalyst switches to a Meraki Network:
+```
+cd src/merakicat
+python merakicat.py claim <Meraki serial numbers> to <Meraki network name> [with timing]
+```
+Translate a Catalyst switch or stack config from a file or host to claimed Meraki serial numbers:
+```
+cd src/merakicat
+python merakicat.py translate host <FQDN or IP address> | file <filespec> to <Meraki serial numbers> [with timing]
+```
+Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
+```
+cd src/merakicat
+python merakicat.py migrate host <FQDN or IP address> to <Meraki network name> [with timing]
+```
+Create a demo report for all features currently in the feature encyclopedia:
+```
+cd src/merakicat
+python merakicat.py demo report
+```
 
 
 # Bulk-mode
 
 To run merakicat in bulk-mode, create a shell script to call merakicat in command line mode.  Example scripts included in the repo are:
 
-    Generate Check config reports for a list of Catalyst switches, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
-    ```
-    cd src/merakicat
-    bulk_check.sh <input file>
-    ```
-    Migrate a list of Catalyst switches to a Meraki network, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
-    ```
-    cd src/merakicat
-    bulk_migrate.sh <input file> <Meraki network name>
-    ```
+Generate Check config reports for a list of Catalyst switches, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
+```
+cd src/merakicat
+bulk_check.sh <input file>
+```
+Migrate a list of Catalyst switches to a Meraki network, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
+```
+cd src/merakicat
+bulk_migrate.sh <input file> <Meraki network name>
+```
 
 
 # ngrok
