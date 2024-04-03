@@ -5,7 +5,7 @@ This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to
  
 ![merakicat](https://github.com/ecoen66/merakicat/raw/main/images/mc_quick.gif)
  
-This Python app can be run in Webex Teams Bot mode or in command-line mode.  It can also be called from shell scripts for bulk-mode.
+This Python app can be run in Webex Teams [Bot mode](#Bot) or in [command-line mode](#command-line).  It can also be called from shell scripts for [bulk-mode](#bulk-mode).
 
 Below is the list of configurations the tool can currently translate:
 
@@ -104,7 +104,9 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 
     > Note: For PDF report generation, MS Word must be installed on the host with merakicat.
 
-1. To run merakicat as a Bot, just start it without any parameters:  
+# Bot
+
+To run merakicat as a Bot, just start it without any parameters:  
 
     ```
     cd src/merakicat
@@ -146,7 +148,9 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
 
 
-1. To run merakicat from the command-line (or from a shell script), enter any of the following:
+# Command-line
+
+To run merakicat from the command-line (or from a shell script), enter any of the following:
 
     Check a Catalyst switch config for both translatable and possible Meraki features:
     ```
@@ -185,7 +189,9 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
     ```
 
 
-1. To run merakicat in bulk-mode, create a shell script to call merakicat in command line mode.  Example scripts included in the repo are:
+# Bulk-mode
+
+To run merakicat in bulk-mode, create a shell script to call merakicat in command line mode.  Example scripts included in the repo are:
 
     Generate Check config reports for a list of Catalyst switches, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
     ```
