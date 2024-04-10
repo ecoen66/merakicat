@@ -2,6 +2,7 @@ import batch_helper
 import json
 import pprint
 import re
+import sys
 from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
 from mc_user_info import DEBUG, DEBUG_TRANSLATOR
@@ -319,6 +320,40 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
     """
 
     debug = DEBUG or DEBUG_TRANSLATOR
+
+    # Make sure that the switches we are translating to have the same
+    # number of ports
+    sw_check_list=list()
+    for serial in sw_list:
+        sw_check_list.append({'serial': serial, 'ports': 0})
+    for port in Intf_list:
+        if not port.startswith('Vlan'):
+            if debug:
+                print(f"port = {port}")
+                print(f"port_dict[port] = {port_dict[port]}")
+            if port_dict[port]['sub_module'] == '0':
+                sw_check_list[int(port_dict[port]['sw_module']
+                  )-1]['ports'] += 1
+    if debug:
+        print(f"sw_check_list = {sw_check_list}")
+    for sw in sw_check_list:
+        try:
+            model = dashboard.organizations.getOrganizationInventoryDevice(
+              organization_id, sw['serial'])['model']
+            if debug:
+                print(f"model = {model}")
+        except:
+            print("Couldn't get switch ports for serial number: "+
+                  f"{sw['serial']}.")
+            sys.exit()
+        port_max = int(re.search(r'-(\d{1,2})',model).group(1))
+        if debug:
+            print(f"Switch with serial number {sw['serial']} has "+
+                  f"{port_max} ports.")
+        if not port_max == sw['ports']:
+            print(f"Switch with serial number {sw['serial']} has {port_max} "+
+                  f"ports, not {sw['ports']}!")
+            sys.exit()
 
     # Create a batch action lists
     action_list = list()

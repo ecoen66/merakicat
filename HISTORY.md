@@ -1,5 +1,9 @@
 # History
 
+## 0.2.3 (04-10-2024)
+
+  - Translate now checks to make sure that the target switches have the same number of ports as the sources.
+
 ## 0.2.2 (04-10-2024)
 
   - Added environment variable to specify a Meraki Oragnization name.
