@@ -9,7 +9,7 @@ tox==3.5.2
 coverage==4.5.1
 Sphinx==1.8.1
 twine==1.12.1
-webexteamssdk==1.0.3
+webexteamssdk==1.6.1
 webexteamsbot==0.1.4.2
 meraki==1.43.0
 white>=0.1.2

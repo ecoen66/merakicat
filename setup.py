@@ -16,7 +16,7 @@ with open('HISTORY.md') as history_file:
 
 requirements = [
     "webexteamsbot==0.1.4.2",
-    "webexteamssdk==1.0.3",
+    "webexteamssdk==1.6.1",
     "Flask>=0.12.1",
     "netmiko==4.3.0",
     "tabulate==0.9.0",

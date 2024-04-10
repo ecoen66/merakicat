@@ -29,6 +29,7 @@ from mc_cfg_check import CheckFeatures
 from mc_translate import Evaluate, MerakiConfig  # ,MerakiConfig_up
 from mc_claim import Claim
 from mc_register import Register
+from mc_cloud_mon import CloudSwitch
 from mc_get_nms import GetNmList
 from mc_splitcheck_serials import SplitCheckSerials
 from mc_ping import Ping
@@ -399,8 +400,48 @@ def greeting(incoming_msg):
 
     # Test if it is equivalent to a command.
     match command:
+        case "cloud":
+            # If the only thing the user typed was "cloud"...
+            if user_text.lower() == 'cloud':
+                if host_id == "":
+                    # Just missing the host
+                    r = "I'm sorry, but I don't have a host "
+                    r += "that we are working with."
+                    response.markdown = r
+                else:
+                    # We did, so mess with it!
+                    response.markdown = cloud_switch(
+                        incoming_msg,
+                        host=host_id)
+            elif not len(user_text.split()) >= 3:
+                r = "Syntax is **cloud (host <_fqdn or ip address_>**"
+                response.markdown = r
+            # Well, did they type "cloud host" ?
+            elif re.search('host ', user_text, re.IGNORECASE):
+                if not user_text.lower().split("host ", 1)[1] == "":
+                    host_id = user_text.lower().split("host ", 1)[1]
+                    if debug:
+                        print(f"Ping({host_id}) = {Ping(host_id)}")
+                    if not Ping(host_id):
+                        r = "I was unable to ping that host."
+                        response.markdown = r
+                        return (response)
+                    if BOT:
+                        response.html = cloud_switch(incoming_msg,
+                                                     host=host_id)
+                    else:
+                        response.markdown = cloud_switch(incoming_msg,
+                                                         host=host_id)
+                else:
+                    r = "I'm sorry, but I don't have a host that we are "
+                    r += "working with."
+                    response.markdown = r
+            else:
+                r = "Syntax is **check (host <_fqdn or ip address_>**"
+                response.markdown = r
+
         case "demo":
-            # If the only thing the user typed was "demo report""...
+            # If the only thing the user typed was "demo report"...
             if user_text.lower() == 'demo report':
                 # It was so check it!
                 response.markdown = check_switch(incoming_msg, demo=True)
@@ -410,7 +451,7 @@ def greeting(incoming_msg):
                 response.markdown += "you mean."
 
         case "migrate":
-            # If the only thing the user typed was "migrate""...
+            # If the only thing the user typed was "migrate"...
             if user_text.lower() == 'migrate':
                 # Check and see if we have a global stateful
                 # host and network to work with
@@ -1144,6 +1185,87 @@ def check_switch(incoming_msg, config="", host="", demo=False):
                 "Translatable features to an existing switch in the Meraki " +
                 "Dashboard." +
                 timing + '\n')
+
+
+def cloud_switch(incoming_msg, host=""):
+    """
+    """
+
+    start_time = time.time()
+    timing = ""
+
+    # Import the global stateful variables
+    global host_id, times
+
+    # Since we weren't passed a config filespec, check for a hostname or 
+    # IP address
+    if host == "":
+        return ("You need to enter a host FQDN or IP address.")
+    else:
+        # We were passed a hostname or IP address...
+        # Update the global stateful variable for later
+        host_id = host
+
+    # SSH to the switch with netmiko, read the config, grab the hostname,
+    # write the config out to a file using the hostname as part of the
+    # filespec
+    sw_name, config_file = CloudSwitch(dashboard,
+                                       meraki_org,
+                                       host,
+                                       ios_username,
+                                       ios_password,
+                                       ios_port,
+                                       ios_secret)
+    '''
+    if debug:
+        print(f"In cloud_switch, status = {status}")
+    if status == "successfully":
+        meraki_serials = registered_serials
+        if debug:
+            for switch in registered_switches:
+                print(f"In register_switch status = {status}")
+                print(f"switch = {switch}")
+                print("switch['Migration Status'] = " +
+                      f"{switch['migration_status']}")
+    if debug:
+        print(f"After registering switches, meraki_serials = {meraki_serials}")
+    # Report back on what happened
+    if called == "":
+        timing = ""
+        if not len(registered_switches) == 0:
+            vals = reduce(lambda x, y: x + y, [list(dic.values())
+                          for dic in registered_switches])
+            header = registered_switches[0].keys()
+            rows = [x.values() for x in registered_switches]
+            thing = tabulate(rows, header)
+            if times:
+                t = "\n=== That registraion took "
+                t += "%s seconds" % str(round((time.time() - start_time), 2))
+                timing = t
+            if BOT:
+                payload = "```\n%s" % thing + "\n```" + timing
+                r = f"We **{status}** registered **{vals.count('Registered')}"
+                r += "** switch"
+                r += f"{'es' if (vals.count('Registered') > 1) else ''}"
+                return (r + f":\n{payload}")
+            else:
+                payload = "\n%s" % thing + timing
+                r = f"\n\nWe {status} registered {vals.count('Registered')}"
+                r += f"switch{'es' if (vals.count('Registered') > 1) else ''}"
+                return (r + f":\n{payload}")
+        else:
+            payload = ""
+            for issue in issues:
+                payload += issue + "\n"
+            r = f"We were unsuccessful registering {host}:\n\n{payload}"
+            return (r + timing)
+    else:
+        return (status, issues, registered_switches)
+    '''
+    if times:
+        t = "%s seconds!" % str(round((time.time() - start_time), 2))
+        timing = " And it only took " + t
+    return ("Well, that was fun!"+timing)
 
 
 def check_report_writer(switch_name, can_list_doc, not_list_doc):

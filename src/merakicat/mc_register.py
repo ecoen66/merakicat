@@ -16,11 +16,11 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
         - A default route
         - Succesful results of Meraki registration
     ** Need to add show meraki compatibility check. **
-    :param host: The switch or stack to SSH into
-    :param username: Username for SSH
-    :param password: Password for SSH
-    :param port: Port number for SSH
-    :param secret: IOSXE secret password for CLI escalation
+    :param host_id: The switch or stack to SSH into
+    :param ios_username: Username for SSH
+    :param ios_password: Password for SSH
+    :param ios_port: Port number for SSH
+    :param ios_secret: IOSXE secret password for CLI escalation
     :return: A string indicating success or failure to be used in reporting,
     :      : a list with any issues encountered, and lists of registered
     :      : switches, the Meraki serial numbers assigned, and a list of the
