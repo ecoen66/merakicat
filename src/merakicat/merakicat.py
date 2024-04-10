@@ -6,7 +6,6 @@ switch configs, registering Catalyst switches to Dashboard and
 claiming them.  It can also be run from the command line or in
 batch from a shell script.
 """
-import ngrok
 import meraki
 import urllib.request
 import requests
@@ -225,7 +224,6 @@ if BOT:
     teams_token = os.getenv("TEAMS_BOT_TOKEN")
     if not os.getenv("TEAMS_EMAILS") is None:
         teams_emails = os.getenv("TEAMS_EMAILS")
-    # ngrok_token = os.getenv("NGROK_AUTHTOKEN")
 
     # If the required details were not in the environment variables
     # grab them from the mc_user_info.py file
@@ -237,12 +235,6 @@ if BOT:
         teams_token = TEAMS_BOT_TOKEN
     if len(teams_emails) == 0:
         teams_emails = TEAMS_EMAILS
-    # if ngrok_token is None:
-    #     ngrok_token = NGROK_AUTHTOKEN
-    # listener = ngrok.forward("localhost:5000", authtoken=ngrok_token)
-    # if debug:
-    #     print(f"Ingress established at: {listener.url()}")
-    # bot_url = listener.url()
 
     # Either way, let's got the Bot's first name in case we are
     # directly addressed in room with multiple users
