@@ -83,11 +83,8 @@ pip install -r requirements_dev.txt
 
     > Note: As an alternative, you may edit the variables in mc_user_info.py.  Although more convenient, it is less secure.
 
-    > Note: See [ngrok](#ngrok) for details on setting up an easy HTTP tunnel for webhooks callbacks for Bot mode.
-
     ```
     # These exports are used for Webex bot mode:
-    export NGROK_AUTHTOKEN=<your ngrok Authtoken>
     export TEAMS_BOT_TOKEN=<your bot's token>
     export TEAMS_BOT_EMAIL=<your bot's email>
     export TEAMS_BOT_APP_NAME=<your bot's name>
@@ -205,27 +202,6 @@ bulk_migrate.sh <input file> <Meraki network name>
 ```
 
 
-# ngrok
-
-[ngrok](http://ngrok.com) will make it easy for you to interact with merakicat as a bot.
-
-You can find account instructions here under `Sign up for free!`: [https://dashboard.ngrok.com/login](https://dashboard.ngrok.com/login)
-
-1. After you've created an `ngrok` account, you will need to get your Authtoken.  Click on `Your Authtoken` on the ngrok dashboard and copy it.
-
-
-1. You can now export it to the OS environment variables like this:
-
-    ```
-    export NGROK_AUTHTOKEN=<your ngrok Authtoken>
-    ```
-
-1. Now launch the bot!!
-
-    ```
-    python merakicat.py
-    ```
-
 # Credits
 **This project is _heavily_ based on the work of others:**
 
@@ -233,7 +209,4 @@ You can find account instructions here under `Sign up for free!`: [https://dashb
 
 `Catalyst_2_Meraki_Config_Checker` by [Fady Sharobeem](https://github.com/fadysharobeem).
 
-The bot functionality is based on the `webexteamsbot` project by [Hank Preston](https://github.com/hpreston).
-
-The initial packaging of the original `ciscosparkbot` project was done by [Kevin Corbin](https://github.com/kecorbin).
-
+The bot functionality is based on the `webex_bot` project by [Finbarr Brady](https://github.com/fbradyirl).
