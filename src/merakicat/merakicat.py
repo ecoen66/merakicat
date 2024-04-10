@@ -17,8 +17,9 @@ import json
 import re
 import sys
 import time
-from webexteamsbot import TeamsBot
-from webexteamsbot.models import Response
+from webex_bot_ecoen66.webex_bot import WebexBot
+from webex_bot_ecoen66.models.response import Response
+from webex_bot_ecoen66.models.command import Command
 from netmiko import ConnectHandler
 from docx2pdf import convert
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -133,6 +134,88 @@ if ios_port is None:
 BOT = False
 if len(sys.argv) == 1:
     BOT = True
+class RunCheck(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="check",
+            help_message="Check a Catalyst switch config for both translatable and possible \
+Meraki features",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        print(f"attachment_actions={attachment_actions}")
+        return greeting(attachment_actions)
+
+class RunRegister(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="register",
+            help_message="Register a Catalyst switch to the Meraki Dashboard",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
+class RunClaim(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="claim",
+            help_message="Claim Catalyst switches to a Meraki Network",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
+class RunTranslate(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="translate",
+            help_message="Translate a Catalyst switch config from a file or \
+host to claimed Meraki serial numbers",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
+class RunMigrate(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="migrate",
+            help_message="Migrate a Catalyst switch to a Meraki switch - \
+register, claim & translate",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
+class RunDemo(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="demo",
+            help_message="Create a demo report for all features currently in \
+the feature encyclopedia",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
+class RunHelp(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="help",
+            help_message="Get help",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
 
 teams_emails = list()
 if BOT:
@@ -142,7 +225,7 @@ if BOT:
     teams_token = os.getenv("TEAMS_BOT_TOKEN")
     if not os.getenv("TEAMS_EMAILS") is None:
         teams_emails = os.getenv("TEAMS_EMAILS")
-    ngrok_token = os.getenv("NGROK_AUTHTOKEN")
+    # ngrok_token = os.getenv("NGROK_AUTHTOKEN")
 
     # If the required details were not in the environment variables
     # grab them from the mc_user_info.py file
@@ -154,12 +237,12 @@ if BOT:
         teams_token = TEAMS_BOT_TOKEN
     if len(teams_emails) == 0:
         teams_emails = TEAMS_EMAILS
-    if ngrok_token is None:
-        ngrok_token = NGROK_AUTHTOKEN
-    listener = ngrok.forward("localhost:5000", authtoken=ngrok_token)
-    if debug:
-        print(f"Ingress established at: {listener.url()}")
-    bot_url = listener.url()
+    # if ngrok_token is None:
+    #     ngrok_token = NGROK_AUTHTOKEN
+    # listener = ngrok.forward("localhost:5000", authtoken=ngrok_token)
+    # if debug:
+    #     print(f"Ingress established at: {listener.url()}")
+    # bot_url = listener.url()
 
     # Either way, let's got the Bot's first name in case we are
     # directly addressed in room with multiple users
@@ -243,7 +326,8 @@ if not meraki_api_key == "":
 
 if BOT:
     # If any of the required bot variables are missing, terminate the app
-    if not bot_email or not teams_token or not bot_url or not bot_app_name:
+    # if not bot_email or not teams_token or not bot_url or not bot_app_name:
+    if not bot_email or not teams_token or not bot_app_name:
         print(
             "merakicat.py - Missing Environment Variable. Please see" +
             " the 'Usage' section in the README."
@@ -271,6 +355,8 @@ if BOT:
 
     if debug:
         print(f"teams_emails = {teams_emails}")
+
+    """
     bot = TeamsBot(
         bot_app_name,
         teams_bot_token=teams_token,
@@ -284,6 +370,20 @@ if BOT:
             {"resource": "attachmentActions", "event": "created"},
         ],
     )
+    """
+    bot = WebexBot(
+        teams_token,
+        bot_name=bot_app_name,
+        # Comment out the approved_users lines if you don't care...
+        approved_users=teams_emails,
+        # approved_domains=[],
+        # approved_rooms=[],
+        threads=False,
+        help_command=RunHelp(),
+        log_level="ERROR"
+    )
+
+
 
 # Create a custom bot greeting function, returned when no /command is given.
 # The default behavior of the bot is to return the '/help' command response
@@ -336,13 +436,15 @@ def greeting(incoming_msg):
     # the bot message, we will try to use them
     if user_text.lower() == 'check' and (user_files is not None):
         x = 0
-        while x < len(user_files) - 1:
+        responses=list()
+        while x < len(user_files):
             config_file = save(user_files[x])
             response.markdown = check_switch(
                 incoming_msg,
                 config=config_file)
-            create_message(user_roomId, response.markdown)
+            create_message(user_roomId, response.markdown, type="html")
             x += 1
+        return
 
     # If the user asked for a report, we will try to give it to them
     if user_text.lower().startswith('check network '):
@@ -441,10 +543,18 @@ def greeting(incoming_msg):
                 response.markdown = r
 
         case "demo":
-            # If the only thing the user typed was "demo report"...
+            # If the only thing the user typed was "demo report""...
             if user_text.lower() == 'demo report':
                 # It was so check it!
-                response.markdown = check_switch(incoming_msg, demo=True)
+                print("should be calling check_switch with demo")
+                response.markdown = check_switch(
+                    incoming_msg,
+                    demo=True)
+                if BOT:
+                    print(f"response.markdown={response.markdown}")
+                    create_message(user_roomId, response.markdown, type="html")
+                    return
+
             else:
                 # It was not...?!
                 response.markdown = "I'm sorry, but I don't know what "
@@ -850,9 +960,7 @@ def greeting(incoming_msg):
                 response.markdown += "See what I can do by asking for "
                 response.markdown += "**help**."
             else:
-                response.markdown = "Hello, I'm really just a glorified chat "
-                response.markdown += "bot. See what I can do by asking for "
-                response.markdown += "help."
+                response.markdown = "See what I can do by asking for help."
 
     # Whatever just happened up above, send our response back to the user.
     return response
@@ -1041,6 +1149,7 @@ def check_switch(incoming_msg, config="", host="", demo=False):
         host_name, the_list = CheckFeatures(config_file)
         switch_name = host_name
     else:
+        print("In check_switch in the demo area")
         # Prep for a demo report
         host_name = switch_name = "Demonstration"
         the_list = list()
@@ -1987,16 +2096,20 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     return (r)
 
 
-def create_message(rid, msgtxt):
+def create_message(rid, msgtxt, type="markdown"):
     headers = {
         "content-type": "application/json; charset=utf-8",
         "authorization": "Bearer " + teams_token,
     }
 
     url = "https://api.ciscospark.com/v1/messages"
-    data = {"roomId": rid, "markdown": msgtxt}
+    if type == "markdown":
+        data = {"roomId": rid, "markdown": msgtxt}
+    else:
+        data = {"roomId": rid, "html": msgtxt}
+    print(f"roomId={rid}")
     response = requests.post(url, json=data, headers=headers)
-    print(f"response from create_massage was: {response}")
+    print(f"response from create_message was: {response}")
     return response.json()
 
 
@@ -2018,8 +2131,9 @@ def create_message_with_attachment(rid, msgtxt, attachment):
 # If we are in BOT mode, set up some bot stuff
 if BOT:
 
+
     # Set the bot greeting.
-    bot.set_greeting(greeting)
+    # bot.set_greeting(greeting)
 
     # Add new commands to the bot.
     bot_commands = list(list())
@@ -2062,6 +2176,7 @@ translate"],
          "Create a demo report for all features currently in the feature \
 encyclopedia"]])
 
+    """
     bot.add_command("help", "This list of commands", greeting)
 
     bot.add_command("check [host _FQDN or IP address_ | file _filespec_] \
@@ -2111,6 +2226,15 @@ feature encyclopedia",
     # Every bot includes a default "/echo" command.  You can remove it, or any
     # other command with the remove_command(command) method.
     bot.remove_command("/echo")
+    """
+    bot.add_command(RunHelp())
+    bot.add_command(RunCheck())
+    bot.add_command(RunRegister())
+    bot.add_command(RunClaim())
+    bot.add_command(RunTranslate())
+    bot.add_command(RunMigrate())
+    bot.add_command(RunDemo())
+
 else:
     command_list = list(list())
     command_list.extend([
@@ -2152,7 +2276,8 @@ encyclopedia"]
 if __name__ == "__main__":
     if BOT:
         # Run Bot
-        bot.run(host="0.0.0.0", port=5000)
+        # bot.run(host="0.0.0.0", port=5000)
+        bot.run()
     else:
         if debug:
             print(f"The number of command line args is {len(sys.argv)-1}")
