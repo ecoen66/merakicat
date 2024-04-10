@@ -355,28 +355,29 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
         if debug:
             print(f"switch_dict = {switch_dict}")
         for key, val in mc_pedia['switch'].items():
-            if (val['translatable'] == "✓" and
-                val['meraki']['skip'] == "post_process") or \
-                 val['meraki']['skip'] == "post_ports":
-                if debug:
-                    print(f"key = {key}, val = {val}")
-                if val['meraki']['skip'] == "post_ports":
-                    post_ports_list.append([key, True])
-                newvals = {}
-                exec(val['meraki'].get('post_process'), locals(), newvals)
-                if debug:
-                    print(f"newvals = {newvals}")
-                return_vals = newvals['return_vals']
-                if debug:
-                    print(f"newvals['return_vals'] = " +
-                          f"{newvals['return_vals']}")
-                n = 0
-                while n < len(return_vals):
-                    switch_dict[return_vals[n]] = newvals[return_vals[n]]
-                    returns_dict[return_vals[n]] = newvals[return_vals[n]]
-                    n += 1
-                if debug:
-                    print(f"switch_dict = {switch_dict}")
+            if not switch_dict[key] == []:
+                if (val['translatable'] == "✓" and
+                    val['meraki']['skip'] == "post_process") or \
+                     val['meraki']['skip'] == "post_ports":
+                    if debug:
+                        print(f"key = {key}, val = {val}")
+                    if val['meraki']['skip'] == "post_ports":
+                        post_ports_list.append([key, True])
+                    newvals = {}
+                    exec(val['meraki'].get('post_process'), locals(), newvals)
+                    if debug:
+                        print(f"newvals = {newvals}")
+                    return_vals = newvals['return_vals']
+                    if debug:
+                        print(f"newvals['return_vals'] = " +
+                              f"{newvals['return_vals']}")
+                    n = 0
+                    while n < len(return_vals):
+                        switch_dict[return_vals[n]] = newvals[return_vals[n]]
+                        returns_dict[return_vals[n]] = newvals[return_vals[n]]
+                        n += 1
+                    if debug:
+                        print(f"switch_dict = {switch_dict}")
 
         # Loop to get all the interfaces in the port_dict
         y = 0

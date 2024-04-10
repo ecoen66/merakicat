@@ -67,8 +67,8 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.5",
-    'dated': "03/28/2024",
+    'version': "v0.1.6",
+    'dated': "04/10/2024",
 
     'switch': {
         
@@ -589,7 +589,7 @@ if len(stack) == 1:\n\
             'name': "Static routing",
             'support':"✓",
             'translatable':"✓",
-            'regex': '^ip\sroute',
+            'regex': '^ip\sroute|^ip\sdefault-gateway',
             'iosxe': "\
 static_routing = list()\n\
 route_obj_list = parse.find_objects('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
@@ -599,7 +599,13 @@ for route_obj in route_obj_list:\n\
     gw = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
     import ipaddress\n\
     subnet = str(ipaddress.ip_network(net + '/' + mask, strict=False))\n\
-    static_routing.append({'net': net, 'mask': mask, 'gw': gw, 'subnet': subnet})\n",
+    static_routing.append({'net': net, 'mask': mask, 'gw': gw, 'subnet': subnet})\n\
+route_obj_list = parse.find_objects('^ip\sdefault-gateway\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
+if len(route_obj_list) == 1:\n\
+    import ipaddress\n\
+    subnet = str(ipaddress.ip_network('0.0.0.0/0', strict=False))\n\
+    gw = route_obj_list[0].re_match_typed('^ip\sdefault-gateway\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
+    static_routing.append({'net': '0.0.0.0', 'mask': '0.0.0.0', 'gw': gw, 'subnet': subnet})\n",
             'meraki': {
                 'skip': 'post_ports',
                 'post_process': "\

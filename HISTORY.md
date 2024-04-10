@@ -1,5 +1,9 @@
 # History
 
+## 0.2.1 (04-10-2024)
+
+  - Added support for ip default-gateway as a static route.
+
 ## 0.2.0 (04-10-2024)
 
   - Changed BOT libraries to enable websockets and remove ngrok for security.
