@@ -1,5 +1,9 @@
 # History
 
+## 0.2.2 (04-10-2024)
+
+  - Added environment variable to specify a Meraki Oragnization name.
+
 ## 0.2.1 (04-10-2024)
 
   - Added support for ip default-gateway as a static route.

@@ -12,9 +12,9 @@ DEBUG_FILE = False
 PDF = False
 
 # For netmiko to connect to a switch directly
-# IOS_USERNAME = 'admin'
-# IOS_PASSWORD = 'password'
-# IOS_SECRET = 'secret'
+# IOS_USERNAME = "admin"
+# IOS_PASSWORD = "password"
+# IOS_SECRET = "secret"
 # IOS_PORT = 22
 
 # Webex Teams Bot Access Token for this Bot 
@@ -30,4 +30,5 @@ PDF = False
 # TEAMS_EMAILS = ["somebody@google.com"]
 
 # For meraki SDK to connect to a Dahsboard account
-# MERAKI_API_KEY = '99NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN90'
+# MERAKI_API_KEY = "99NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN90"
+# MERAKI_ORG_NAME = "My Organization"

@@ -55,13 +55,13 @@ try:
 except ImportError:
     TEAMS_BOT_APP_NAME = TEAMS_EMAILS = None
 try:
-    from mc_user_info import NGROK_AUTHTOKEN
-except ImportError:
-    NGROK_AUTHTOKEN = None
-try:
     from mc_user_info import MERAKI_API_KEY
 except ImportError:
     MERAKI_API_KEY = None
+try:
+    from mc_user_info import MERAKI_ORG_NAME
+except ImportError:
+    MERAKI_ORG_NAME = None
 try:
     from mc_user_info import DEBUG, DEBUG_MAIN, PDF
 except ImportError:
@@ -100,33 +100,6 @@ else:
         print("Not old enough to update.")
 
 from mc_pedia import mc_pedia
-
-# Retrieve required Meraki details from environment variables
-meraki_api_key = os.getenv("MERAKI_API_KEY")
-# If the required details were not in the environment variables
-# grab them from the mc_user_info.py file
-if meraki_api_key is None:
-    meraki_api_key = MERAKI_API_KEY
-
-# Retrieve required SSH details from environment variables
-ios_username = os.getenv("IOS_USERNAME")
-ios_password = os.getenv("IOS_PASSWORD")
-ios_secret = os.getenv("IOS_SECRET")
-ios_port = os.getenv("IOS_PORT")
-# If the required details were not in the environment variables
-# grab them from the mc_user_info.py file
-if ios_username is None:
-    ios_username = IOS_USERNAME
-if ios_username is None:
-    ios_username = IOS_USERNAME
-if ios_password is None:
-    ios_password = IOS_PASSWORD
-if ios_secret is None:
-    ios_secret = IOS_SECRET
-if ios_port is None:
-    ios_port = IOS_PORT
-    if ios_port is None:
-        ios_port = 22
 
 # If we were run without arguments, run as a BOT
 # Otherwise, we will attempt to use the args in batch mode
@@ -265,8 +238,38 @@ meraki_net = ""
 meraki_net_name = ""
 meraki_urls = list()
 
+# Retrieve required Meraki details from environment variables
+meraki_api_key = os.getenv("MERAKI_API_KEY")
+meraki_org_name = os.getenv("MERAKI_ORG_NAME")
+# If the required details were not in the environment variables
+# grab them from the mc_user_info.py file
+if meraki_api_key is None:
+    meraki_api_key = MERAKI_API_KEY
+if meraki_org_name is None:
+    meraki_org_name = MERAKI_ORG_NAME
+
+# Retrieve required SSH details from environment variables
+ios_username = os.getenv("IOS_USERNAME")
+ios_password = os.getenv("IOS_PASSWORD")
+ios_secret = os.getenv("IOS_SECRET")
+ios_port = os.getenv("IOS_PORT")
+# If the required details were not in the environment variables
+# grab them from the mc_user_info.py file
+if ios_username is None:
+    ios_username = IOS_USERNAME
+if ios_username is None:
+    ios_username = IOS_USERNAME
+if ios_password is None:
+    ios_password = IOS_PASSWORD
+if ios_secret is None:
+    ios_secret = IOS_SECRET
+if ios_port is None:
+    ios_port = IOS_PORT
+    if ios_port is None:
+        ios_port = 22
+
 # Request the lists of Organizations and their Networks from Dashboard
-if not meraki_api_key == "":
+if not meraki_api_key == "" and not meraki_org_name =="":
     if debug:
         print("Trying to setup a dashboard instance")
     dashboard = meraki.DashboardAPI(
@@ -286,20 +289,22 @@ if not meraki_api_key == "":
         print(f"meraki_orgs = {meraki_orgs}")
     x = 0
     while x <= len(meraki_orgs) - 1:
-        try:
-            raw_nets = dashboard.organizations.getOrganizationNetworks(
-                organizationId=meraki_orgs[x]['id'])
-
-        except meraki.exceptions.APIError:
-            print("We were unable to get the list of networks" +
-                  f" for {meraki_orgs[x]['name']}.")
-            sys.exit()
-        if debug:
-            print(raw_nets)
-        y = 0
-        while y <= len(raw_nets) - 1:
-            meraki_networks.append(raw_nets[y])
-            y += 1
+        if meraki_orgs[x]['name'] == meraki_org_name:
+            try:
+                raw_nets = dashboard.organizations.getOrganizationNetworks(
+                    organizationId=meraki_orgs[x]['id'])
+    
+            except meraki.exceptions.APIError:
+                print("We were unable to get the list of networks" +
+                      f" for {meraki_orgs[x]['name']}.")
+                sys.exit()
+            if debug:
+                print(raw_nets)
+            y = 0
+            while y <= len(raw_nets) - 1:
+                meraki_networks.append(raw_nets[y])
+                y += 1
+            break
         x += 1
     if debug:
         print(f"meraki_networks = {meraki_networks}")

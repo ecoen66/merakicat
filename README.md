@@ -96,6 +96,7 @@ pip install -r requirements_dev.txt
     export IOS_SECRET=<the CLI secret password for the Catalyst switches>
     export IOS_PORT=<the ssh port number for the Catalyst switches - usually 22>
     export MERAKI_API_KEY=<your meraki dashboard API key>
+    export MERAKI_ORG_NAME =<your meraki organization name>
     ```
 In addition to these settings, various debugs and a choice of PDF vs. DOCX report format can be enabled in the mc_user_info.py file.
 
