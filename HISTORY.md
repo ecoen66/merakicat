@@ -1,5 +1,11 @@
 # History
 
+## 0.2.4 (04-12-2024)
+
+  - Added Private VLAN -> Port Isolation to encyclopedia.
+  - Removed older bot code.
+  - Updated AUTHORS.rst.
+
 ## 0.2.3 (04-10-2024)
 
   - Translate now checks to make sure that the target switches have the same number of ports as the sources.
@@ -49,46 +55,46 @@
   - Setting up for publishing automation.
   - Changed directory structure for publishing.
   - Released on PyPI.
-  
+
 ## 0.0.14 (03-19-2024)
 
   - Option added for check with drag and drop files in bot mode.
   - Added missing timing in check report in bot mode.
   - Still not yet released on PyPI.
-  
+
 ## 0.0.13 (03-18-2024)
 
   - Option added for detailed check report "with detail".
-  
+
 ## 0.0.12 (03-15-2024)
 
   - Option for PDF vs. DOCX reporting in checker.
   - Layer 3 Interfaces (interface VLAN) supported.
   - Static routes supported.
   - Command added for "demo report".
-  
+
 ## 0.0.11 (03-12-2024)
 
   - New reporting in checker.
   - Port-channel LACP is working and fast.
-  
+
 ## 0.0.10 (03-08-2024)
 
   - Using a single mc_pedia.
-  
+
 ## 0.0.9 (03-07-2024)
 
   - Using both config_pedia and check_pedia.
   - Changed to ngrok API for bot functionality
-  
+
 ## 0.0.8 (03-01-2024)
 
   - Lots of comment blocks added.
-  
+
 ## 0.0.7 (03-01-2024)
 
   - Now using batch port updates to Meraki dashboard.
-  
+
 ## 0.0.6 (03-01-2024)
 
   - Some light refactoring of mc_translate module.

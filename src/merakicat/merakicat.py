@@ -293,7 +293,7 @@ if not meraki_api_key == "" and not meraki_org_name =="":
             try:
                 raw_nets = dashboard.organizations.getOrganizationNetworks(
                     organizationId=meraki_orgs[x]['id'])
-    
+
             except meraki.exceptions.APIError:
                 print("We were unable to get the list of networks" +
                       f" for {meraki_orgs[x]['name']}.")
@@ -340,9 +340,6 @@ if BOT:
         sys.exit()
 
     # Create a Bot Object
-    #   Note: debug mode prints out more details about processing to terminal
-    #   Note: the `approved_users=approved_users` line commented out and shown
-    #   as reference
     #
     # Example: How to limit the approved Webex Teams accounts for interaction
     # List of email accounts of approved users to talk with the bot
@@ -353,21 +350,6 @@ if BOT:
     if debug:
         print(f"teams_emails = {teams_emails}")
 
-    """
-    bot = TeamsBot(
-        bot_app_name,
-        teams_bot_token=teams_token,
-        teams_bot_url=bot_url,
-        teams_bot_email=bot_email,
-        debug=debug,
-        # Comment out the approved_users lines if you don't care...
-        approved_users=teams_emails,
-        webhook_resource_event=[
-            {"resource": "messages", "event": "created"},
-            {"resource": "attachmentActions", "event": "created"},
-        ],
-    )
-    """
     bot = WebexBot(
         teams_token,
         bot_name=bot_app_name,
@@ -379,8 +361,6 @@ if BOT:
         help_command=RunHelp(),
         log_level="ERROR"
     )
-
-
 
 # Create a custom bot greeting function, returned when no /command is given.
 # The default behavior of the bot is to return the '/help' command response
@@ -413,6 +393,7 @@ def greeting(incoming_msg):
             user_text = user_text.split(bot_fname + ' ', 1)[1]
 
     if debug:
+        print(f"user_text = {user_text}")
         print(f"command = {command}")
 
     # If the user asked for timing, we will try to give it to them
@@ -1303,7 +1284,7 @@ def cloud_switch(incoming_msg, host=""):
     # Import the global stateful variables
     global host_id, times
 
-    # Since we weren't passed a config filespec, check for a hostname or 
+    # Since we weren't passed a config filespec, check for a hostname or
     # IP address
     if host == "":
         return ("You need to enter a host FQDN or IP address.")
@@ -2173,57 +2154,6 @@ translate"],
          "Create a demo report for all features currently in the feature \
 encyclopedia"]])
 
-    """
-    bot.add_command("help", "This list of commands", greeting)
-
-    bot.add_command("check [host _FQDN or IP address_ | file _filespec_] \
-[with timing] [with details]",
-                    "Check a Catalyst switch config for both translatable \
-and possible Meraki features",
-                    greeting)
-
-    bot.add_command("check _drag-and-drop files_ [with timing] [with details]\
-",
-                    "Check one or more Catalyst switch config files for both \
-translatable and possible Meraki features",
-                    greeting)
-
-    bot.add_command("check [network _Meraki network_] [with timing] \
-[with details]",
-                    "Check the configs of cloud monitored Catalyst switches \
-for both translatable and possible Meraki features",
-                    greeting)
-
-    bot.add_command("register [host _FQDN or IP address_] [with timing]",
-                    "Register a Catalyst switch to the Meraki Dashboard",
-                    greeting)
-
-    bot.add_command("claim [_Meraki serial numbers_] [to _Meraki network \
-name_] [with timing]",
-                    "Claim Catalyst switches to a Meraki Network",
-                    greeting)
-
-    bot.add_command("translate [host _FQDN or IP address_ | file _filespec_] \
-[to _Meraki serial numbers_] [with timing]",
-                    "Translate a Catalyst switch config from a file or host \
-to claimed Meraki serial numbers",
-                    greeting)
-
-    bot.add_command("migrate [host _FQDN or IP address_] [to _Meraki network \
-name_] [with timing]",
-                    "Migrate a Catalyst switch to a Meraki switch - register,\
- claim & translate",
-                    greeting)
-
-    bot.add_command("demo report",
-                    "Create a demo report for all features currently in the \
-feature encyclopedia",
-                    greeting)
-
-    # Every bot includes a default "/echo" command.  You can remove it, or any
-    # other command with the remove_command(command) method.
-    bot.remove_command("/echo")
-    """
     bot.add_command(RunHelp())
     bot.add_command(RunCheck())
     bot.add_command(RunRegister())

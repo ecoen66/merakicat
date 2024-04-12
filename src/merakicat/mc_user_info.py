@@ -17,13 +17,13 @@ PDF = False
 # IOS_SECRET = "secret"
 # IOS_PORT = 22
 
-# Webex Teams Bot Access Token for this Bot 
+# Webex Teams Bot Access Token for this Bot
 # TEAMS_BOT_TOKEN = "ZTZjMDc5ZTUtN2Q5NS00NzNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN2_PF84_1eb65fdf-9643-417f-9974-ad72cae0e10f"
 
-# Webex Teams Bot email address for this Bot 
+# Webex Teams Bot email address for this Bot
 # TEAMS_BOT_EMAIL = "mybot@webex.bot"
 
-# Webex Teams Bot email address for this Bot 
+# Webex Teams Bot email address for this Bot
 # TEAMS_BOT_APP_NAME = "My Bot"
 
 # Webex Teams user email who can access our bot

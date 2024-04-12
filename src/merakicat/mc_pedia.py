@@ -67,11 +67,11 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.6",
-    'dated': "04/10/2024",
+    'version': "v0.1.7",
+    'dated': "04/12/2024",
 
     'switch': {
-        
+
         'switch_name': {
             'name': "Hostname",
             'support':"✓",
@@ -88,7 +88,7 @@ if switch_name == '':\n\
 host_name = switch_name\n\
 if debug:\n\
     print(f'switch_name = {switch_name}')\n",
-            
+
             'meraki': {
                 'skip': 'post_process',
                 'default': 'Auto negotiate',
@@ -151,7 +151,7 @@ if debug:\n\
     print(f'dir() = {dir()}')\n"
             }
         },
-        
+
         'vtp':{
             'name': "VTP",
             'support':"",
@@ -164,7 +164,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Integrating_the_MS_Access_Switch_into_a_Cisco_VTP_domain",
             'note':"Not required"
         },
-        
+
         'mls':{
             'name': "QoS",
             'support':"✓",
@@ -177,7 +177,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/MS/Other_Topics/MS_Switch_Quality_of_Service_Defined",
             'note':"Network-wide"
         },
-        
+
         'rstp':{
             'name':"Spanning Tree RSTP",
             'support':"✓",
@@ -188,7 +188,7 @@ if debug:\n\
             },
             'iosxe': "rstp = parse.find_objects('^spanning-tree mode rapid-pvst')\n"
         },
-        
+
         'spanning':{
             'name':"Spanning Tree",
             'support':"",
@@ -205,7 +205,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Configuring_Spanning_Tree_on_Meraki_Switches_(MS)",
             'note':"Only Supports RSTP"
         },
-        
+
         'snmp':{
             'name': "SNMP",
             'support':"",
@@ -218,7 +218,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url': "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/SNMP_Overview_and_Configuration",
             'note': "Configured network-wide"
         },
-        
+
         'logging_host':{
             'name': "Syslog",
             'support':"",
@@ -231,7 +231,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url': "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/Syslog_Server_Overview_and_Configuration",
             'note': "Configured network-wide"
         },
-        
+
         'ntp':{
             'name':"NTP",
             'support':"",
@@ -244,7 +244,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
         },
-        
+
         'access_list':{
             'name': "Access-List",
             'support':"",
@@ -257,7 +257,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS/Access_Control/Meraki_MS_Group_Policy_Access_Control_Lists",
             'note':"Group Policies"
         },
-        
+
         'extended_access_list':{
             'name': "Extended ACL",
             'support':"",
@@ -270,7 +270,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS/Access_Control/Meraki_MS_Group_Policy_Access_Control_Lists",
             'note':"Group Policies"
         },
-        
+
         'port_mirror':{
             'name': "Port mirroring",
             'support': "✓",
@@ -281,7 +281,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             },
             'iosxe': "port_mirror = parse.find_objects('^monitor')\n"
         },
-        
+
         'aaa':{
             'name': "AAA",
             'support':"",
@@ -294,7 +294,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/General_Administration/Managing_Dashboard_Access/Managing_Dashboard_Administrators_and_Permissions",
             'note':"Built in Meraki dashboard"
         },
-        
+
         'dot1x':{
             'name': "802.1x",
             'support': "✓",
@@ -307,7 +307,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
             'note':"Network-wide"
         },
-        
+
         'netflow':{
             'name': "NetFlow",
             'support':"✓",
@@ -320,7 +320,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS/Monitoring_and_Reporting/MS_NetFlow_and_Encrypted_Traffic_Analytics",
             'note':"Network-wide"
         },
-        
+
         'dhcp':{
             'name':"DHCP server",
             'support':"✓",
@@ -331,7 +331,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             },
             'iosxe':"dhcp = parse.find_objects('^ip\sdhcp\spool')\n"
         },
-        
+
         'banner':{
             'name': "Banner",
             'support':"",
@@ -344,7 +344,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not required"
         },
-        
+
         'radius':{
             'name':"Radius",
             'support':"✓",
@@ -355,7 +355,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             },
             'iosxe':"radius = parse.find_objects('^radius-server|^radius\sserver')\n"
         },
-        
+
         'http_server':{
             'name': "HTTP server",
             'support':"",
@@ -368,7 +368,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not required"
         },
-        
+
         'stack':{
             'name': "Stack",
             'support':"✓",
@@ -382,7 +382,7 @@ stack = parse.find_objects('^switch')\n\
 if len(stack) == 1:\n\
     stack = []\n"
         },
-        
+
         'mab_vlan_mac':{
             'name': "MAB VLAN MAC Auth",
             'support':"",
@@ -395,7 +395,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
             'note':"MAB with RADIUS is supported"
         },
-        
+
         'vlan':{
             'name': "Layer 2 VLAN",
             'support':"",
@@ -408,7 +408,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
         },
-        
+
         'vmps':{
             'name': "VMPS",
             'support':"",
@@ -421,7 +421,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported as it is dated technology"
         },
-        
+
         'uplinkfast':{
             'name': "STP Uplinkfast",
             'support':"",
@@ -434,7 +434,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
-        
+
         'backbonefast':{
             'name': "STP Backbonefast",
             'support':"",
@@ -447,7 +447,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
-        
+
         'loopguard':{
             'name': "STP Loopguard",
             'support':"",
@@ -459,7 +459,7 @@ if len(stack) == 1:\n\
             'iosxe': "loopguard = parse.find_objects('spanning-tree\sloopguard')\n",
             'note':"Supported at the port level"
         },
-        
+
         'dhcp_snooping':{
             'name': "DHCP Snooping",
             'support':"✓",
@@ -472,7 +472,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS/Other_Topics/Dynamic_ARP_Inspection",
             'note':"Network-wide"
         },
-        
+
         'ip_source_guard':{
             'name': "IP Source Binding",
             'support':"",
@@ -483,7 +483,7 @@ if len(stack) == 1:\n\
             },
             'iosxe': "ip_source_guard = parse.find_objects('ip\ssource\sbinding')\n"
         },
-        
+
         'arp_inspection':{
             'name': "ARP Inspection",
             'support':"✓",
@@ -496,7 +496,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS/Other_Topics/Dynamic_ARP_Inspection",
             'note':"Network-wide"
         },
-        
+
         'arp_acl':{
             'name': "ARP Access-list",
             'support':"",
@@ -509,7 +509,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
-        
+
         'psp':{
             'name': "Protocol Storm Protection",
             'support':"",
@@ -522,7 +522,7 @@ if len(stack) == 1:\n\
             'url': "https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
-        
+
         'udld':{
             'name': "UDLD",
             'support':"",
@@ -534,7 +534,7 @@ if len(stack) == 1:\n\
             'iosxe': "udld = parse.find_objects('^udld')\n",
             'note':"Supported at the port level"
         },
-        
+
         'logging':{
             'name': "Logging",
             'support':"",
@@ -547,7 +547,7 @@ if len(stack) == 1:\n\
             'url': "https://documentation.meraki.com/General_Administration/Cross-Platform_Content/Meraki_Event_Log",
             'note':"Configured by default"
         },
-        
+
         'ip_sla':{
             'name': "IP SLA",
             'support':"",
@@ -560,7 +560,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
-        
+
         'multicast_igmp':{
             'name': "Multicast IGMP",
             'support':"",
@@ -573,7 +573,7 @@ if len(stack) == 1:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
         },
-        
+
         'multicast_pim':{
             'name': "Multicast PIM",
             'support':"✓",
@@ -584,7 +584,7 @@ if len(stack) == 1:\n\
             },
             'iosxe': "multicast_pim = parse.find_objects('^ip\spim')\n"
         },
-        
+
         'static_routing':{
             'name': "Static routing",
             'support':"✓",
@@ -623,7 +623,7 @@ for route in switch_dict['static_routing']:\n\
                 dashboard.switch.createDeviceSwitchRoutingStaticRoute(swlist[0],route['subnet'],route['gw'])\n"
             }
         },
-        
+
         'ipv6':{
             'name': "IPv6",
             'support':"✓",
@@ -634,7 +634,7 @@ for route in switch_dict['static_routing']:\n\
             },
             'iosxe': "ipv6 = parse.find_objects('^ipv6')\n"
         },
-        
+
         'rip':{
             'name': "RIP",
             'support':"",
@@ -647,7 +647,7 @@ for route in switch_dict['static_routing']:\n\
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
-        
+
         'eigrp':{
             'name': "EIGRP",
             'support':"",
@@ -660,7 +660,7 @@ for route in switch_dict['static_routing']:\n\
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
-        
+
         'ospf':{
             'name': "OSPFv2",
             'support':"✓",
@@ -673,7 +673,7 @@ for route in switch_dict['static_routing']:\n\
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Supported on MS250 and above"
         },
-        
+
         'ospfv3':{
             'name': "OSPFv3",
             'support':"",
@@ -686,7 +686,7 @@ for route in switch_dict['static_routing']:\n\
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
-        
+
         'bgp':{
             'name': "BGP",
             'support':"",
@@ -699,7 +699,7 @@ for route in switch_dict['static_routing']:\n\
             'url':"https://documentation.meraki.com/MX/Networks_and_Routing/Border_Gateway_Protocol_(BGP)",
             'note':"Currently supported on MX only"
         },
-        
+
         'isis':{
             'name': "IS-IS",
             'support':"",
@@ -712,7 +712,7 @@ for route in switch_dict['static_routing']:\n\
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
-        
+
         'vrf': {
             'name': "VRF",
             'support':"",
@@ -726,9 +726,9 @@ for route in switch_dict['static_routing']:\n\
             'note':"Not Supported"
         }
     },
-    
+
     'port': {
-        
+
         'name': {
             'name': "Port Description",
             'support':"✓",
@@ -740,7 +740,7 @@ for route in switch_dict['static_routing']:\n\
             },
             'iosxe': "name = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')\n"
         },
-        
+
         'active': {
             'name': "Port Status",
             'support':"✓",
@@ -754,7 +754,7 @@ for route in switch_dict['static_routing']:\n\
 shut = child.re_match_typed(regex=r'\s(shutdown)')\n\
 active = 'true' if shut == '' else 'false'\n"
         },
-        
+
         'speed': {
             'name': "Port Speed",
             'support':"✓",
@@ -766,7 +766,7 @@ active = 'true' if shut == '' else 'false'\n"
             },
             'iosxe': "speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')\n"
         },
-        
+
         'duplex': {
             'name': "Port Duplex",
             'support':"✓",
@@ -777,9 +777,9 @@ active = 'true' if shut == '' else 'false'\n"
                 'default': ''
             },
             'iosxe': "duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')\n",\
-            
+
         },
-        
+
         'linkNegotiation': {
             'iosxe': "",
             'regex': '',
@@ -808,19 +808,20 @@ except:\n\
     linkNegotiation = 'Auto negotiate'\n"
             }
         },
-        
+
         'type': {
             'name': "Port Type",
             'support':"✓",
             'translatable':"✓",
-            'regex': r'\sswitchport\smode\s+(\S.+)',
+            'regex': r'\sswitchport\smode(?:\s\S+-\S+)?\s(access|trunk|host)',
             'meraki': {
                 'skip': False,
                 'default': 'trunk'
             },
-            'iosxe': "type = child.re_match_typed(regex=r'\sswitchport\smode\s+(\S.+)')\n"
+            'iosxe': "type = child.re_match_typed(regex=r'\sswitchport\smode(?:\s\S+-\S+)?\s(access|trunk|host)')\n\
+type = 'access' if type == 'host' else type\n"
         },
-        
+
         'poeEnabled': {
             'name': "PoE Enabled",
             'support':"✓",
@@ -833,7 +834,7 @@ except:\n\
             },
             'iosxe': "poeEnabled = not child.re_match_typed(regex=r'\spower\sinline\s+(\S.+)')=='never'\n"
         },
-        
+
         'allowedVlans': {
             'name': "Allowed VLANs",
             'support':"✓",
@@ -845,7 +846,7 @@ except:\n\
             },
             'iosxe': "allowedVlans = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')\n"
         },
-        
+
         'vlan': {
             'name': "Native VLAN",
             'support':"✓",
@@ -857,7 +858,7 @@ except:\n\
             },
             'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')\n"
         },
-        
+
         'vlan': {
             'name': "Data VLAN",
             'support':"✓",
@@ -869,7 +870,7 @@ except:\n\
             },
             'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\svlan\s+(\S.*)')\n"
         },
-        
+
         'voiceVlan': {
             'name': "Voice VLAN",
             'support':"✓",
@@ -881,20 +882,21 @@ except:\n\
             },
             'iosxe': "voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n"
         },
-        
-        'private_vlan': {
+
+        'isolationEnabled': {
             'name': "Private VLAN",
-            'support':"",
-            'translatable':"",
+            'support':"✓",
+            'translatable':"✓",
             'regex': r'\sswitchport\smode\sprivate-vlan?(\S.*)',
             'meraki': {
-                'skip': True
+                'skip': False,
+                'default': False
             },
-            'iosxe': "private_vlan = child.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)')\n",
+            'iosxe': "isolationEnabled = True if not child.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)') == '' else False\n",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
             'note':"Port Isolation can be used"
         },
-        
+
         'l3_interface': {
             'name': "Layer 3 Interface",
             'support':"✓",
@@ -948,7 +950,7 @@ return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
             },
             'iosxe': "l3_interface = child.re_match_typed(regex=r'\sip\saddress\s(\S.*)')\n"
         },
-        
+
         'root_guard': {
             'name': "STP Root Guard",
             'support':"✓",
@@ -960,7 +962,7 @@ return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
                 'default': ''
             }
         },
-        
+
         'loop_guard': {
             'name': "STP Loop Guard",
             'support':"✓",
@@ -972,7 +974,7 @@ return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
                 'default': ''
             }
         },
-        
+
         'bpdu_guard': {
             'name': "STP BPDU Guard",
             'support':"✓",
@@ -984,7 +986,7 @@ return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
                 'default': ''
             }
         },
-        
+
         'stpGuard': {
             'iosxe': "",
             'regex': '',
@@ -1013,7 +1015,7 @@ if debug:\n\
                 'default': 'disabled'
             }
         },
-        
+
         'pruning': {
             'name': "Pruning",
             'support':"",
@@ -1026,7 +1028,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Fundamentals_of_802.1Q_VLAN_Tagging",
             'note':"Not required"
         },
-        
+
         'stp_port': {
             'name': "STP Port Priority",
             'support':"",
@@ -1037,7 +1039,7 @@ if debug:\n\
             },
             'iosxe': "stp_port = child.re_match_typed(regex=r'\sspanning-tree\sport-priority?(\S.*)')\n"
         },
-        
+
         'portfast': {
             'name': "STP Portfast",
             'support':"✓",
@@ -1050,7 +1052,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/MS/Deployment_Guides/Advanced_MS_Setup_Guide",
             'note':"Automatic Edge Port"
         },
-        
+
         'storm_control': {
             'name': "Storm Control",
             'support':"",
@@ -1063,7 +1065,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/MS/Other_Topics/Storm_Control_for_MS",
             'note':"Configured network-wide"
         },
-        
+
         'protected': {
             'name': "Protected",
             'support':"✓",
@@ -1076,7 +1078,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
             'note':"Port Isolation"
         },
-        
+
         'port_security': {
             'name': "Port Security",
             'support':"✓",
@@ -1087,7 +1089,7 @@ if debug:\n\
             },
             'iosxe': "port_security = child.re_match_typed(regex=r'\sswitchport\sport-security?(\S.*)')\n"
         },
-        
+
         'port_udld': {
             'name': "Port UDLD",
             'support':"✓",
@@ -1098,7 +1100,7 @@ if debug:\n\
             },
             'iosxe': "port_udld = child.re_match_typed(regex=r'\sudld\sport?(\S.*)')\n"
         },
-        
+
         'lldp': {
             'name': "LLDP",
             'support':"",
@@ -1111,7 +1113,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/General_Administration/Other_Topics/LLDP_Support_on_Cisco_Meraki_Products#ms",
             'note':"Always on"
         },
-        
+
         'ipv6': {
             'name': "IPv6",
             'support':"",
@@ -1124,7 +1126,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
-        
+
         'directed_broadcast': {
             'name': "IP Directed Broadcast",
             'support':"",
@@ -1135,7 +1137,7 @@ if debug:\n\
             },
             'iosxe': "directed_broadcast = child.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')\n"
         },
-        
+
         'etherchannel_cisco': {
             'name': "Etherchannel Classic",
             'support':"",
@@ -1148,7 +1150,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Link_Aggregation_and_Load_Balancing",
             'note':"Only LACP is supported"
         },
-        
+
         'etherchannel_pagp': {
             'name': "Etherchannel PAgP",
             'support':"",
@@ -1161,7 +1163,7 @@ if debug:\n\
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Link_Aggregation_and_Load_Balancing",
             'note':"Only LACP is supported"
         },
-        
+
         'etherchannel_lacp': {
             'name': "Etherchannel LACP",
             'support':"✓",
@@ -1172,7 +1174,7 @@ if debug:\n\
             },
             'iosxe': "etherchannel_lacp = child.re_match_typed('^\schannel-group\s(\d+)')\n"
         },
-        
+
         'etherchannel': {
             'iosxe': "",
             'regex': '',
@@ -1260,7 +1262,7 @@ return_vals = ['channel_port_dict']\n"
         }
     },
     'layer3': {
-        
+
         'interfaceIp': {
             'iosxe': "",
             'regex': '',
@@ -1274,7 +1276,7 @@ if 'l3_interface' in intf_settings.keys():\n\
         interfaceIp = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', intf_settings['l3_interface'])[0]\n"
             }
         },
-        
+
         'subnet': {
             'iosxe': "",
             'regex': '',
@@ -1564,9 +1566,9 @@ def index_mc_pedia(index_args):
     blurb = "\n\n\
 ==============================\n\
       Index of mc_pedia\n"
-    
+
     if len(index_args) == 0:
-        blurb+="     All Reportable Items\n"        
+        blurb+="     All Reportable Items\n"
     elif "support" in index_args:
         if "translatable" in index_args:
             blurb+="Supported & Translatable Items\n"

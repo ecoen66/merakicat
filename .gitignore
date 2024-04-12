@@ -2,6 +2,10 @@
 src/merakicat/batch_helper_preview.json
 src/merakicat/test.txt
 
+# BBEdit files
+*.bbprojectd
+*.bbnotebookd
+
 # App-created files and logs
 files/*.cfg
 files/*.pdf
