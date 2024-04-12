@@ -5,6 +5,7 @@
   - Added Private VLAN -> Port Isolation to encyclopedia.
   - Removed older bot code.
   - Updated AUTHORS.rst.
+  - Updated .gitignore
 
 ## 0.2.3 (04-10-2024)
 

@@ -2,9 +2,9 @@
 # ![merakicat](https://github.com/ecoen66/merakicat/raw/main/images/merakicat.png) merakicat
 
 This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to [Meraki](https:www.meraki.com) Dashboard much easier. #merakicat
- 
+
 ![merakicat](https://github.com/ecoen66/merakicat/raw/main/images/mc_quick.gif)
- 
+
 This Python app can be run in Webex Teams [Bot mode](#Bot) or in [command-line mode](#command-line).  It can also be called from shell scripts for [bulk-mode](#bulk-mode).
 
 Below is the list of configurations the tool can currently translate:
@@ -25,6 +25,7 @@ port:
  - Allowed VLANs
  - Data VLAN
  - Voice VLAN
+ - Private VLAN
  - Layer 3 Interface
  - STP RootGuard
  - STP Loop Guard
@@ -32,7 +33,7 @@ port:
  - Etherchannel LACP
  - NM Ports
 
- 
+
 Once installed, you can print the entire index of the feature encyclopedia, or to print the index based on either supported and translatable items or both, enter:
 ```
 cd src/merakicat
@@ -89,7 +90,7 @@ pip install -r requirements_dev.txt
     export TEAMS_BOT_EMAIL=<your bot's email>
     export TEAMS_BOT_APP_NAME=<your bot's name>
     export TEAMS_EMAILS=<a comma delimited list of email addresses the bot will respond to>
-    
+
     # These exports are required regardless of mode:
     export IOS_USERNAME=<the ssh username for the Catalyst switches>
     export IOS_PASSWORD=<the ssh password for the Catalyst switches>
@@ -104,7 +105,7 @@ In addition to these settings, various debugs and a choice of PDF vs. DOCX repor
 
 # Bot
 
-To run merakicat as a Bot, just start it without any parameters:  
+To run merakicat as a Bot, just start it without any parameters:
 
 ```
 cd src/merakicat
