@@ -116,7 +116,6 @@ Meraki features",
             delete_previous_message=True)
 
     def execute(self, message, attachment_actions, activity):
-        print(f"attachment_actions={attachment_actions}")
         return greeting(attachment_actions)
 
 class RunRegister(Command):
@@ -183,6 +182,28 @@ class RunHelp(Command):
         super().__init__(
             command_keyword="help",
             help_message="Get help",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
+class RunHello(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="hello",
+            help_message="Say hello",
+            delete_previous_message=True)
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions)
+
+class RunHi(Command):
+
+    def __init__(self):
+        super().__init__(
+            command_keyword="hi",
+            help_message="Say hi",
             delete_previous_message=True)
 
     def execute(self, message, attachment_actions, activity):
@@ -293,7 +314,6 @@ if not meraki_api_key == "" and not meraki_org_name =="":
             try:
                 raw_nets = dashboard.organizations.getOrganizationNetworks(
                     organizationId=meraki_orgs[x]['id'])
-
             except meraki.exceptions.APIError:
                 print("We were unable to get the list of networks" +
                       f" for {meraki_orgs[x]['name']}.")
@@ -2154,6 +2174,8 @@ translate"],
          "Create a demo report for all features currently in the feature \
 encyclopedia"]])
 
+    bot.add_command(RunHello())
+    bot.add_command(RunHi())
     bot.add_command(RunHelp())
     bot.add_command(RunCheck())
     bot.add_command(RunRegister())
