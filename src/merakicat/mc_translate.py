@@ -355,7 +355,7 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
                   f"ports, not {sw['ports']}!")
             sys.exit()
 
-    # Create a batch action lists
+    # Create batch action lists
     action_list = list()
     all_actions = list()
     returns_dict = {}

@@ -191,24 +191,12 @@ class RunHello(Command):
 
     def __init__(self):
         super().__init__(
-            command_keyword="hello",
+            command_keyword="hello|hi",
             help_message="Say hello",
             delete_previous_message=True)
 
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
-
-class RunHi(Command):
-
-    def __init__(self):
-        super().__init__(
-            command_keyword="hi",
-            help_message="Say hi",
-            delete_previous_message=True)
-
-    def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
-
 
 teams_emails = list()
 if BOT:
@@ -459,7 +447,8 @@ def greeting(incoming_msg):
                     print(f"maybe_targets = {maybe_targets}")
                 if not len(maybe_targets)==0:
                     targets = re.split(';|,|\s',maybe_targets)
-                    print(f"regex.split(user_text)[0] = {regex.split(user_text)[0]}")
+                    if debug:
+                        print(f"regex.split(user_text)[0] = {regex.split(user_text)[0]}")
         if debug:
             print(f"targets = {targets}")
         # Did they enter a network name after "network"?
@@ -1011,7 +1000,7 @@ def check_network(incoming_msg, dest_net, targets=['C9300']):
         r = "We were unable to get the list of devices for that network."
         return (r)
     if debug:
-        print(f"devices = {switches}")
+        print(f"devices = {devices}")
 
     # Loop through the devices searching for cloud monitored C9300s
     success_list = list()
@@ -1634,7 +1623,7 @@ def register_switch(incoming_msg, host="", called=""):
                 return (r + f":\n{payload}")
             else:
                 payload = "\n%s" % thing + timing
-                r = f"\n\nWe {status} registered {vals.count('Registered')}"
+                r = f"\n\nWe {status} registered {vals.count('Registered')} "
                 r += f"switch{'es' if (vals.count('Registered') > 1) else ''}"
                 return (r + f":\n{payload}")
         else:
@@ -2175,7 +2164,6 @@ translate"],
 encyclopedia"]])
 
     bot.add_command(RunHello())
-    bot.add_command(RunHi())
     bot.add_command(RunHelp())
     bot.add_command(RunCheck())
     bot.add_command(RunRegister())
