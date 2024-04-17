@@ -1,6 +1,9 @@
 import meraki
 import re
-from mc_user_info import DEBUG, DEBUG_CLAIM
+try:
+    from mc_user_info import DEBUG, DEBUG_CLAIM
+except ImportError:
+    DEBUG = DEBUG_CLAIM = False
 
 
 def Claim(dashboard, dest_net, serials):

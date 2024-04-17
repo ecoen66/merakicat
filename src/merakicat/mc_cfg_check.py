@@ -1,6 +1,9 @@
 from ciscoconfparse2 import CiscoConfParse
-from mc_user_info import DEBUG, DEBUG_CHECKER
 from mc_pedia import mc_pedia
+try:
+    from mc_user_info import DEBUG, DEBUG_CHECKER
+except ImportError:
+    DEBUG = DEBUG_CHECKER = False
 
 
 def CheckFeatures(sw_file):

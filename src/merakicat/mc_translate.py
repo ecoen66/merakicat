@@ -5,8 +5,11 @@ import re
 import sys
 from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
-from mc_user_info import DEBUG, DEBUG_TRANSLATOR
 from mc_pedia import mc_pedia, nm_dict
+try:
+    from mc_user_info import DEBUG, DEBUG_TRANSLATOR
+except ImportError:
+    DEBUG = DEBUG_TRANSLATOR = False
 
 
 def Evaluate(config_file, nm_list):

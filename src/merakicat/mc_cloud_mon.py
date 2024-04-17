@@ -1,8 +1,11 @@
 from netmiko import ConnectHandler
 import meraki
-from mc_user_info import DEBUG
 import re
 import os
+try:
+    from mc_user_info import DEBUG
+except ImportError:
+    DEBUG = False
 
 
 def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password, ios_port, ios_secret):

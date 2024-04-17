@@ -1,5 +1,8 @@
 import os
-from mc_user_info import DEBUG, DEBUG_FILE
+try:
+    from mc_user_info import DEBUG, DEBUG_FILE
+except ImportError:
+    DEBUG = DEBUG_FILE = False
 
 
 def FileExists(filespec):

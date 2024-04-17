@@ -5,6 +5,9 @@ of functions for checking & translating Catalyst IOSXE to Meraki
 switch configs, registering Catalyst switches to Dashboard and
 claiming them.  It can also be run from the command line or in
 batch from a shell script.
+
+
+Please excuse the code, I need to refactor it -- badly.
 """
 import meraki
 import urllib.request

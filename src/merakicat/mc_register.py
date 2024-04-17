@@ -1,7 +1,10 @@
 from netmiko import ConnectHandler
-from mc_user_info import DEBUG, DEBUG_REGISTER
 from mc_get_nms import GetNmList
 import re
+try:
+    from mc_user_info import DEBUG, DEBUG_REGISTER
+except ImportError:
+    DEBUG = DEBUG_REGISTER = False
 
 
 def Register(host_id, ios_username, ios_password, ios_port, ios_secret):

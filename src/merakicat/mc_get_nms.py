@@ -1,6 +1,9 @@
 from netmiko import ConnectHandler
-from mc_user_info import DEBUG
 import re
+try:
+    from mc_user_info import DEBUG
+except ImportError:
+    DEBUG = False
 
 
 def GetNmList(host_id, ios_username, ios_password, ios_port, ios_secret):
