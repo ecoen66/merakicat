@@ -8,12 +8,11 @@ except ImportError:
     DEBUG = False
 
 
-def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password, ios_port, ios_secret):
+def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password,
+                ios_port, ios_secret):
     """
-    This function will write a Catalyst switch config to a file, check the
-    switch for compatibility with Cloud Monitoring, create a backup config
-    on the switch, enroll the switch and modify the config for Cloud
-    Monitoring.
+    This function is under construction....
+    It will enroll a Catalyst switch into Dashboard for Cloud Monitoring.
     :param dashboard: Dashboard API session instance
     :param meraki_org: Meraki Organization ID
     :param host_id: The switch or stack to SSH into
@@ -21,7 +20,7 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password, ios_
     :param ios_password: Password for SSH
     :param ios_port: Port number for SSH
     :param ios_secret: IOSXE secret password for CLI escalation
-    :return: The hostname & the filespec for the saved config file.
+    :return: (I'm not sure yet what I will return other than success/failure')
     """
 
     debug = DEBUG
@@ -47,7 +46,8 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password, ios_
     switch_name = switch_name[:len(switch_name) - 1]
     net_connect.send_command('term len 0')
     config = net_connect.send_command('show running-config')
-    sudi_chain = net_connect.send_command('show cry pki certificates pem CISCO_IDEVID_SUDI')
+    sudi_chain = net_connect.send_command(
+      'show cry pki certificates pem CISCO_IDEVID_SUDI')
     regex = re.compile(r"%\sGeneral Purpose Certificate:\s *", flags=re.I)
     if len(regex.split(sudi_chain)) > 1:
         if not regex.split(sudi_chain)[1] == "":
@@ -109,8 +109,6 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password, ios_
 
     print(f"devices = {devices}")
     print(f"meraki_org = {meraki_org}")
-    # try:
-    # db = meraki.DashboardAPI('9939da9713a2ca5f4ef503900c264fb911c1d890')
     response = dashboard.organizations.getOrganizationInventoryOnboardingCloudMonitoringNetworks(meraki_org, 'switch', total_pages='all')
     print(f"Response = {response}")
     response = dashboard.organizations.createOrganizationInventoryOnboardingCloudMonitoringPrepare(meraki_org, devices)

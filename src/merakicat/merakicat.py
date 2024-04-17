@@ -1025,12 +1025,16 @@ def check_network(incoming_msg, dest_net, targets=['C9300']):
 
                 # Grab the list of config files archived for the switch
                 try:
-                    url = f"https://api.meraki.com/api/v1/devices/{devices[x]['serial']}/switch/configs"
+                    url = "https://api.meraki.com/api/v1/devices/"
+                    url += f"{devices[x]['serial']}/switch/configs"
                     payload = {}
                     headers = {
                       'X-Cisco-Meraki-API-Key': meraki_api_key
                     }
-                    response = requests.request("GET", url, headers=headers, data=payload)
+                    response = requests.request("GET",
+                                                url,
+                                                headers=headers,
+                                                data=payload)
                 except:
                     print(f"ERROR getting the config list for {sw_name}")
                     x += 1
@@ -1038,29 +1042,34 @@ def check_network(incoming_msg, dest_net, targets=['C9300']):
                 # If the Python meraki SDK ever supports this it should look
                 # like this:
                 #
-                # conf_list = dashboard.devices.getSwitchConfigs(devices[x]['serial'])
+                # conf_list = dashboard.devices.getSwitchConfigs(
+                #   devices[x]['serial'])
 
                 if debug:
                     print(f"conf_list = {conf_list}")
                     print(f"len(conf_list) = {len(conf_list)}")
                     print(f"conf_list[0] = {conf_list[0]}")
 
-                # Assuming there are and configs in the list, we will grab a copy
-                # of the first (latest) one.
+                # Assuming there are and configs in the list, we will grab a
+                # copy of the first (latest) one.
                 if len(conf_list) > 0:
                     url += "/" + conf_list[0]['id']
                     if debug:
                         print(f"url = {url}")
                     try:
-                        response = requests.request("GET", url, headers=headers, data=payload)
+                        response = requests.request("GET",
+                                                    url,
+                                                    headers=headers,
+                                                    data=payload)
                     except:
                         print(f"ERROR getting config for {sw_name}")
                         x += 1
                     c = response.json()
-                    # If the Python meraki SDK ever supports this it should look
-                    # like this:
+                    # If the Python meraki SDK ever supports this it should
+                    # look like this:
                     #
-                    # c = dashboard.devices.getSwitchConfigs(devices[x]['serial'],conf_list[0]['id'])
+                    # c = dashboard.devices.getSwitchConfigs(
+                    #   devices[x]['serial'],conf_list[0]['id'])
 
                     # Now that we have the config, let's save a copy
                     dir = os.path.join(os.getcwd(), "../../files")
