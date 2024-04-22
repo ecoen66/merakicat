@@ -204,6 +204,11 @@ bulk_migrate.sh <input file> <Meraki network name>
 ```
 
 
+# Donations
+
+If you found this repo to be useful, please consider donating to Life Decisions, Rockford, IL through a purchase from the [Merakicat store](https://bonfire.com/store/merakicat).
+
+
 # Credits
 **This project is _heavily_ based on the work of others:**
 
