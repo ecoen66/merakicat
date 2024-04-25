@@ -19,9 +19,9 @@ import json
 import re
 import sys
 import time
-from webex_bot_ecoen66.webex_bot import WebexBot
-from webex_bot_ecoen66.models.response import Response
-from webex_bot_ecoen66.models.command import Command
+from webex_bot.webex_bot import WebexBot
+from webex_bot.models.response import Response
+from webex_bot.models.command import Command
 from netmiko import ConnectHandler
 from docx2pdf import convert
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -29,7 +29,7 @@ from docx.shared import Inches
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from mc_cfg_check import CheckFeatures
-from mc_translate import Evaluate, MerakiConfig  # ,MerakiConfig_up
+from mc_translate import Evaluate, MerakiConfig
 from mc_claim import Claim
 from mc_register import Register
 from mc_cloud_mon import CloudSwitch
@@ -109,6 +109,8 @@ from mc_pedia import mc_pedia
 BOT = False
 if len(sys.argv) == 1:
     BOT = True
+
+
 class RunCheck(Command):
 
     def __init__(self):
@@ -121,6 +123,7 @@ Meraki features",
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
 
+
 class RunRegister(Command):
 
     def __init__(self):
@@ -132,6 +135,7 @@ class RunRegister(Command):
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
 
+
 class RunClaim(Command):
 
     def __init__(self):
@@ -142,6 +146,7 @@ class RunClaim(Command):
 
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
+
 
 class RunTranslate(Command):
 
@@ -155,6 +160,7 @@ host to claimed Meraki serial numbers",
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
 
+
 class RunMigrate(Command):
 
     def __init__(self):
@@ -166,6 +172,7 @@ register, claim & translate",
 
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
+
 
 class RunDemo(Command):
 
@@ -179,16 +186,18 @@ the feature encyclopedia",
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
 
+
 class RunHelp(Command):
 
     def __init__(self):
         super().__init__(
-            command_keyword="help",
+            command_keyword="help|?",
             help_message="Get help",
             delete_previous_message=True)
 
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions)
+
 
 class RunHello(Command):
 
@@ -267,8 +276,6 @@ ios_secret = os.getenv("IOS_SECRET")
 ios_port = os.getenv("IOS_PORT")
 # If the required details were not in the environment variables
 # grab them from the mc_user_info.py file
-if ios_username is None:
-    ios_username = IOS_USERNAME
 if ios_username is None:
     ios_username = IOS_USERNAME
 if ios_password is None:
@@ -373,8 +380,8 @@ if BOT:
         log_level="ERROR"
     )
 
-# Create a custom bot greeting function, returned when no /command is given.
-# The default behavior of the bot is to return the '/help' command response
+# The greeting processes user input before calling the correct command.
+# The default behavior of the bot is to return the 'help' command response
 # If there is an English language command line, try to work with that.
 
 
@@ -918,7 +925,7 @@ def greeting(incoming_msg):
                                                          dest_net=dest_net,
                                                          serials=serials)
 
-        case "help":
+        case "help" | "?":
             if BOT:
                 # Lookup details about sender for our default response
                 sender = bot.teams.people.get(incoming_msg.personId)

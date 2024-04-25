@@ -10,7 +10,7 @@ coverage==4.5.1
 Sphinx==1.8.1
 twine==1.12.1
 webexteamssdk==1.6.1
-webex-bot-ecoen66==0.4.3
+webex-bot==0.4.7
 meraki==1.43.0
 white>=0.1.2
 requests-mock

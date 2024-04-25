@@ -15,7 +15,7 @@ with open('HISTORY.md') as history_file:
     history = history_file.read()
 
 requirements = [
-    "webex-bot-ecoen66==0.4.3",
+    "webex-bot==0.4.7",
     "webexteamssdk==1.6.1",
     "Flask>=0.12.1",
     "netmiko==4.3.0",
