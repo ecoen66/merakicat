@@ -1,5 +1,9 @@
 # History
 
+## 0.2.5 (04-25-2024)
+
+  - Reverted back to Finbarr Brady's webex-bot after a pull merge.
+
 ## 0.2.4 (04-12-2024)
 
   - Added Private VLAN -> Port Isolation to encyclopedia.
