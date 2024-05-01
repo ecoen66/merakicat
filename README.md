@@ -216,4 +216,4 @@ If you found this repo to be useful, please consider donating to Life Decisions,
 
 `Catalyst_2_Meraki_Config_Checker` by [Fady Sharobeem](https://github.com/fadysharobeem).
 
-The bot functionality is based on the `webex_bot` project by [Finbarr Brady](https://github.com/fbradyirl).
+The bot functionality is using `webex_bot` by [Finbarr Brady](https://github.com/fbradyirl).
