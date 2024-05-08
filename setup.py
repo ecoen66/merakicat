@@ -20,9 +20,9 @@ requirements = [
     "Flask>=0.12.1",
     "netmiko==4.3.0",
     "tabulate==0.9.0",
-    "ciscoconfparse2==0.5",
-    "meraki==1.42.0",
-    "python-docx==1.1.0",
+    "ciscoconfparse2==0.7.50",
+    "meraki==1.46.0",
+    "python-docx==1.1.2",
     "docx2pdf==0.1.8",
     "requests==2.31.0"
     ]

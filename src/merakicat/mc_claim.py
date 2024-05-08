@@ -24,80 +24,90 @@ def Claim(dashboard, dest_net, serials):
     ac_switches = list()
     bad_switches = list()
 
-    for serial in serials:
-        try:
-            r = (dashboard.networks.removeNetworkDevices(
-                 networkId=dest_net, serial=serial))
-        except meraki.APIError:
-            pass
     try:
-        r = (dashboard.networks.claimNetworkDevices(
-             networkId=dest_net, serials=serials))
+        r = dashboard.switch.getNetworkSwitchStacks(networkId=dest_net)
         if debug:
-            print(f"issues from Dashboard for claiming switches was:\n{r}")
-    # Oops, we got a Dashboard ERROR while claiming switches to the network
+            print(f"I grabbed the list of switch stacks in network {dest_net}, it was {r}")
+        for stack in r:
+            for serial in serials:
+                if serial in stack['serials'][0]:
+                    try:
+                        response = dashboard.switch.deleteNetworkSwitchStack(dest_net,stack['id'])
+                        if debug:
+                            print(f"I deleted switch stack {stack['id']}, with switch {serial}")
+                        break
+                    except meraki.APIError as e:
+                        if debug:
+                            print(f"In an attempt to delete switch stack {stack['id']}, we encountered the following error:")
+                            print(f'Meraki API error: {e}')
+                            print(f'status code = {e.status}')
+                            print(f'reason = {e.reason}')
+                            print(f'error = {e.message}')
+                        continue
     except meraki.APIError as e:
         if debug:
+            print(f"In an attempt to get the list of switch stacks for network {dest_net}, we encountered the following error:")
             print(f'Meraki API error: {e}')
             print(f'status code = {e.status}')
             print(f'reason = {e.reason}')
             print(f'error = {e.message}')
-        # Let's parse through the list of errors returned and divide them
-        # into Already Claimed and Not Found
-        x = 0
-        while x <= len(e.message['errors'])-1:
+
+    for serial in serials:
+        try:
+            r = (dashboard.networks.removeNetworkDevices(
+                 networkId=dest_net, serial=serial))
+            if debug:
+                print(f"I deleted serial number {serial}.")
+        except meraki.APIError as e:
+            if debug:
+                print(f"In an attempt to delete serial number {serial}, we encountered the following error:")
+                print(f'Meraki API error: {e}')
+                print(f'status code = {e.status}')
+                print(f'reason = {e.reason}')
+                print(f'error = {e.message}')
+            continue
+
+    x = 0
+    while x <= len(serials)-1:
+        try:
+            r = (dashboard.networks.claimNetworkDevices(
+                 networkId=dest_net, serials=[serials[x]]))
+            if debug:
+                print(f"issues from Dashboard for claiming switch {serials[x]} was:\n{r}")
+        # Oops, we got a Dashboard ERROR while claiming switches to the network
+        except meraki.APIError as e:
+            if debug:
+                print(f'Meraki API error: {e}')
+                print(f'status code = {e.status}')
+                print(f'reason = {e.reason}')
+                print(f'error = {e.message}')
+            # Let's parse through the list of errors returned and divide them
+            # into Already Claimed and Not Found
             # If it is already claimed...
-            if re.search('already claimed', e.message['errors'][x]):
-                if debug:
-                    print(e.message['errors'][x].split(
-                          "Device with serial")[1].split()[0])
-                ac_switch = e.message['errors'][x].split(
-                    "Device with serial")[1].split()[0]
-                if debug:
-                    print(e.message['errors'][x].split(
-                          "already claimed and in ")[1].split('(')[0])
-                ac_net_name = e.message['errors'][x].split(
-                    "already claimed and in ")[1].split("(")[0]
-                if debug:
-                    print(e.message['errors'][x].split(
-                          "already claimed and in ")[1].split(
-                          "network ID: ")[1].split(')')[0])
-                # If it is already claimed but in a different network
-                # remove it from the claimed_switches list
-                # append it to the bad_switches list
-                # append a ERROR to the issues string
-                if not (e.message['errors'][x].split(
-                    "already claimed and in ")[1].split(
-                        "network ID: ")[1].split(')')[0]) == dest_net:
-                    issues += "ERROR: Switch "+ac_switch+" has already "
-                    issues += "been claimed and is in the "+ac_net_name
-                    issues += " network.\n"
-                    claimed_switches.remove(ac_switch)
-                    bad_switches.append(ac_switch)
+            if re.search('Devices already claimed', e.message['errors'][0]):
+                ac_switch = serials[x]
+
                 # If it is already claimed in the desired network
                 # remove it from the claimed_switches list and append it to
                 # ac_switches list and append a WARNING to the issues string
-                else:
-                    issues += "Warning: Switch "+ac_switch+" has already "
-                    issues += "been claimed in that network.\n"
-                    ac_switches.append(ac_switch)
+                issues += "Warning: Switch "+ac_switch+" has already "
+                issues += "been claimed in that network.\n"
+                ac_switches.append(ac_switch)
+
             # If it is not found, append it to the bad_switches list
             # remove it from the claimed_switches list and
             # append a ERROR to the issues string
-            elif re.search('not found', e.message['errors'][x]):
-                if debug:
-                    print(e.message['errors'][x].split(
-                        "Device with serial")[1].split()[0])
-                bad_switch = e.message['errors'][x].split(
-                    "Device with serial")[1].split()[0]
-                bad_switches.append(bad_switch)
+            elif re.search('not found', e.message['errors'][0]):
+                bad_switch = serials[x]
+                bad_switches.append(serial)
                 claimed_switches.remove(bad_switch)
                 issues += "Error: Switch "+bad_switch+" was not found.\n"
-            x += 1
-        if debug:
-            print(f"claimed_switches = {claimed_switches}")
-            print(f"ac_switches = {ac_switches}")
-            print(f"bad_switches = {bad_switches}")
-        # Even though we got an error, keep on going...
-        pass
+            # Even though we got an error, keep on going...
+        finally:
+            if debug:
+                print(f"claimed_switches = {claimed_switches}")
+                print(f"ac_switches = {ac_switches}")
+                print(f"bad_switches = {bad_switches}")
+        x += 1
+
     return (issues, bad_switches, ac_switches, claimed_switches)
