@@ -1,5 +1,11 @@
 # History
 
+## 0.2.6 (05-07-2024)
+
+  - Resolved Issue # 1.
+  - Fixed issue with unclaiming switches before removing switch stack.
+  - Updated requirements.
+
 ## 0.2.5 (04-25-2024)
 
   - Reverted back to Finbarr Brady's webex-bot after a pull merge.
