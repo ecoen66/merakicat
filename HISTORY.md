@@ -2,7 +2,7 @@
 
 ## 0.2.6 (05-07-2024)
 
-  - Resolved Issue # 1.
+  - Resolved Issue #6.
   - Fixed issue with unclaiming switches before removing switch stack.
   - Updated requirements.
 
