@@ -1,5 +1,10 @@
 # History
 
+## 0.2.7 (03-23-2025)
+
+  - Resolved issue with C9K Uplink after API change.
+  - mc_pedia version 0.1.78
+
 ## 0.2.6 (05-07-2024)
 
   - Resolved Issue #6.

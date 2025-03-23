@@ -144,3 +144,5 @@ merakicat.bbprojectd/project.lockfile
 merakicat.bbprojectd/project.bbprojectdata
 merakicat.bbprojectd/ecoen.bbprojectsettings
 merakicat.bbprojectd/Chat Worksheet.bbaiworksheet
+.DS_Store
+src/merakicat/testscript.sh

@@ -67,8 +67,8 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.7",
-    'dated': "04/12/2024",
+    'version': "v0.1.78",
+    'dated': "03/23/2025",
 
     'switch': {
 
@@ -922,7 +922,14 @@ while x < len(l3_ports):\n\
     if 'defaultGateway' in ma[4].keys():\n\
         try:\n\
             if 'switchStackId' in switch_dict.keys():\n\
-                dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
+                if x == 0:\n\
+                    ma[4]['uplinkV4'] = True\n\
+                    ma[4]['staticV4Dns1'] = '8.8.8.8'\n\
+                    ma[4]['staticV4Dns2'] = '8.8.4.4'\n\
+                    dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
+                else:\n\
+                    ma[4]['uplinkV4'] = false\n\
+                    dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
             else:\n\
                 dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
             conf_ports.append(ma[2])\n\
