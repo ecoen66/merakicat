@@ -5,7 +5,7 @@ import re
 import sys
 from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
-from mc_pedia import mc_pedia, nm_dict
+from mc_pedia2 import mc_pedia, nm_dict
 try:
     from mc_user_info import DEBUG, DEBUG_TRANSLATOR
 except ImportError:
