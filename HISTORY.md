@@ -7,6 +7,7 @@
   - Added compatibility with Early Adopters version of Meraki Dashboard API for unified IOS XE onboarding.
   - Fixed issue with special versions of IOS XE.
   - Reformatted the encyclopedia for easier updates and readability.
+  - Updated requirements
 
 ## 0.2.7 (03-23-2025)
 
