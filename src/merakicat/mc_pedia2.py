@@ -67,8 +67,8 @@ provide a generated value for the element in the meraki config loop.
 
 mc_pedia = {
 
-    'version': "v0.1.78",
-    'dated': "03/23/2025",
+    'version': "v1.0.0",
+    'dated': "11/14/2025",
 
     'switch': {
 
@@ -77,79 +77,99 @@ mc_pedia = {
             'support':"✓",
             'translatable':"✓",
             'regex': '^hostname',
-            'iosxe': "\
-\
-switch_name = ''\n\
-switch_name_obj = parse.find_objects('^hostname')\n\
-if not switch_name_obj == []:\n\
-    switch_name = switch_name_obj[0].re_match_typed('^hostname\s(\S+)',default='Switch')\n\
-if switch_name == '':\n\
-    switch_name = 'Switch'\n\
-host_name = switch_name\n\
-if debug:\n\
-    print(f'switch_name = {switch_name}')\n",
+            'iosxe': """
+switch_name = ''
+switch_name_obj = parse.find_objects('^hostname')
+if not switch_name_obj == []:
+    switch_name = switch_name_obj[0].re_match_typed('^hostname\s(\S+)',default='Switch')
+if switch_name == '':
+    switch_name = 'Switch'
+host_name = switch_name
+if debug:
+    print(f'switch_name = {switch_name}')
+""",
 
             'meraki': {
                 'skip': 'post_process',
                 'default': 'Auto negotiate',
-                'post_process': "\
-\
-urls = list()\n\
-blurb = 'This was a conversion from a Catalyst IOSXE config.'\n\
-n = 0\n\
-if debug:\n\
-    print(f'dir() = {dir()}')\n\
-switch_name = switch_dict['switch_name']\n\
-if switch_name == '':\n\
-    switch_name = 'Switch'\n\
-if len(sw_list) == 1:\n\
-    try:\n\
-        ## Set the switch name and notes\n\
-        response = dashboard.devices.updateDevice(sw_list[n], name=switch_name, notes=blurb)\n\
-        urls.append(response['url'])\n\
-        if debug:\n\
-            print(f'Dashboard response was: {response}')\n\
-    except:\n\
-        print(f'Unable to configure name on switch.')\n\
-else:\n\
-    while n <= len(sw_list)-1:\n\
-        try:\n\
-            ## Set the switch name and notes\n\
-            response = dashboard.devices.updateDevice(sw_list[n], name=switch_name+'-'+str(n+1), notes=blurb)\n\
-            urls.append(response['url'])\n\
-            networkId = response['networkId']\n\
-            if debug:\n\
-                print(f'Dashboard response was: {response}')\n\
-        except:\n\
-            print('Cannot set the switch name for switch ' + switch_name+'-'+str(n+1))\n\
-        n +=1\n\
-    if debug:\n\
-        print(f'networkId = {networkId}')\n\
-    try:\n\
-        ## Create the switch stack\n\
-        r = dashboard.switch.getNetworkSwitchStacks(networkId=networkId)\n\
-        for stack in r:\n\
-            for serial in sw_list:\n\
-                if serial in stack['serials'][0]:\n\
-                    response = dashboard.switch.deleteNetworkSwitchStack(networkId,stack['id'])\n\
-                    break\n\
-        switchStackId = dashboard.switch.createNetworkSwitchStack(networkId=networkId, serials=sw_list, name=switch_name)['id']\n\
-        if debug:\n\
-            print(f'switchStackId = {switchStackId}')\n\
-            print(f'Dashboard response to Create Stack was: {response}')\n\
-    # Oops, we got a Dashboard ERROR while claiming the switches to the network\n\
-    except Exception as e:\n\
-       if debug:\n\
-           print(f'Meraki API error: {e}')\n\
-           print(f'status code = {e.status}')\n\
-           print(f'reason = {e.reason}')\n\
-           print(f'error = {e.message}')\n\
-       if not e.message['errors'][0] == 'Cannot stack switches that are already part of a switch stack':\n\
-           print(f'Cannot create switch stack {switch_name} with {sw_list}.')\n\
-return_vals = ['urls','networkId','switchStackId']\n\
-if debug:\n\
-    print(f'dir() = {dir()}')\n"
+                'post_process': """
+urls = list()
+blurb = 'This was a conversion from a Catalyst IOSXE config.'
+n = 0
+if debug:
+    print(f'dir() = {dir()}')
+switch_name = switch_dict['switch_name']
+if switch_name == '':
+    switch_name = 'Switch'
+if len(sw_list) == 1:
+    try:
+        ## Set the switch name and notes
+        response = dashboard.devices.updateDevice(sw_list[n], name=switch_name, notes=blurb)
+        urls.append(response['url'])
+        networkId = response['networkId']
+        if debug:
+            print(f'Dashboard response was: {response}')
+    except:
+        print(f'Unable to configure name on switch.')
+    return_vals = ['urls','networkId']
+else:
+    while n <= len(sw_list)-1:
+        try:
+            ## Set the switch name and notes
+            response = dashboard.devices.updateDevice(sw_list[n], name=switch_name+'-'+str(n+1), notes=blurb)
+            urls.append(response['url'])
+            networkId = response['networkId']
+            if debug:
+                print(f'Dashboard response was: {response}')
+        except:
+            print('Cannot set the switch name for switch ' + switch_name+'-'+str(n+1))
+        n +=1
+    if debug:
+        print(f'networkId = {networkId}')
+    try:
+        ## Create the switch stack
+        r = dashboard.switch.getNetworkSwitchStacks(networkId=networkId)
+        for stack in r:
+            for serial in sw_list:
+                if serial in stack['serials'][0]:
+                    response = dashboard.switch.deleteNetworkSwitchStack(networkId,stack['id'])
+                    break
+        switchStackId = dashboard.switch.createNetworkSwitchStack(networkId=networkId, serials=sw_list, name=switch_name)['id']
+        if debug:
+            print(f'switchStackId = {switchStackId}')
+            print(f'Dashboard response to Create Stack was: {response}')
+    # Oops, we got a Dashboard ERROR while claiming the switches to the network
+    except Exception as e:
+       if debug:
+           print(f'Meraki API error: {e}')
+           print(f'status code = {e.status}')
+           print(f'reason = {e.reason}')
+           print(f'error = {e.message}')
+       if not e.message['errors'][0] == 'Cannot stack switches that are already part of a switch stack':
+           print(f'Cannot create switch stack {switch_name} with {sw_list}.')
+    return_vals = ['urls','networkId','switchStackId']
+if debug:
+    print(f'dir() = {dir()}')
+"""
             }
+        },
+
+        'model':{
+            'name': "Model",
+            'support':"",
+            'translatable':"",
+            'regex': '^switch',
+            'meraki': {
+                'skip': True
+            },
+            'iosxe': """
+model = []
+stack_obj_list = parse.find_objects('^switch')
+x = 1
+while x <= len(stack_obj_list):
+    model.append(stack_obj_list[0].re_match_typed('^switch\\s\\d{1}\\sprovision\\s(\\S+)'))
+    x +=1
+"""
         },
 
         'vtp':{
@@ -160,7 +180,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "vtp = parse.find_objects('^vtp')\n",
+            'iosxe': "vtp = parse.find_objects('^vtp')",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Integrating_the_MS_Access_Switch_into_a_Cisco_VTP_domain",
             'note':"Not required"
         },
@@ -173,7 +193,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "mls = parse.find_objects('^mls')\n",
+            'iosxe': "mls = parse.find_objects('^mls')",
             'url':"https://documentation.meraki.com/MS/Other_Topics/MS_Switch_Quality_of_Service_Defined",
             'note':"Network-wide"
         },
@@ -186,7 +206,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "rstp = parse.find_objects('^spanning-tree mode rapid-pvst')\n"
+            'iosxe': "rstp = parse.find_objects('^spanning-tree mode rapid-pvst')"
         },
 
         'spanning':{
@@ -197,11 +217,12 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "\
-spanning = ''\n\
-if parse.find_objects('^spanning-tree extend system-id') == '':\n\
-    if parse.find_objects('^spanning-tree mode rapid-pvst') == '':\n\
-        spanning = parse.find_objects('^spanning-tree\s+(\S.+)')\n",
+            'iosxe': """
+spanning = ''
+if parse.find_objects('^spanning-tree extend system-id') == '':
+    if parse.find_objects('^spanning-tree mode rapid-pvst') == '':
+        spanning = parse.find_objects('^spanning-tree\s+(\S.+)')
+""",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Configuring_Spanning_Tree_on_Meraki_Switches_(MS)",
             'note':"Only Supports RSTP"
         },
@@ -214,7 +235,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe':"snmp = parse.find_objects('^snmp')\n",
+            'iosxe':"snmp = parse.find_objects('^snmp')",
             'url': "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/SNMP_Overview_and_Configuration",
             'note': "Configured network-wide"
         },
@@ -227,7 +248,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe':"logging_host = parse.find_objects('^logging')\n",
+            'iosxe':"logging_host = parse.find_objects('^logging')",
             'url': "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/Syslog_Server_Overview_and_Configuration",
             'note': "Configured network-wide"
         },
@@ -240,7 +261,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe':"ntp = parse.find_objects('^ntp')\n",
+            'iosxe':"ntp = parse.find_objects('^ntp')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
         },
@@ -253,7 +274,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "access_list = parse.find_objects('^access-list')\n",
+            'iosxe': "access_list = parse.find_objects('^access-list')",
             'url':"https://documentation.meraki.com/MS/Access_Control/Meraki_MS_Group_Policy_Access_Control_Lists",
             'note':"Group Policies"
         },
@@ -266,7 +287,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "extended_access_list = parse.find_objects('^ip\saccess-list')\n",
+            'iosxe': "extended_access_list = parse.find_objects('^ip\saccess-list')",
             'url':"https://documentation.meraki.com/MS/Access_Control/Meraki_MS_Group_Policy_Access_Control_Lists",
             'note':"Group Policies"
         },
@@ -279,7 +300,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "port_mirror = parse.find_objects('^monitor')\n"
+            'iosxe': "port_mirror = parse.find_objects('^monitor')"
         },
 
         'aaa':{
@@ -290,7 +311,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "aaa = parse.find_objects('^aaa')\n",
+            'iosxe': "aaa = parse.find_objects('^aaa')",
             'url':"https://documentation.meraki.com/General_Administration/Managing_Dashboard_Access/Managing_Dashboard_Administrators_and_Permissions",
             'note':"Built in Meraki dashboard"
         },
@@ -303,7 +324,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "dot1x = parse.find_objects('^aaa authentication dot1x')\n",
+            'iosxe': "dot1x = parse.find_objects('^aaa authentication dot1x')",
             'url':"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
             'note':"Network-wide"
         },
@@ -316,7 +337,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "netflow = parse.find_objects('^flow\sexporter')\n",
+            'iosxe': "netflow = parse.find_objects('^flow\sexporter')",
             'url':"https://documentation.meraki.com/MS/Monitoring_and_Reporting/MS_NetFlow_and_Encrypted_Traffic_Analytics",
             'note':"Network-wide"
         },
@@ -329,7 +350,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe':"dhcp = parse.find_objects('^ip\sdhcp\spool')\n"
+            'iosxe':"dhcp = parse.find_objects('^ip\sdhcp\spool')"
         },
 
         'banner':{
@@ -340,7 +361,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "banner = parse.find_objects('^banner')\n",
+            'iosxe': "banner = parse.find_objects('^banner')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not required"
         },
@@ -353,7 +374,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe':"radius = parse.find_objects('^radius-server|^radius\sserver')\n"
+            'iosxe':"radius = parse.find_objects('^radius-server|^radius\sserver')"
         },
 
         'http_server':{
@@ -364,7 +385,7 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "http_server = parse.find_objects('^ip\shttp')\n",
+            'iosxe': "http_server = parse.find_objects('^ip\shttp')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not required"
         },
@@ -377,10 +398,11 @@ if parse.find_objects('^spanning-tree extend system-id') == '':\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "\
-stack = parse.find_objects('^switch')\n\
-if len(stack) == 1:\n\
-    stack = []\n"
+            'iosxe': """
+stack = parse.find_objects('^switch')
+if len(stack) == 1:
+    stack = []
+"""
         },
 
         'mab_vlan_mac':{
@@ -391,7 +413,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "mab_vlan_mac = parse.find_objects('^mab\srequest\sformat')\n",
+            'iosxe': "mab_vlan_mac = parse.find_objects('^mab\srequest\sformat')",
             'url':"https://documentation.meraki.com/MS/Access_Control/MS_Switch_Access_Policies_(802.1X)",
             'note':"MAB with RADIUS is supported"
         },
@@ -404,7 +426,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "vlan = parse.find_objects('^vlan')\n",
+            'iosxe': "vlan = parse.find_objects('^vlan')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
         },
@@ -417,7 +439,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "vmps = parse.find_objects('^vmps')\n",
+            'iosxe': "vmps = parse.find_objects('^vmps')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported as it is dated technology"
         },
@@ -430,7 +452,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "uplinkfast = parse.find_objects('^spanning-tree\suplinkfast')\n",
+            'iosxe': "uplinkfast = parse.find_objects('^spanning-tree\suplinkfast')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
@@ -443,7 +465,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "backbonefast = parse.find_objects('^spanning-tree\sbackbonefast')\n",
+            'iosxe': "backbonefast = parse.find_objects('^spanning-tree\sbackbonefast')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
@@ -456,7 +478,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "loopguard = parse.find_objects('spanning-tree\sloopguard')\n",
+            'iosxe': "loopguard = parse.find_objects('spanning-tree\sloopguard')",
             'note':"Supported at the port level"
         },
 
@@ -468,7 +490,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "dhcp_snooping = parse.find_objects('ip\sdhcp\ssnooping')\n",
+            'iosxe': "dhcp_snooping = parse.find_objects('ip\sdhcp\ssnooping')",
             'url':"https://documentation.meraki.com/MS/Other_Topics/Dynamic_ARP_Inspection",
             'note':"Network-wide"
         },
@@ -481,7 +503,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "ip_source_guard = parse.find_objects('ip\ssource\sbinding')\n"
+            'iosxe': "ip_source_guard = parse.find_objects('ip\ssource\sbinding')"
         },
 
         'arp_inspection':{
@@ -492,7 +514,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "arp_inspection = parse.find_objects('^ip\sarp\sinspection')\n",
+            'iosxe': "arp_inspection = parse.find_objects('^ip\sarp\sinspection')",
             'url':"https://documentation.meraki.com/MS/Other_Topics/Dynamic_ARP_Inspection",
             'note':"Network-wide"
         },
@@ -505,7 +527,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "arp_acl = parse.find_objects('^arp\saccess-list')\n",
+            'iosxe': "arp_acl = parse.find_objects('^arp\saccess-list')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
@@ -518,7 +540,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "psp = parse.find_objects('^psp')\n",
+            'iosxe': "psp = parse.find_objects('^psp')",
             'url': "https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
@@ -531,7 +553,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "udld = parse.find_objects('^udld')\n",
+            'iosxe': "udld = parse.find_objects('^udld')",
             'note':"Supported at the port level"
         },
 
@@ -543,7 +565,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "logging = parse.find_objects('^logging')\n",
+            'iosxe': "logging = parse.find_objects('^logging')",
             'url': "https://documentation.meraki.com/General_Administration/Cross-Platform_Content/Meraki_Event_Log",
             'note':"Configured by default"
         },
@@ -556,7 +578,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "ip_sla = parse.find_objects('^ip\ssla')\n",
+            'iosxe': "ip_sla = parse.find_objects('^ip\ssla')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
@@ -569,7 +591,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "multicast_igmp = parse.find_objects('^ip\sigmp')\n",
+            'iosxe': "multicast_igmp = parse.find_objects('^ip\sigmp')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Configured by default"
         },
@@ -582,7 +604,7 @@ if len(stack) == 1:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "multicast_pim = parse.find_objects('^ip\spim')\n"
+            'iosxe': "multicast_pim = parse.find_objects('^ip\spim')"
         },
 
         'static_routing':{
@@ -590,37 +612,40 @@ if len(stack) == 1:\n\
             'support':"✓",
             'translatable':"✓",
             'regex': '^ip\sroute|^ip\sdefault-gateway',
-            'iosxe': "\
-static_routing = list()\n\
-route_obj_list = parse.find_objects('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
-for route_obj in route_obj_list:\n\
-    net = route_obj.re_match_typed('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')\n\
-    mask = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')\n\
-    gw = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
-    import ipaddress\n\
-    subnet = str(ipaddress.ip_network(net + '/' + mask, strict=False))\n\
-    static_routing.append({'net': net, 'mask': mask, 'gw': gw, 'subnet': subnet})\n\
-route_obj_list = parse.find_objects('^ip\sdefault-gateway\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
-if len(route_obj_list) == 1:\n\
-    import ipaddress\n\
-    subnet = str(ipaddress.ip_network('0.0.0.0/0', strict=False))\n\
-    gw = route_obj_list[0].re_match_typed('^ip\sdefault-gateway\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')\n\
-    static_routing.append({'net': '0.0.0.0', 'mask': '0.0.0.0', 'gw': gw, 'subnet': subnet})\n",
+            'iosxe': """
+static_routing = list()
+route_obj_list = parse.find_objects('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+for route_obj in route_obj_list:
+    net = route_obj.re_match_typed('^ip\sroute\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+    mask = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+    gw = route_obj.re_match_typed('^ip\sroute\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    import ipaddress
+    subnet = str(ipaddress.ip_network(net + '/' + mask, strict=False))
+    static_routing.append({'net': net, 'mask': mask, 'gw': gw, 'subnet': subnet})
+route_obj_list = parse.find_objects('^ip\sdefault-gateway\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+if len(route_obj_list) == 1:
+    import ipaddress
+    subnet = str(ipaddress.ip_network('0.0.0.0/0', strict=False))
+    gw = route_obj_list[0].re_match_typed('^ip\sdefault-gateway\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    static_routing.append({'net': '0.0.0.0', 'mask': '0.0.0.0', 'gw': gw, 'subnet': subnet})
+""",
             'meraki': {
                 'skip': 'post_ports',
-                'post_process': "\
-for route in switch_dict['static_routing']:\n\
-    if route['subnet'] == '0.0.0.0/0':\n\
-        default_route = route\n\
-        return_vals = ['default_route']\n",
-                'post_ports_process': "\
-for route in switch_dict['static_routing']:\n\
-    if not route['subnet'] == '0.0.0.0/0':\n\
-        if 'switchStackId' in switch_dict.keys():\n\
-            dashboard.switch.createNetworkSwitchStackRoutingStaticRoute(switch_dict['networkId'],switch_dict['switchStackId'],route['subnet'],route['gw'])\n\
-        else:\n\
-            if len(sw_list) == 1:\n\
-                dashboard.switch.createDeviceSwitchRoutingStaticRoute(swlist[0],route['subnet'],route['gw'])\n"
+                'post_process': """
+for route in switch_dict['static_routing']:
+    if route['subnet'] == '0.0.0.0/0':
+        default_route = route
+        return_vals = ['default_route']
+""",
+                'post_ports_process': """
+for route in switch_dict['static_routing']:
+    if not route['subnet'] == '0.0.0.0/0':
+        if 'switchStackId' in switch_dict.keys():
+            dashboard.switch.createNetworkSwitchStackRoutingStaticRoute(switch_dict['networkId'],switch_dict['switchStackId'],route['subnet'],route['gw'])
+        else:
+            if len(sw_list) == 1:
+                dashboard.switch.createDeviceSwitchRoutingStaticRoute(sw_list[0],route['subnet'],route['gw'])
+"""
             }
         },
 
@@ -632,7 +657,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "ipv6 = parse.find_objects('^ipv6')\n"
+            'iosxe': "ipv6 = parse.find_objects('^ipv6')"
         },
 
         'rip':{
@@ -643,7 +668,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "rip = parse.find_objects('^router rip')\n",
+            'iosxe': "rip = parse.find_objects('^router rip')",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
@@ -656,7 +681,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "eigrp = parse.find_objects('^router eigrp')\n",
+            'iosxe': "eigrp = parse.find_objects('^router eigrp')",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
@@ -669,7 +694,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "ospf = parse.find_objects('^router ospf')\n",
+            'iosxe': "ospf = parse.find_objects('^router ospf')",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Supported on MS250 and above"
         },
@@ -682,7 +707,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "ospfv3 = parse.find_objects('^router ospfv3')\n",
+            'iosxe': "ospfv3 = parse.find_objects('^router ospfv3')",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
@@ -695,7 +720,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "bgp = parse.find_objects('^router bgp')\n",
+            'iosxe': "bgp = parse.find_objects('^router bgp')",
             'url':"https://documentation.meraki.com/MX/Networks_and_Routing/Border_Gateway_Protocol_(BGP)",
             'note':"Currently supported on MX only"
         },
@@ -708,7 +733,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "isis = parse.find_objects('^router isis')\n",
+            'iosxe': "isis = parse.find_objects('^router isis')",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         },
@@ -721,7 +746,7 @@ for route in switch_dict['static_routing']:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "vrf = parse.find_objects('^vrf')\n",
+            'iosxe': "vrf = parse.find_objects('^vrf')",
             'url':"https://documentation.meraki.com/MS/Layer_3_Switching/MS_Layer_3_Switching_and_Routing",
             'note':"Not Supported"
         }
@@ -738,7 +763,7 @@ for route in switch_dict['static_routing']:\n\
                 'skip': False,
                 'default': ''
             },
-            'iosxe': "name = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')\n"
+            'iosxe': "name = child.re_match_typed(regex=r'\sdescription\s+(\S.+)')"
         },
 
         'active': {
@@ -750,9 +775,10 @@ for route in switch_dict['static_routing']:\n\
                 'skip': False,
                 'default': 'true'
             },
-            'iosxe': "\
-shut = child.re_match_typed(regex=r'\s(shutdown)')\n\
-active = 'true' if shut == '' else 'false'\n"
+            'iosxe': """
+shut = child.re_match_typed(regex=r'\s(shutdown)')
+active = 'true' if shut == '' else 'false'
+"""
         },
 
         'speed': {
@@ -764,7 +790,7 @@ active = 'true' if shut == '' else 'false'\n"
                 'skip': True,
                 'default': ''
             },
-            'iosxe': "speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')\n"
+            'iosxe': "speed = child.re_match_typed(regex=r'\sspeed\s+(\S.*)')"
         },
 
         'duplex': {
@@ -776,8 +802,7 @@ active = 'true' if shut == '' else 'false'\n"
                 'skip': True,
                 'default': ''
             },
-            'iosxe': "duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')\n",\
-
+            'iosxe': "duplex = child.re_match_typed(regex=r'\sduplex\s+(\S.+)')"
         },
 
         'linkNegotiation': {
@@ -786,26 +811,26 @@ active = 'true' if shut == '' else 'false'\n"
             'meraki': {
                 'skip': 'post_process',
                 'default': 'Auto negotiate',
-                'post_process': "\
-\
-linkNegotiation = ''\n\
-try:\n\
-    speed = int(intf_settings['speed'])\n\
-    if speed < 1000:\n\
-        linkNegotiation += str(speed)+' Megabit '\n\
-    else:\n\
-        linkNegotiation += str(int(speed/1000))+' Gigabit '\n\
-    try:\n\
-        duplex = intf_settings['duplex']\n\
-        match duplex:\n\
-            case 'half':\n\
-                linkNegotiation += 'half duplex (forced)'\n\
-            case 'full':\n\
-                linkNegotiation += 'full duplex (forced)'\n\
-    except KeyError:\n\
-        linkNegotiation += '(auto)'\n\
-except:\n\
-    linkNegotiation = 'Auto negotiate'\n"
+                'post_process': """
+linkNegotiation = ''
+try:
+    speed = int(intf_settings['speed'])
+    if speed < 1000:
+        linkNegotiation += str(speed)+' Megabit '
+    else:
+        linkNegotiation += str(int(speed/1000))+' Gigabit '
+    try:
+        duplex = intf_settings['duplex']
+        match duplex:
+            case 'half':
+                linkNegotiation += 'half duplex (forced)'
+            case 'full':
+                linkNegotiation += 'full duplex (forced)'
+    except KeyError:
+        linkNegotiation += '(auto)'
+except:
+    linkNegotiation = 'Auto negotiate'
+"""
             }
         },
 
@@ -818,8 +843,10 @@ except:\n\
                 'skip': False,
                 'default': 'trunk'
             },
-            'iosxe': "type = child.re_match_typed(regex=r'\sswitchport\smode(?:\s\S+-\S+)?\s(access|trunk|host)')\n\
-type = 'access' if type == 'host' else type\n"
+            'iosxe': """
+type = child.re_match_typed(regex=r'\sswitchport\smode(?:\s\S+-\S+)?\s(access|trunk|host)')
+type = 'access' if type == 'host' else type
+"""
         },
 
         'poeEnabled': {
@@ -832,7 +859,7 @@ type = 'access' if type == 'host' else type\n"
                 'skip': False,
                 'default': True
             },
-            'iosxe': "poeEnabled = not child.re_match_typed(regex=r'\spower\sinline\s+(\S.+)')=='never'\n"
+            'iosxe': "poeEnabled = not child.re_match_typed(regex=r'\spower\sinline\s+(\S.+)')=='never'"
         },
 
         'allowedVlans': {
@@ -841,10 +868,9 @@ type = 'access' if type == 'host' else type\n"
             'translatable':"✓",
             'regex': r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)',
             'meraki': {
-                'skip': False,
-                'default': '1-1000'
+                'skip': False
             },
-            'iosxe': "allowedVlans = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')\n"
+            'iosxe': "allowedVlans = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')"
         },
 
         'vlan': {
@@ -856,7 +882,7 @@ type = 'access' if type == 'host' else type\n"
                 'skip': False,
                 'default': '1'
             },
-            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')\n"
+            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')"
         },
 
         'vlan': {
@@ -868,7 +894,7 @@ type = 'access' if type == 'host' else type\n"
                 'skip': False,
                 'default': '1'
             },
-            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\svlan\s+(\S.*)')\n"
+            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\svlan\s+(\S.*)')"
         },
 
         'voiceVlan': {
@@ -880,7 +906,7 @@ type = 'access' if type == 'host' else type\n"
                 'skip': False,
                 'default': None
             },
-            'iosxe': "voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')\n"
+            'iosxe': "voiceVlan = child.re_match_typed(regex=r'\sswitchport\svoice\svlan\s+(\S.*)')"
         },
 
         'isolationEnabled': {
@@ -892,7 +918,7 @@ type = 'access' if type == 'host' else type\n"
                 'skip': False,
                 'default': False
             },
-            'iosxe': "isolationEnabled = True if not child.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)') == '' else False\n",
+            'iosxe': "isolationEnabled = True if not child.re_match_typed(regex=r'\sswitchport\smode\sprivate-vlan?(\S.*)') == '' else False",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
             'note':"Port Isolation can be used"
         },
@@ -904,65 +930,88 @@ type = 'access' if type == 'host' else type\n"
             'regex': r'\sip\saddress\s(\S.*)',
             'meraki': {
                 'skip': 'post_ports',
-                'post_process':"l3_interface = True\n\
-return_vals=['l3_interface']\n",
-                'post_ports_process': "\
-conf_ports = list()\n\
-unconf_ports = list()\n\
-l3_ports = [v for k, v in port_dict.items() if 'Vlan' in k]\n\
-if debug:\n\
-    print(f'l3_ports = {l3_ports}')\n\
-x = 0\n\
-while x < len(l3_ports):\n\
-    if debug:\n\
-        print(f'l3_ports[{x}] = {l3_ports[x]}')\n\
-        print(f'l3_ports[{x}][meraki_args] = ')\n\
-        print(l3_ports[x]['meraki_args'])\n\
-    ma = l3_ports[x]['meraki_args']\n\
-    if 'defaultGateway' in ma[4].keys():\n\
-        try:\n\
-            if 'switchStackId' in switch_dict.keys():\n\
-                if x == 0:\n\
-                    ma[4]['uplinkV4'] = True\n\
-                    ma[4]['staticV4Dns1'] = '8.8.8.8'\n\
-                    ma[4]['staticV4Dns2'] = '8.8.4.4'\n\
-                    dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
-                else:\n\
-                    ma[4]['uplinkV4'] = false\n\
-                    dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
-            else:\n\
-                dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
-            conf_ports.append(ma[2])\n\
-        except:\n\
-            print(f'We had an issue creating {ma[2]}.')\n\
-            unconf_ports.append(ma[2])\n\
-        dg = x\n\
-        break\n\
-    x+=1\n\
-x = 0\n\
-while x < len(l3_ports):\n\
-    if not x == dg:\n\
-        ma = l3_ports[x]['meraki_args']\n\
-        try:\n\
-            if 'switchStackId' in switch_dict.keys():\n\
-                dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])\n\
-            else:\n\
-                dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])\n\
-            conf_ports.append(ma[2])\n\
-        except:\n\
-            print(f'We had an issue creating {ma[2]}.')\n\
-            unconf_ports.append(ma[2])\n\
-    x+=1\n\
-return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
+                'post_process':"""
+l3_interface = True
+return_vals=['l3_interface']
+""",
+                'post_ports_process': """
+conf_ports = list()
+unconf_ports = list()
+temp_payload = {}
+payload = {}
+
+l3_ports = [v for k, v in port_dict.items() if 'Vlan' in k]
+if debug:
+    print(f'l3_ports = {l3_ports}')
+x = 0
+while x < len(l3_ports):
+    if debug:
+        print(f'l3_ports[{x}] = {l3_ports[x]}')
+        print(f'l3_ports[{x}][meraki_args] = ')
+        print(l3_ports[x]['meraki_args'])
+    ma = l3_ports[x]['meraki_args']
+    if 'defaultGateway' in ma[4].keys():
+        try:
+            if 'switchStackId' in switch_dict:
+                dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])
+            else:
+                if unified_os:
+                    import requests
+                    import json
+                    import os
+                    url = "https://api.meraki.com/api/v1/devices/" + sw_list[0] + "/switch/routing/interfaces"
+                    temp_payload = {
+                        "name": ma[2],
+                        "switchPortId": "1",
+                        "vlanId": ma[3],
+                        "staticV4Dns1": "8.8.8.8",
+                        "staticV4Dns2": "8.8.4.4"
+                    }
+                    payload = temp_payload | ma[4]
+                    pretty_payload = json.dumps(payload, indent=4)
+                    data = pretty_payload.rstrip(os.linesep+'}') + ',' + os.linesep + '    "uplinkV4": true' + os.linesep + '}'
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-Cisco-Meraki-API-Key": meraki_api_key
+                    }
+                    response = requests.request('POST', url, headers=headers, data = data)
+                    if debug:
+                        print(response.text.encode('utf8'))
+                else:
+                    dashboard.switch.createDeviceSwitchRoutingInterface(sw_list[0],ma[2],vlanId=ma[3],**ma[4])
+            conf_ports.append(ma[2])
+        except:
+            print(f'We had an issue creating {ma[2]}.')
+            unconf_ports.append(ma[2])
+        dg = x
+        break
+    x+=1
+x = 0
+while x < len(l3_ports):
+    if not x == dg:
+        ma = l3_ports[x]['meraki_args']
+        try:
+            if 'switchStackId' in switch_dict.keys():
+                dashboard.switch.createNetworkSwitchStackRoutingInterface(ma[0],ma[1],ma[2],ma[3],**ma[4])
+            else:
+                dashboard.switch.createDeviceSwitchRoutingInterface(swlist[0],name=ma[2],vlanId=ma[3],**ma[4])
+            conf_ports.append(ma[2])
+        except:
+            print(f'We had an issue creating {ma[2]}.')
+            unconf_ports.append(ma[2])
+    x+=1
+return_vals = ['l3_ports','conf_ports','unconf_ports']
+"""
             },
-            'iosxe': "l3_interface = child.re_match_typed(regex=r'\sip\saddress\s(\S.*)')\n"
+            'iosxe': "l3_interface = child.re_match_typed(regex=r'\sip\saddress\s(\S.*)')"
         },
 
         'root_guard': {
             'name': "STP Root Guard",
             'support':"✓",
             'translatable':"✓",
-            'iosxe': "root_guard = 'yes'\n",
+            'iosxe': "root_guard = 'yes'",
             'regex': r'\sspanning-tree\sguard\sroot?(\S.+)',
             'meraki': {
                 'skip': True,
@@ -974,7 +1023,7 @@ return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
             'name': "STP Loop Guard",
             'support':"✓",
             'translatable':"✓",
-            'iosxe': "loop_guard = 'yes'\n",
+            'iosxe': "loop_guard = 'yes'",
             'regex': r'\sspanning-tree\sguard\sloop?(\S.+)',
             'meraki': {
                 'skip': True,
@@ -986,7 +1035,7 @@ return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
             'name': "STP BPDU Guard",
             'support':"✓",
             'translatable':"✓",
-            'iosxe': "bpdu_guard =  'yes'\n",
+            'iosxe': "bpdu_guard =  'yes'",
             'regex': r'\sspanning-tree\sbpduguard?(\S.+)',
             'meraki': {
                 'skip': True,
@@ -999,26 +1048,26 @@ return_vals = ['l3_ports','conf_ports','unconf_ports']\n"
             'regex': '',
             'meraki': {
                 'skip': 'post_process',
-                'post_process': "\
-\
-stpGuard = 'disabled'\n\
-try:\n\
-    if intf_settings['root_guard'] == 'yes':\n\
-        stpGuard = 'root guard'\n\
-except:\n\
-    pass\n\
-try:\n\
-    if intf_settings['loop_guard'] == 'yes':\n\
-        stpGuard = 'loop guard'\n\
-except:\n\
-    pass\n\
-try:\n\
-    if intf_settings['bpdu_guard'] == 'yes':\n\
-        stpGuard = 'bpdu guard'\n\
-except:\n\
-    pass\n\
-if debug:\n\
-    print(f'stpGuard = {stpGuard}')\n",
+                'post_process': """
+stpGuard = 'disabled'
+try:
+    if intf_settings['root_guard'] == 'yes':
+        stpGuard = 'root guard'
+except:
+    pass
+try:
+    if intf_settings['loop_guard'] == 'yes':
+        stpGuard = 'loop guard'
+except:
+    pass
+try:
+    if intf_settings['bpdu_guard'] == 'yes':
+        stpGuard = 'bpdu guard'
+except:
+    pass
+if debug:
+    print(f'stpGuard = {stpGuard}')
+""",
                 'default': 'disabled'
             }
         },
@@ -1031,7 +1080,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "pruning = child.re_match_typed(regex=r'\sswitchport\strunk\spruning?(\S.*)')\n",
+            'iosxe': "pruning = child.re_match_typed(regex=r'\sswitchport\strunk\spruning?(\S.*)')",
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Fundamentals_of_802.1Q_VLAN_Tagging",
             'note':"Not required"
         },
@@ -1044,7 +1093,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "stp_port = child.re_match_typed(regex=r'\sspanning-tree\sport-priority?(\S.*)')\n"
+            'iosxe': "stp_port = child.re_match_typed(regex=r'\sspanning-tree\sport-priority?(\S.*)')"
         },
 
         'portfast': {
@@ -1055,7 +1104,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "portfast = child.re_match_typed(regex=r'\sspanning-tree\sportfast?(\S.*)')\n",
+            'iosxe': "portfast = child.re_match_typed(regex=r'\sspanning-tree\sportfast?(\S.*)')",
             'url':"https://documentation.meraki.com/MS/Deployment_Guides/Advanced_MS_Setup_Guide",
             'note':"Automatic Edge Port"
         },
@@ -1068,7 +1117,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "storm_control = child.re_match_typed(regex=r'\sstorm-control?(\S.*)')\n",
+            'iosxe': "storm_control = child.re_match_typed(regex=r'\sstorm-control?(\S.*)')",
             'url':"https://documentation.meraki.com/MS/Other_Topics/Storm_Control_for_MS",
             'note':"Configured network-wide"
         },
@@ -1081,7 +1130,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "protected = child.re_match_typed(regex=r'\sswitchport\sprotected?(\S.*)')\n",
+            'iosxe': "protected = child.re_match_typed(regex=r'\sswitchport\sprotected?(\S.*)')",
             'url':"https://documentation.meraki.com/MS/Port_and_VLAN_Configuration/Restricting_Traffic_with_Isolated_Switch_Ports",
             'note':"Port Isolation"
         },
@@ -1094,7 +1143,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "port_security = child.re_match_typed(regex=r'\sswitchport\sport-security?(\S.*)')\n"
+            'iosxe': "port_security = child.re_match_typed(regex=r'\sswitchport\sport-security?(\S.*)')"
         },
 
         'port_udld': {
@@ -1105,7 +1154,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "port_udld = child.re_match_typed(regex=r'\sudld\sport?(\S.*)')\n"
+            'iosxe': "port_udld = child.re_match_typed(regex=r'\sudld\sport?(\S.*)')"
         },
 
         'lldp': {
@@ -1116,7 +1165,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "lldp = child.re_match_typed(regex=r'\slldp?(\S.*)')\n",
+            'iosxe': "lldp = child.re_match_typed(regex=r'\slldp?(\S.*)')",
             'url':"https://documentation.meraki.com/General_Administration/Other_Topics/LLDP_Support_on_Cisco_Meraki_Products#ms",
             'note':"Always on"
         },
@@ -1129,7 +1178,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "ipv6 = child.re_match_typed(regex=r'\sipv6?(\S.*)')\n",
+            'iosxe': "ipv6 = child.re_match_typed(regex=r'\sipv6?(\S.*)')",
             'url':"https://documentation.meraki.com/MS",
             'note':"Not Supported"
         },
@@ -1142,7 +1191,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "directed_broadcast = child.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')\n"
+            'iosxe': "directed_broadcast = child.re_match_typed(regex=r'\sip\sdirected-broadcast?(\S.*)')"
         },
 
         'etherchannel_cisco': {
@@ -1153,7 +1202,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "etherchannel_cisco = 'on'\n",
+            'iosxe': "etherchannel_cisco = 'on'",
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Link_Aggregation_and_Load_Balancing",
             'note':"Only LACP is supported"
         },
@@ -1166,7 +1215,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "etherchannel_pagp = child.re_match_typed('^\schannel-group\s\d+\smode\s(auto|desirable)')\n",
+            'iosxe': "etherchannel_pagp = child.re_match_typed('^\schannel-group\s\d+\smode\s(auto|desirable)')",
             'url':"https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Link_Aggregation_and_Load_Balancing",
             'note':"Only LACP is supported"
         },
@@ -1179,7 +1228,7 @@ if debug:\n\
             'meraki': {
                 'skip': True
             },
-            'iosxe': "etherchannel_lacp = child.re_match_typed('^\schannel-group\s(\d+)')\n"
+            'iosxe': "etherchannel_lacp = child.re_match_typed('^\schannel-group\s(\d+)')"
         },
 
         'etherchannel': {
@@ -1187,84 +1236,87 @@ if debug:\n\
             'regex': '',
             'meraki': {
                 'skip': 'post_ports',
-                'post_process': "\
-if 'etherchannel_lacp' in intf_settings:\n\
-    if debug:\n\
-        print('etherchannel_lacp = ' + intf_settings['etherchannel_lacp'])\n\
-    group = intf_settings['etherchannel_lacp']\n\
-    serial = sw_list[switch_num]\n\
-    portId = intf_settings['port']\n\
-    if debug:\n\
-        print('group = ' + group + ', switch_num = ' + str(switch_num) + ', serial = ' + serial + ', portId = ' + portId)\n\
-    etherchannel = {'group': group, 'switch_num': switch_num, 'serial': serial, 'portId': portId}\n\
-    if debug:\n\
-        print(etherchannel)\n\
-    return_vals = ['etherchannel']\n\
-    if debug:\n\
-        print(return_vals)\n",
-            'post_ports_process': "\
-if debug:\n\
-    print(f'In post_ports_process, post_ports_list = {post_ports_list}')\n\
-    print(f'Length of post_ports_list is {len(post_ports_list)}')\n\
-# Get a list of array positions where 'etherchannel' appears in our post_ports_list \n\
-channel_positions = [i for i in range(len(post_ports_list)) if post_ports_list[i][0] == 'etherchannel']\n\
-if debug:\n\
-    print(f'channel_positions = {channel_positions}')\n\
-# Create a dictionary of lists to hold the data needed to create each etherchannel \n\
-channel_dict = dict(list())\n\
-channel_port_dict = {}\n\
-#action_list = list()\n\
-x = 0\n\
-# Loop through the relevant positions in the post_ports_list, and append the required data \n\
-# to the dictionary of lists that holds the data for each etherchannel \n\
-while x < len(channel_positions):\n\
-    if debug:\n\
-        print(f'post_ports_list[channel_positions[x]][1] = {post_ports_list[channel_positions[x]][1]}')\n\
-    group = post_ports_list[channel_positions[x]][1]['group']\n\
-    # We need to remove 'group' from the dictionary of values now before adding the \n\
-    # other dictionary entries to the list that Dashboard will process for this \n\
-    # etherchannel group \n\
-    post_ports_list[channel_positions[x]][1].pop('group')\n\
-    post_ports_list[channel_positions[x]][1].pop('switch_num')\n\
-    if debug:\n\
-        print(f'group = {group}')\n\
-    if group not in channel_dict.keys():\n\
-        channel_dict[group] = []\n\
-    # Append the 'serial' and 'port' key, value pairs to the switchPorts list for this \n\
-    # etherchannel group \n\
-    channel_dict[group].extend([post_ports_list[channel_positions[x]][1]])\n\
-    if debug:\n\
-        print(f'In loop x = {x}, channel_dict = {channel_dict}')\n\
-    x+=1\n\
-if debug:\n\
-    print(f'channel_dict = {channel_dict}')\n\
-return_vals = list()\n\
-if debug:\n\
-    print(f'len(channel_dict) = {len(channel_dict)}')\n\
-key_list =list(channel_dict.keys())\n\
-x = 0\n\
-while x < len(key_list):\n\
-    if debug:\n\
-        print(f'key = {key_list[x]}, channel_dict[{key_list[x]}] = {channel_dict[key_list[x]]}')\n\
-        print(f'switchPorts = {channel_dict[key_list[x]]}')\n\
-        print('networkId = ' + returns_dict['networkId'])\n\
-    interface_descriptor = 'Port-channel' + key_list[x]\n\
-    channel_port_dict[interface_descriptor] = port_dict[interface_descriptor]\n\
-    channel_port_dict[interface_descriptor]['meraki_args'] = [returns_dict['networkId'],channel_dict[key_list[x]]]\n\
-    try:\n\
-        #action_list.append(dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key]))\n\
-        r = dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key_list[x]])\n\
-        if debug:\n\
-            print(f'channel_port_dict = {channel_port_dict}')\n\
-        channel_port_dict[interface_descriptor]['id'] = r['id']\n\
-        if debug:\n\
-            print(f'channel_port_dict[{interface_descriptor}] = {channel_port_dict[interface_descriptor]}')\n\
-            print(f'Dashboard response was {r}')\n\
-    except:\n\
-        print(f'Exception in port-channel')\n\
-        continue\n\
-    x+=1\n\
-return_vals = ['channel_port_dict']\n"
+                'post_process': """
+if 'etherchannel_lacp' in intf_settings:
+    if debug:
+        print('etherchannel_lacp = ' + intf_settings['etherchannel_lacp'])
+    group = intf_settings['etherchannel_lacp']
+    serial = sw_list[switch_num]
+    portId = intf_settings['port']
+    if debug:
+        print('group = ' + group + ', switch_num = ' + str(switch_num) + ', serial = ' + serial + ', portId = ' + portId)
+    etherchannel = {'group': group, 'switch_num': switch_num, 'serial': serial, 'portId': portId}
+    if debug:
+        print(etherchannel)
+    return_vals = ['etherchannel']
+    if debug:
+        print(return_vals)
+""",
+            'post_ports_process': """
+if debug:
+    print(f'In post_ports_process, post_ports_list = {post_ports_list}')
+    print(f'Length of post_ports_list is {len(post_ports_list)}')
+# Get a list of array positions where 'etherchannel' appears in our post_ports_list
+channel_positions = [i for i in range(len(post_ports_list)) if post_ports_list[i][0] == 'etherchannel']
+if debug:
+    print(f'channel_positions = {channel_positions}')
+# Create a dictionary of lists to hold the data needed to create each etherchannel
+channel_dict = dict(list())
+channel_port_dict = {}
+#action_list = list()
+x = 0
+# Loop through the relevant positions in the post_ports_list, and append the required data
+# to the dictionary of lists that holds the data for each etherchannel
+while x < len(channel_positions):
+    if debug:
+        print(f'post_ports_list[channel_positions[x]][1] = {post_ports_list[channel_positions[x]][1]}')
+    group = post_ports_list[channel_positions[x]][1]['group']
+    # We need to remove 'group' from the dictionary of values now before adding the
+    # other dictionary entries to the list that Dashboard will process for this
+    # etherchannel group
+    post_ports_list[channel_positions[x]][1].pop('group')
+    post_ports_list[channel_positions[x]][1].pop('switch_num')
+    if debug:
+        print(f'group = {group}')
+    if group not in channel_dict.keys():
+        channel_dict[group] = []
+    # Append the 'serial' and 'port' key, value pairs to the switchPorts list for this
+    # etherchannel group
+    channel_dict[group].extend([post_ports_list[channel_positions[x]][1]])
+    if debug:
+        print(f'In loop x = {x}, channel_dict = {channel_dict}')
+    x+=1
+if debug:
+    print(f'channel_dict = {channel_dict}')
+return_vals = list()
+if debug:
+    print(f'len(channel_dict) = {len(channel_dict)}')
+key_list =list(channel_dict.keys())
+x = 0
+while x < len(key_list):
+    if debug:
+        print(f'key = {key_list[x]}, channel_dict[{key_list[x]}] = {channel_dict[key_list[x]]}')
+        print(f'switchPorts = {channel_dict[key_list[x]]}')
+        print('networkId = ' + returns_dict['networkId'])
+    interface_descriptor = 'Port-channel' + key_list[x]
+    channel_port_dict[interface_descriptor] = port_dict[interface_descriptor]
+    channel_port_dict[interface_descriptor]['meraki_args'] = [returns_dict['networkId'],channel_dict[key_list[x]]]
+    try:
+        #action_list.append(dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key]))
+        r = dashboard.switch.createNetworkSwitchLinkAggregation(returns_dict['networkId'], switchPorts = channel_dict[key_list[x]])
+        if debug:
+            print(f'channel_port_dict = {channel_port_dict}')
+        channel_port_dict[interface_descriptor]['id'] = r['id']
+        if debug:
+            print(f'channel_port_dict[{interface_descriptor}] = {channel_port_dict[interface_descriptor]}')
+            print(f'Dashboard response was {r}')
+    except:
+        print(f'Exception in port-channel')
+        x+=1
+        continue
+    x+=1
+return_vals = ['channel_port_dict']
+"""
             }
         }
     },
@@ -1275,12 +1327,13 @@ return_vals = ['channel_port_dict']\n"
             'regex': '',
             'meraki': {
                 'skip': 'post_process',
-                'post_process': "\
-interfaceIp = ''\n\
-if 'l3_interface' in intf_settings.keys():\n\
-    import re\n\
-    if not intf_settings['l3_interface'] == '':\n\
-        interfaceIp = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', intf_settings['l3_interface'])[0]\n"
+                'post_process': """
+interfaceIp = ''
+if 'l3_interface' in intf_settings.keys():
+    import re
+    if not intf_settings['l3_interface'] == '':
+        interfaceIp = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', intf_settings['l3_interface'])[0]
+"""
             }
         },
 
@@ -1289,19 +1342,20 @@ if 'l3_interface' in intf_settings.keys():\n\
             'regex': '',
             'meraki': {
                 'skip': 'post_process',
-                'post_process': "\
-if 'l3_interface' in intf_settings.keys():\n\
-        import re\n\
-        subnet = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', intf_settings['l3_interface'])[0]\n\
-        import ipaddress\n\
-        if debug:\n\
-            print(f'intf_settings = {intf_settings}')\n\
-        subnet = str(ipaddress.ip_network(intf_settings['interfaceIp'] + '/' + subnet, strict=False))\n\
-        defaultGateway = switch_dict['default_route']['gw']\n\
-        if ipaddress.ip_address(defaultGateway) in ipaddress.ip_network(subnet):\n\
-            if debug:\n\
-                print(f'defaultGateway = {defaultGateway}')\n\
-            return_vals = ['defaultGateway']\n"
+                'post_process': """
+if 'l3_interface' in intf_settings.keys():
+        import re
+        subnet = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', intf_settings['l3_interface'])[0]
+        import ipaddress
+        if debug:
+            print(f'intf_settings = {intf_settings}')
+        subnet = str(ipaddress.ip_network(intf_settings['interfaceIp'] + '/' + subnet, strict=False))
+        defaultGateway = switch_dict['default_route']['gw']
+        if ipaddress.ip_address(defaultGateway) in ipaddress.ip_network(subnet):
+            if debug:
+                print(f'defaultGateway = {defaultGateway}')
+            return_vals = ['defaultGateway']
+"""
             }
         }
     }
@@ -1565,6 +1619,31 @@ nm_dict = {
     r'TwentyFiveGigE\d/1/8'
     ],
     "description": "Catalyst 9300 8 x 25G/10G/1G multi-rate SFP Network Module"
+  },
+    "C9300X-NM-8Y":
+  {
+    "supported": True,
+    "ports": [
+    r'TenGigabitEthernet\d/1/1',
+    r'TenGigabitEthernet\d/1/2',
+    r'TenGigabitEthernet\d/1/3',
+    r'TenGigabitEthernet\d/1/4',
+    r'TenGigabitEthernet\d/1/5',
+    r'TenGigabitEthernet\d/1/6',
+    r'TenGigabitEthernet\d/1/7',
+    r'TenGigabitEthernet\d/1/8',
+    r'TwentyFiveGigE\d/1/1',
+    r'TwentyFiveGigE\d/1/2',
+    r'TwentyFiveGigE\d/1/3',
+    r'TwentyFiveGigE\d/1/4',
+    r'TwentyFiveGigE\d/1/5',
+    r'TwentyFiveGigE\d/1/6',
+    r'TwentyFiveGigE\d/1/7',
+    r'TwentyFiveGigE\d/1/8',
+    r'HundredGigE\d/1/1',
+    r'HundredGigE\d/1/2'
+    ],
+    "description": "Catalyst 9300X 8 x 100G/25G/10G multi-rate SFP Network Module"
   }
 }
 

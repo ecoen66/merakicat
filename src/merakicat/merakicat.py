@@ -71,38 +71,38 @@ except ImportError:
     DEBUG = DEBUG_MAIN = PDF = False
 debug = DEBUG or DEBUG_MAIN
 
-# Check to see if we have the most recent encyclopedia
-# and update it if not
-# dstFile = "mc_pedia.py"
-# filetime = (time.strftime('%a, %d %b %Y %X GMT',
-#             time.gmtime(os.path.getmtime(dstFile))))
-# if debug:
-#     print("Checking if the local encyclopedia is older than a day.")
-#     print("File Last Modified: {0}".format(filetime))
-# url = "https://raw.githubusercontent.com/ecoen66/merakicat\
-# /main/src/merakicat/mc_pedia.py"
-# if debug:
-#     print(f"url = {url}")
-# if not os.path.exists(dstFile) or (
-#        os.path.getmtime(dstFile) < time.time() - 86400):
-#     if debug:
-#         print("It's been at least a day since we updated the encyclopedia.")
-#         print("Downloading a fresh copy.")
-#     try:
-#         urllib.request.urlretrieve(url, dstFile)
-#         if debug:
-#             print("Done.")
-#     except HTTPError as error:
-#         print(error.status, error.reason)
-#     except URLError as error:
-#         print(error.reason)
-#     except TimeoutError:
-#         print("Request timed out")
-# else:
-#     if debug:
-#         print("Not old enough to update.")
+Check to see if we have the most recent encyclopedia
+and update it if not
+dstFile = "mc_pedia2.py"
+filetime = (time.strftime('%a, %d %b %Y %X GMT',
+            time.gmtime(os.path.getmtime(dstFile))))
+if debug:
+    print("Checking if the local encyclopedia is older than a day.")
+    print("File Last Modified: {0}".format(filetime))
+url = "https://raw.githubusercontent.com/ecoen66/merakicat\
+/main/src/merakicat/mc_pedia2.py"
+if debug:
+    print(f"url = {url}")
+if not os.path.exists(dstFile) or (
+       os.path.getmtime(dstFile) < time.time() - 86400):
+    if debug:
+        print("It's been at least a day since we updated the encyclopedia.")
+        print("Downloading a fresh copy.")
+    try:
+        urllib.request.urlretrieve(url, dstFile)
+        if debug:
+            print("Done.")
+    except HTTPError as error:
+        print(error.status, error.reason)
+    except URLError as error:
+        print(error.reason)
+    except TimeoutError:
+        print("Request timed out")
+else:
+    if debug:
+        print("Not old enough to update.")
 
-from mc_pedia import mc_pedia
+from mc_pedia2 import mc_pedia
 
 # If we were run without arguments, run as a BOT
 # Otherwise, we will attempt to use the args in batch mode

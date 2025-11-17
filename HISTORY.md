@@ -1,12 +1,13 @@
 # History
 
-## 0.3.0 (11-16-2025)
+## 1.0.0 (11-16-2025)
 
   - Fixed issue with single switch "stacks".
   - Fixed issue where switches on unified versions of IOS XE would automatically reboot into Meraki mode.
   - Added compatibility with Early Adopters version of Meraki Dashboard API for unified IOS XE onboarding.
   - Fixed issue with special versions of IOS XE.
   - Reformatted the encyclopedia for easier updates and readability.
+  - Renamed the new encyclopedia, as it is no longer compatible with earlier versions of Merakicat.
   - Updated requirements
 
 ## 0.2.7 (03-23-2025)
