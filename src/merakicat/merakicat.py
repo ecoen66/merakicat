@@ -71,8 +71,8 @@ except ImportError:
     DEBUG = DEBUG_MAIN = PDF = False
 debug = DEBUG or DEBUG_MAIN
 
-Check to see if we have the most recent encyclopedia
-and update it if not
+# Check to see if we have the most recent encyclopedia
+# and update it if not
 dstFile = "mc_pedia2.py"
 filetime = (time.strftime('%a, %d %b %Y %X GMT',
             time.gmtime(os.path.getmtime(dstFile))))
