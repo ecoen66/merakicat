@@ -12,7 +12,7 @@ except ImportError:
     DEBUG = DEBUG_TRANSLATOR = False
 
 
-def Evaluate(config_file, nm_list):
+def Evaluate(config_file, nm_list, unified_os):
     """
     This parent function will evaluate a Catalyst switch config file and
     reports on which features that are being used can and cannot be mapped to
@@ -239,9 +239,11 @@ def Evaluate(config_file, nm_list):
         for key, value in interfaces_list.items():
             for value in interfaces_list_copy[key]:
                 if key == "HundredGigabitEthernet" or \
+                  key == "HundredGigE" or \
                   key == "FortyGigabitEthernet" or \
                   key == "TwentyFiveGigE" or \
                   key == "TenGigabitEthernet" or \
+                  key == "FiveGigabitEthernet" or \
                   key == "GigabitEthernet" or \
                   key == "FastEthernet" or \
                   key == "Vlan":
@@ -306,7 +308,8 @@ def Evaluate(config_file, nm_list):
 
 
 def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
-                  Intf_list, Other_list, switch_dict, nm_list):
+                  Intf_list, Other_list, switch_dict, nm_list, unified_os,
+                  meraki_api_key):
     """
     This parent function will convert Catalyst switch config features to
     Meraki features and send them to Dashboard to program Meraki switches.
@@ -378,7 +381,8 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
     args = list(dict())
 
     # Loop to go through all the ports of the switches
-    def loop_configure_meraki(port_dict, Intf_list, switch_dict):
+    def loop_configure_meraki(port_dict, Intf_list, switch_dict, unified_os,
+        meraki_api_key):
         """
         This sub-function does the actual work of setting the meraki functions
         based on the dictionary of IOSXE ports and features from Evaluate.
@@ -544,8 +548,11 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
             else:
                 # Setup the features for a logical L3 interface
                 # Setup the default features
+                stack_id = ""
+                if 'switchStackId' in returns_dict:
+                    stack_id = returns_dict['switchStackId']
                 args.append([returns_dict['networkId'],
-                            returns_dict['switchStackId'],
+                            stack_id,
                             interface_descriptor,
                             intf_settings['vlan'],
                             {}])
@@ -680,7 +687,7 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
                                 print(f"cp_list = {cp_list}")
                             for port in cp_list:
                                 switch_num = "stack" if len(
-                                    sw_list) > 1 else 1
+                                    sw_list) > 1 else 0
                                 conf_ports[switch_num].append(port)
                         if 'unconf_ports' in return_vals:
                             up_list = newvals['unconf_ports']
@@ -688,13 +695,15 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
                                 print(f"up_list = {up_list}")
                             for port in up_list:
                                 switch_num = "stack" if len(
-                                    sw_list) > 1 else 1
+                                    sw_list) > 1 else 0
                                 unconf_ports[switch_num].append(port)
                 item += 1
 
-            # This is not used yet, but I left this here in case we need
-            # it later for switch-level post ports processes
+            # This is used for switch-level post ports processes
             item = 0
+            if debug:
+              print(f"sw_list = {sw_list}")
+              print(f"locals() = {locals()}")
             while item < len(short_list):
                 if debug:
                     print(f"short_list[{item}] = {short_list[item]}")
@@ -713,7 +722,8 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
 
         if debug:
             print(f"\n\naction_list = {action_list}\n\n")
-    loop_configure_meraki(port_dict, Intf_list, switch_dict)
+    loop_configure_meraki(port_dict, Intf_list, switch_dict, unified_os,
+        meraki_api_key)
 
     # Combine all of the action_list sublists into a larger set for batching
     x = 0

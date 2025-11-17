@@ -54,6 +54,7 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password,
             maybe_sudi = regex.split(sudi_chain)[1]
             print(f"maybe_sudi = \n{maybe_sudi}")
             sudi = maybe_sudi.replace('\n','\n        ')
+            #sudi = maybe_sudi.replace('\r\n','\n')
             print(f"sudi = \n{sudi}")
 
     net_connect.send_command('term len 24')
@@ -68,15 +69,15 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password,
     dev_info = {
         "sudi": sudi,
         "tunnel": {
-            "certificateName": "CISCO_IDEVID_SUDI",
+            "certificateName": "MERAKI_TLSGW_CA",
             "name": "MERAKI-PRIMARY",
             "loopbackNumber": 1000,
             "localInterface": 1
         },
         "user": { "username": "meraki-user" },
         "vty": {
-            "startLineNumber": 16,
-            "endLineNumber": 19,
+            "startLineNumber": 18,
+            "endLineNumber": 21,
             "authentication": {
                 "group": {
                     "name": "MERAKI"
@@ -89,10 +90,10 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password,
             },
             "accessList": {
                 "vtyIn": {
-                    "name": "MERAKI_IN"
+                    "name": "MERAKI_VTY_IN"
                 },
                 "vtyOut": {
-                    "name": "MERAKI_OUT"
+                    "name": "MERAKI_VTY_OUT"
                 }
             },
             "rotaryNumber": 50
@@ -103,7 +104,7 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password,
         "sudi": sudi
     }
 
-    devices.append(dev_info2)
+    devices.append(dev_info)
     # devices = []
     # devices = [{'sudi': '-----BEGIN CERTIFICATE-----\n        MIIDyTCCArGgAwIBAgIKBBNXOVCGU1YztjANBgkqhkiG9w0BAQsFADAnMQ4wDAYD\n        VQQKEwVDaXNjbzEVMBMGA1UEAxMMQUNUMiBTVURJIENBMB4XDTIxMDUzMTEzNTUx\n        NVoXDTI5MDUxNDIwMjU0MVowbTEpMCcGA1UEBRMgUElEOkM5MjAwTC0yNFAtNEcg\n        U046SkFFMjUyMjBSMksxDjAMBgNVBAoTBUNpc2NvMRgwFgYDVQQLEw9BQ1QtMiBM\n        aXRlIFNVREkxFjAUBgNVBAMTDUM5MjAwTC0yNFAtNEcwggEiMA0GCSqGSIb3DQEB\n        AQUAA4IBDwAwggEKAoIBAQDaUPxW76gT5MdoEAt+UrDFiYA9RYh2iHicDViBEyow\n        TR1TuP36bHh13X3vtGiDsCD88Ci2TZIqd/EDkkc7v9ipUUYVVH+YDrPt2Aukb1PH\n        D6K0R+KhgEzRo5x54TlU6oWvjUpwNZUwwdhMWIQaUVkMyZBYNy0jGPLO8jwZhyBg\n        1Fneybr9pwedGbLrAaz+gdEikB8B4a/fvPjVfL5Ngb4QRjFqWuE+X3nLc0kHedep\n        6nfgpUNXMlStVm5nIXKP6OjmzfCHPYh9L2Ehs1TrSk1ser9Ofx0ZMVL/jBZR2EIj\n        OZ8tH6KlX2/B2pbSPIO6kD5c4UA8Cf1SbDJCwJ/kI9ihAgMBAAGjgbAwga0wDgYD\n        VR0PAQH/BAQDAgXgMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUSNjx8cJw1Vu7\n        fHMJk6+4uDAD+H8wTQYDVR0RBEYwRKBCBgkrBgEEAQkVAgOgNRMzQ2hpcElEPVVV\n        VUNNaElGcUVFMklFUUVBQWNBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE9MB0GA1Ud\n        DgQWBBRdhMkFD/z5hokaQeLbaRsp4hkvbzANBgkqhkiG9w0BAQsFAAOCAQEAMtuh\n        YpBz4xEZ7YdJsLpw67Q0TTJGnTBRpzAeY1urYDoDz8TSx556XG7z3IRzuED5KVSp\n        OwmH/iZ+tDfYQ3W3ElWTW93871DkuW4WQIfbnoHg/F7bF0DKYVkD3rpZjyz3NhzH\n        d7cjTdJXQ85bTAOXDuxKH3qewrXxxOGXgh3I6NUq0UwMTWh84lND7Jl+ZAQkYNS2\n        iHanTZFQBk3ML0NUb7fKDYGRTZRqwQ/upIO4S6LV1cxH/6V0qbMy3sCSHZoMLrW3\n        0m3M6yKpe5+VZzHZwmWdUf3Ot+zKjhveK5/YNsMIASdvtvymxUizq2Hr1hvR/kPc\n        p1vuyWxipU8JfzOh/A==\n        -----END CERTIFICATE-----\n        ', 'tunnel': {'certificateName': 'DeviceSUDI', 'name': 'MERAKI', 'loopbackNumber': 1000, 'localInterface': 1}, 'user': {'username': 'Meraki'}, 'vty': {'startLineNumber': 16, 'endLineNumber': 17, 'authentication': {'group': {'name': ''}}, 'authorization': {'group': {'name': 'MERAKI'}}, 'accessList': {'vtyIn': {'name': 'MERAKI_IN'}, 'vtyOut': {'name': 'MERAKI_OUT'}}, 'rotaryNumber': 50}}]
 
@@ -111,6 +112,10 @@ def CloudSwitch(dashboard, meraki_org, host_id, ios_username, ios_password,
     print(f"meraki_org = {meraki_org}")
     response = dashboard.organizations.getOrganizationInventoryOnboardingCloudMonitoringNetworks(meraki_org, 'switch', total_pages='all')
     print(f"Response = {response}")
-    response = dashboard.organizations.createOrganizationInventoryOnboardingCloudMonitoringPrepare(meraki_org, devices)
-    print(f"Response = {response}")
+    try:
+        response = dashboard.organizations.createOrganizationInventoryOnboardingCloudMonitoringPrepare(meraki_org, devices)
+    except meraki.exceptions.APIError as error:
+        print(error)
+    else:
+        print(f"Response = {response}")
     return(switch_name, config_file)

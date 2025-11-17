@@ -6,13 +6,16 @@ except ImportError:
     DEBUG = DEBUG_CLAIM = False
 
 
-def Claim(dashboard, dest_net, serials):
+def Claim(dashboard, dest_net, serials, ios_username, ios_password, ios_secret):
     """
     This function will claim a set of Meraki network device serial numbers
     to a Meraki network.
     :param dashboard: The active Meraki dashboard API session to use
     :param dest_net: The destination Meraki network to claim the devices to
     :param serials: The serial numbers of the Meraki network devices to claim
+    :param ios_username: Username for SSH from Dashboard
+    :param ios_password: Password for SSH from Dashboard
+    :param ios_secret: IOSXE secret password for CLI escalation
     :return: A string with any issues encountered, and lists of devices that
     :      : could not be claimed, claimed devices, already claimed devices
     """
@@ -67,13 +70,35 @@ def Claim(dashboard, dest_net, serials):
                 print(f'error = {e.message}')
             continue
 
-    x = 0
-    while x <= len(serials)-1:
+    # x = 0
+    #while x <= len(serials)-1:
+    for serial in serials:
         try:
             r = (dashboard.networks.claimNetworkDevices(
-                 networkId=dest_net, serials=[serials[x]]))
+                 networkId=dest_net, serials=[serial], detailsByDevice=[
+                   {
+                    "serial": serial,
+                    "details": [
+                      {
+                        "name": "username",
+                        "value": ios_username
+                      },
+                      {
+                        "name": "password",
+                        "value": ios_password
+                      },
+                      {
+                        "name": "enable password",
+                        "value": ios_secret
+                      }
+                    ]
+                   }
+                 ]
+                )
+            )
+
             if debug:
-                print(f"issues from Dashboard for claiming switch {serials[x]} was:\n{r}")
+                print(f"issues from Dashboard for claiming switch {serial} was:\n{r}")
         # Oops, we got a Dashboard ERROR while claiming switches to the network
         except meraki.APIError as e:
             if debug:
@@ -85,7 +110,7 @@ def Claim(dashboard, dest_net, serials):
             # into Already Claimed and Not Found
             # If it is already claimed...
             if re.search('Devices already claimed', e.message['errors'][0]):
-                ac_switch = serials[x]
+                ac_switch = serial
 
                 # If it is already claimed in the desired network
                 # remove it from the claimed_switches list and append it to
@@ -98,7 +123,7 @@ def Claim(dashboard, dest_net, serials):
             # remove it from the claimed_switches list and
             # append a ERROR to the issues string
             elif re.search('not found', e.message['errors'][0]):
-                bad_switch = serials[x]
+                bad_switch = serial
                 bad_switches.append(serial)
                 claimed_switches.remove(bad_switch)
                 issues += "Error: Switch "+bad_switch+" was not found.\n"
@@ -108,6 +133,5 @@ def Claim(dashboard, dest_net, serials):
                 print(f"claimed_switches = {claimed_switches}")
                 print(f"ac_switches = {ac_switches}")
                 print(f"bad_switches = {bad_switches}")
-        x += 1
 
     return (issues, bad_switches, ac_switches, claimed_switches)

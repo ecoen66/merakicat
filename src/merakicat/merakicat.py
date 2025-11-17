@@ -73,34 +73,34 @@ debug = DEBUG or DEBUG_MAIN
 
 # Check to see if we have the most recent encyclopedia
 # and update it if not
-dstFile = "mc_pedia.py"
-filetime = (time.strftime('%a, %d %b %Y %X GMT',
-            time.gmtime(os.path.getmtime(dstFile))))
-if debug:
-    print("Checking if the local encyclopedia is older than a day.")
-    print("File Last Modified: {0}".format(filetime))
-url = "https://raw.githubusercontent.com/ecoen66/merakicat\
-/main/src/merakicat/mc_pedia.py"
-if debug:
-    print(f"url = {url}")
-if not os.path.exists(dstFile) or (
-       os.path.getmtime(dstFile) < time.time() - 86400):
-    if debug:
-        print("It's been at least a day since we updated the encyclopedia.")
-        print("Downloading a fresh copy.")
-    try:
-        urllib.request.urlretrieve(url, dstFile)
-        if debug:
-            print("Done.")
-    except HTTPError as error:
-        print(error.status, error.reason)
-    except URLError as error:
-        print(error.reason)
-    except TimeoutError:
-        print("Request timed out")
-else:
-    if debug:
-        print("Not old enough to update.")
+# dstFile = "mc_pedia.py"
+# filetime = (time.strftime('%a, %d %b %Y %X GMT',
+#             time.gmtime(os.path.getmtime(dstFile))))
+# if debug:
+#     print("Checking if the local encyclopedia is older than a day.")
+#     print("File Last Modified: {0}".format(filetime))
+# url = "https://raw.githubusercontent.com/ecoen66/merakicat\
+# /main/src/merakicat/mc_pedia.py"
+# if debug:
+#     print(f"url = {url}")
+# if not os.path.exists(dstFile) or (
+#        os.path.getmtime(dstFile) < time.time() - 86400):
+#     if debug:
+#         print("It's been at least a day since we updated the encyclopedia.")
+#         print("Downloading a fresh copy.")
+#     try:
+#         urllib.request.urlretrieve(url, dstFile)
+#         if debug:
+#             print("Done.")
+#     except HTTPError as error:
+#         print(error.status, error.reason)
+#     except URLError as error:
+#         print(error.reason)
+#     except TimeoutError:
+#         print("Request timed out")
+# else:
+#     if debug:
+#         print("Not old enough to update.")
 
 from mc_pedia import mc_pedia
 
@@ -241,6 +241,7 @@ api = ""
 payload = None
 configured_ports = defaultdict(list)
 unconfigured_ports = defaultdict(list)
+unified_os = False
 command_line_msg = Response()
 times = False
 report = False
@@ -986,7 +987,7 @@ def save(file):
 # ------------------------------------------------------------------------
 
 
-def check_network(incoming_msg, dest_net, targets=['C9300']):
+def check_network(incoming_msg, dest_net, targets=['C9300','9200']):
     """
     This function will get a list of all switches in a Meraki network, parse
     it for any cloud-monitored Catalyst switches that cold be cloud-managed.
@@ -1007,7 +1008,7 @@ def check_network(incoming_msg, dest_net, targets=['C9300']):
     try:
         devices = dashboard.networks.getNetworkDevices(dest_net)
     except meraki.exceptions.APIError:
-        r = "We were unable to get the list of devices for that network."
+        r = "We were unable to get the list of devices for that network. (Meraki network names are case sensitive.)"
         return (r)
     if debug:
         print(f"devices = {devices}")
@@ -1015,7 +1016,7 @@ def check_network(incoming_msg, dest_net, targets=['C9300']):
     # Loop through the devices searching for cloud monitored C9300s
     success_list = list()
     if targets == []:
-        targets = ['C9300']
+        targets = ['C9300','9200']
     if debug:
         print(f"targets = {targets}")
     x = 0
@@ -1593,7 +1594,7 @@ def register_switch(incoming_msg, host="", called=""):
     start_time = time.time()
 
     # Import the global stateful variables
-    global host_id, meraki_serials, nm_list, times
+    global host_id, meraki_serials, nm_list, times, unified_os
 
     # Since we weren't passed a config filespec, check for a hostname
     # or IP address
@@ -1607,7 +1608,8 @@ def register_switch(incoming_msg, host="", called=""):
     # SSH to the switch with netmiko, read the config, grab the hostname,
     # write the config out to a file using the hostname as part of the
     # filespec
-    status, issues, registered_switches, registered_serials, nm_list =\
+    status, issues, registered_switches, registered_serials, nm_list, \
+        unified_os = \
         Register(host, ios_username, ios_password, ios_port, ios_secret)
     if debug:
         print(f"In register_switch, status = {status}")
@@ -1695,7 +1697,10 @@ def claim_switch(incoming_msg,
 
     issues, bad_switches, ac_switches, claimed_switches = Claim(dashboard,
                                                                 dest_net,
-                                                                serials)
+                                                                serials,
+                                                                ios_username,
+                                                                ios_password,
+                                                                ios_secret)
 
     # If the claim went fine, update the global stateful variables for later
     if len(bad_switches) == 0:
@@ -1754,7 +1759,7 @@ def translate_switch(
 
     # Import the global stateful variables
     global config_file, host_id, meraki_org, meraki_serials
-    global meraki_urls, nm_list, times
+    global meraki_urls, nm_list, meraki_api_key, unified_os, times
 
     if debug:
         print(f"In translate, config_file = {config_file}")
@@ -1823,7 +1828,7 @@ def translate_switch(
 
     # Evaluate the Catalyst config and break it into lists we can work with
     Intf_list, Other_list, port_dict, switch_dict = \
-        Evaluate(config_file, nm_list)
+        Evaluate(config_file, nm_list, unified_os)
 
     # Creating a list of the downlink port configurations to push to Meraki
     ToBeConfigured = {}
@@ -1863,7 +1868,9 @@ def translate_switch(
                                                      Intf_list,
                                                      Other_list,
                                                      switch_dict,
-                                                     nm_list)
+                                                     nm_list,
+                                                     unified_os,
+                                                     meraki_api_key)
 
     if debug:
         print(f"configured_ports = {configured_ports}")
@@ -1936,7 +1943,7 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     start_time = time.time()
 
     # Import the global stateful variables
-    global config_file, host_id, nm_list, times
+    global config_file, host_id, nm_list, unified_os, times
     global meraki_net, meraki_net_name, meraki_serials, meraki_urls
 
     # Clear some variables for the next step
@@ -2096,9 +2103,15 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
         r += "SO YOU DO SO AT YOUR OWN RISK!"
     r += "\n To convert the switch, enter the following:\n"
     if BOT:
-        r += "```\nenable\nservice meraki start"
+        if unified_os:
+            r += "```\nenable\nconfig t\nservice meraki connect"
+        else:
+            r += "```\nenable\nservice meraki start"
     else:
-        r += "\n    enable\n    service meraki start"
+        if unified_os:
+            r += "\n    enable\n    config t\n    service meraki connect"
+        else:
+            r += "\n    enable\n    service meraki start"
     return (r)
 
 
