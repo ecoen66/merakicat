@@ -1,6 +1,6 @@
 # History
 
-## 1.0.0 (11-16-2025)
+## 1.0.1 (11-16-2025)
 
   - Fixed issue with single switch "stacks".
   - Fixed issue where switches on unified versions of IOS XE would automatically reboot into Meraki mode.
