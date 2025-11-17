@@ -68,7 +68,7 @@ If you don't already have a [Webex Teams](https://www.webex.com/products/teams/i
 
 # Installation
 
-> Python 3.11+ is recommended.
+> Python 3.11 is recommended.
 
  - Clone the github repository and install the requirements
 
