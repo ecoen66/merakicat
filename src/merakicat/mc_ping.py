@@ -1,7 +1,6 @@
 import subprocess
 import platform
 
-
 def Ping(host):
     """
     Returns True if host (str) responds to a ping request.
@@ -12,9 +11,12 @@ def Ping(host):
     """
 
     # Option for the number of packets as a function of
-    param = '-n' if platform.system().lower() == 'windows' else '-c'
+    if platform.system().lower() == 'windows':
+        result = subprocess.run(f'ping -n 1 {host}', capture_output=True, text=True)
+        reachable = result.returncode == 0
+    else:
+        reachable = subprocess.call(f'ping -c 1 {host} -q', stdout=subprocess.DEVNULL) == 0
 
-    # Building the command. Ex: "ping -c 1 google.com"
-    command = ['ping', param, '1', '-q', host]
-
-    return subprocess.call(command, stdout=subprocess.DEVNULL) == 0
+    print(f"reachable:  {reachable}")
+    
+    return reachable
