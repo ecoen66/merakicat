@@ -5,7 +5,7 @@ This package makes migrating [Cisco](https://www.cisco.com) Catalyst switches to
 
 ![merakicat](https://github.com/ecoen66/merakicat/raw/main/images/mc_quick.gif)
 
-This Python app can be run in Webex Teams [Bot mode](#Bot) or in [command-line mode](#command-line).  It can also be called from shell scripts for [bulk-mode](#bulk-mode).
+This Python app can be run in Webex Teams [Bot mode](#Bot) or in [command-line mode](#command-line).  
 
 Below is the list of configurations the tool can currently translate:
 
@@ -156,10 +156,25 @@ Check a Catalyst switch config for both translatable and possible Meraki feature
 cd src/merakicat
 python merakicat.py check host <FQDN or IP address> | file <filespec> [with timing] [with details]
 ```
+Check a list of switches specified in a CSV or Excel file (use `hosts_template.xlsx` as a template):
+```
+cd src/merakicat
+check hosts <filespec> [with timing]
+```
 Check the configs of cloud monitored Catalyst switches for both translatable and possible Meraki features:
 ```
 cd src/merakicat
 python merakicat.py check network <Meraki network name> [with timing] [with details]
+```
+Get the Cloud ID for a Catalyst switch:
+```
+cd src/merakicat
+python merakicat.py get cloud-id <FQDN or IP address> [with timing]
+```
+Get Cloud IDs for hosts listed in a CSV or Excel file (use `hosts_template.xlsx` as a template):
+```
+cd src/merakicat
+python merakicat.py get cloud-ids <filespec> [with timing]
 ```
 Register a Catalyst switch or stack to the Meraki Dashboard:
 ```
@@ -192,11 +207,6 @@ python merakicat.py demo report
 
 To run merakicat in bulk-mode, create a shell script to call merakicat in command line mode.  Example scripts included in the repo are:
 
-Generate Check config reports for a list of Catalyst switches, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
-```
-cd src/merakicat
-bulk_check.sh <input file>
-```
 Migrate a list of Catalyst switches to a Meraki network, 20 switches at a time, until the entire list is exhausted. The list is provided in an input file, one hostname/fqdn/IP address per line:
 ```
 cd src/merakicat

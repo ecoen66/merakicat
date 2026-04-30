@@ -6,6 +6,8 @@ import sys
 from ciscoconfparse2 import CiscoConfParse
 from collections import defaultdict
 from mc_pedia2 import mc_pedia, nm_dict
+import mc_meraki_dry_run
+
 try:
     from mc_user_info import DEBUG, DEBUG_TRANSLATOR
 except ImportError:
@@ -40,18 +42,18 @@ def Evaluate(config_file, nm_list, unified_os):
         :      : dictionary with all the ports and their settings, and the
         :      : hostname
         """
-        for key, val in mc_pedia['switch'].items():
+        for key, val in mc_pedia["switch"].items():
             switch_dict[key] = ""
         if debug:
             print(f"switch_dict = {switch_dict}")
         # Parsing the Cisco Catalyst configuration
         if debug:
-            print("-------- Reading <"+config_file+"> Configuration --------")
-        parse = CiscoConfParse(config_file, syntax='ios', factory=True)
+            print("-------- Reading <" + config_file + "> Configuration --------")
+        parse = CiscoConfParse(config_file, syntax="ios")
         # Try out our mc_pedia for the switch name
-        for key, val in mc_pedia['switch'].items():
+        for key, val in mc_pedia["switch"].items():
             newvals = {}
-            exec(val.get('iosxe'), locals(), newvals)
+            exec(val.get("iosxe"), locals(), newvals)
             switch_dict[key] = newvals[key]
             if debug:
                 print(f"switch_dict['{key}'] = {switch_dict[key]}")
@@ -64,38 +66,41 @@ def Evaluate(config_file, nm_list, unified_os):
         All_interfaces = defaultdict(list)
 
         # Grab all shutdown interfaces
-        intf_for_test = parse.find_parent_objects([
-            r'^interface',
-            r'^\s+shutdown'])
+        intf_for_test = parse.find_parent_objects([r"^interface", r"^\s+shutdown"])
         # Remove the management, Loopback, and AppGig interfaces from
         # the intf_for_test list
-        intf_for_test[:] = [y for y in intf_for_test if not (
-            y.re_match_typed(
-                r'^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
-            y.re_match_typed(
-                r'^interface\s+(\S.*)$').startswith("Loopback") or
-            y.re_match_typed(r'^interface\s+(\S.*)$').startswith("AppGig"))]
+        intf_for_test[:] = [
+            y
+            for y in intf_for_test
+            if not (
+                y.re_match_typed(r"^interface\s+(\S.*)$") == "GigabitEthernet0/0"
+                or y.re_match_typed(r"^interface\s+(\S.*)$").startswith("Loopback")
+                or y.re_match_typed(r"^interface\s+(\S.*)$").startswith("AppGig")
+            )
+        ]
         # Test the remaining interfaces for shutdown and add to shut list
         for intf_obj in intf_for_test:
-            shut_interfaces.append(
-                intf_obj.re_match_typed(r'^interface\s+(\S.+?)$'))
+            shut_interfaces.append(intf_obj.re_match_typed(r"^interface\s+(\S.+?)$"))
 
         # Select all interfaces
-        intf = parse.find_objects(r'^interface')
+        intf = parse.find_objects(r"^interface")
         if debug:
             print(f"intf = {intf}")
         # Remove the management, Loopback, and AppGig interfaces from
         # the interface list
-        intf[:] = [x for x in intf if not (
-            x.re_match_typed(
-                r'^interface\s+(\S.*)$') == "GigabitEthernet0/0" or
-            x.re_match_typed(
-                r'^interface\s+(\S.*)$').startswith("Loopback") or
-            x.re_match_typed(r'^interface\s+(\S.*)$').startswith("AppGig"))]
+        intf[:] = [
+            x
+            for x in intf
+            if not (
+                x.re_match_typed(r"^interface\s+(\S.*)$") == "GigabitEthernet0/0"
+                or x.re_match_typed(r"^interface\s+(\S.*)$").startswith("Loopback")
+                or x.re_match_typed(r"^interface\s+(\S.*)$").startswith("AppGig")
+            )
+        ]
 
         for intf_obj in intf:
             # Get the interface name
-            intf_name = intf_obj.re_match_typed(r'^interface\s+(\S.*)$')
+            intf_name = intf_obj.re_match_typed(r"^interface\s+(\S.*)$")
             # Default to include this interface_descriptor
             intf_include = True
 
@@ -107,64 +112,70 @@ def Evaluate(config_file, nm_list, unified_os):
                     Switch_module = "0"
                 else:
                     Switch_module = intf_obj.re_match_typed(
-                        r'^interface\s\S+?thernet+(\d)')
+                        r"^interface\s\S+?thernet+(\d)"
+                    )
                     if Switch_module == "":
                         Switch_module = intf_obj.re_match_typed(
-                            r'^interface\s\S+?GigE+(\d)')
+                            r"^interface\s\S+?GigE+(\d)"
+                        )
                 port, sub_module = check(intf_name)
                 if sub_module == "1":
                     intf_include = False
                     if debug:
                         print(f"Switch_module = {Switch_module}")
                         print(f"nm_list = {nm_list}")
-                    if not nm_list[int(Switch_module)-1] == "":
-                        if nm_dict[
-                              nm_list[int(Switch_module)-1]]['supported']:
-                            for regex in nm_dict[
-                              nm_list[int(Switch_module)-1]]['ports']:
-                                if re.match(regex,intf_name):
+                    if not nm_list[int(Switch_module) - 1] == "":
+                        if nm_dict[nm_list[int(Switch_module) - 1]]["supported"]:
+                            for regex in nm_dict[nm_list[int(Switch_module) - 1]][
+                                "ports"
+                            ]:
+                                if re.match(regex, intf_name):
                                     # Make sure it has some settings,
                                     # or skip it
                                     if not intf_obj.children == []:
                                         intf_include = True
                                         if debug:
-                                            print(f"I matched {intf_name} "+
-                                                  f"to {regex}\n")
+                                            print(
+                                                f"I matched {intf_name} "
+                                                + f"to {regex}\n"
+                                            )
                                         break
                 if intf_include:
                     # If we are including the interfaces, let's set a few
                     # default settings
                     All_interfaces[only_intf_name].append(intf_name)
                     port_dict[intf_name] = {}
-                    port_dict[intf_name]['sw_module'] = "1"
-                    port_dict[intf_name]['sub_module'] = sub_module
-                    port_dict[intf_name]['port'] = port
-                    port_dict[intf_name]['mac'] = []
-                    port_dict[intf_name]['active'] = "true"
+                    port_dict[intf_name]["sw_module"] = "1"
+                    port_dict[intf_name]["sub_module"] = sub_module
+                    port_dict[intf_name]["port"] = port
+                    port_dict[intf_name]["mac"] = []
+                    port_dict[intf_name]["active"] = "true"
 
                     if debug:
                         print("Made it to Switch_module test")
                     if Switch_module == "0":
-                        port_dict[intf_name]['sw_module'] = "1"
+                        port_dict[intf_name]["sw_module"] = "1"
                     if not Switch_module == "" and not Switch_module == "0":
-                        port_dict[intf_name]['sw_module'] = Switch_module
+                        port_dict[intf_name]["sw_module"] = Switch_module
 
-                    port_dict[intf_name]['mac'].clear()
+                    port_dict[intf_name]["mac"].clear()
                     # Check if the interface in the shutdown list then
                     # mark it as shutdown
                     if intf_name in shut_interfaces:
-                        port_dict[intf_name]['active'] = "false"
+                        port_dict[intf_name]["active"] = "false"
 
             else:
                 # interface Vlan
                 All_interfaces[only_intf_name].append(intf_name)
                 port_dict[intf_name] = {}
-                port_dict[intf_name]['active'] = "true"
-                port_dict[intf_name]['vlan'] = intf_obj.re_match_typed(
-                    r'^interface\sVlan(\d+)')
+                port_dict[intf_name]["active"] = "true"
+                port_dict[intf_name]["vlan"] = intf_obj.re_match_typed(
+                    r"^interface\sVlan(\d+)"
+                )
                 if debug:
-                    print(f"for {intf_name}, vlan is " +
-                          f"{port_dict[intf_name]['vlan']}")
+                    print(
+                        f"for {intf_name}, vlan is " + f"{port_dict[intf_name]['vlan']}"
+                    )
 
             if intf_include:
                 if debug:
@@ -175,24 +186,21 @@ def Evaluate(config_file, nm_list, unified_os):
 
                 # Capture the configuration of the interface
                 port_sec_raw = max_mac = ""
-                r = \
-                  r'\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)'
+                r = r"\sswitchport\sport-security\smac-address\ssticky\s+(\S.+)"
                 for child in int_fx:
                     # Try out our mc_pedia
                     if debug:
                         print(f"child = {child}")
-                    for key, val in mc_pedia['port'].items():
+                    for key, val in mc_pedia["port"].items():
                         newvals = {}
                         if debug:
                             print(f"key, val = {key},{val}")
-                        if not val['regex'] == "":
-                            if not child.re_match_typed(
-                              regex=val['regex']) == "":
-                                if not val['iosxe'] == "":
-                                    exec(val.get('iosxe'), locals(), newvals)
+                        if not val["regex"] == "":
+                            if not child.re_match_typed(regex=val["regex"]) == "":
+                                if not val["iosxe"] == "":
+                                    exec(val.get("iosxe"), locals(), newvals)
                                     if debug:
-                                        print(f"newvals[{key}] = " +
-                                              f"{newvals[key]}")
+                                        print(f"newvals[{key}] = " + f"{newvals[key]}")
                                     if not newvals[key] == "":
                                         i = intf_name
                                         port_dict[i][key] = newvals[key]
@@ -201,19 +209,16 @@ def Evaluate(config_file, nm_list, unified_os):
                     except:
                         pass
                     try:
-                        regex = r'\sswitchport\sport-security\smaximum\s+(\d)'
+                        regex = r"\sswitchport\sport-security\smaximum\s+(\d)"
                         max_mac = child.re_match_typed(regex=regex)
                     except:
                         pass
                     if not port_sec_raw == "":
-                        port_dict[intf_name]['mac'].append(
-                          mac_build(port_sec_raw))
+                        port_dict[intf_name]["mac"].append(mac_build(port_sec_raw))
                     if not max_mac == "":
-                        port_dict[intf_name]['Port_Sec'] = max_mac
+                        port_dict[intf_name]["Port_Sec"] = max_mac
 
-        Intf_list, Other_list = split_down_up_link(
-            All_interfaces,
-            Gig_uplink)
+        Intf_list, Other_list = split_down_up_link(All_interfaces, Gig_uplink)
         if debug:
             print(f"Intf_list = {Intf_list}\n")
             print(f"Other_list = {Other_list}\n")
@@ -238,15 +243,17 @@ def Evaluate(config_file, nm_list, unified_os):
             print(f"interfaces_list = {interfaces_list}\n")
         for key, value in interfaces_list.items():
             for value in interfaces_list_copy[key]:
-                if key == "HundredGigabitEthernet" or \
-                  key == "HundredGigE" or \
-                  key == "FortyGigabitEthernet" or \
-                  key == "TwentyFiveGigE" or \
-                  key == "TenGigabitEthernet" or \
-                  key == "FiveGigabitEthernet" or \
-                  key == "GigabitEthernet" or \
-                  key == "FastEthernet" or \
-                  key == "Vlan":
+                if (
+                    key == "HundredGigabitEthernet"
+                    or key == "HundredGigE"
+                    or key == "FortyGigabitEthernet"
+                    or key == "TwentyFiveGigE"
+                    or key == "TenGigabitEthernet"
+                    or key == "FiveGigabitEthernet"
+                    or key == "GigabitEthernet"
+                    or key == "FastEthernet"
+                    or key == "Vlan"
+                ):
                     # pass
                     Intf_list.append(value)
                 else:
@@ -254,7 +261,7 @@ def Evaluate(config_file, nm_list, unified_os):
         return Intf_list, Other_list
 
     # rebuild the mac address to match Meraki format
-    def mac_build(my_str, group=2, char=':'):
+    def mac_build(my_str, group=2, char=":"):
         """
         This sub-function takes an IOSXE MAC address and reformats it into the
         Meraki format.
@@ -263,12 +270,11 @@ def Evaluate(config_file, nm_list, unified_os):
         :param char: The delimiter to use between digit groupings
         :return: A string containing the translate MAC address
         """
-        port_sec = re.findall(re.compile(r'[a-fA-F0-9.]{14}'), my_str)[0]
+        port_sec = re.findall(re.compile(r"[a-fA-F0-9.]{14}"), my_str)[0]
         new_p = re.sub("\.", "", port_sec)  # DO NOT EDIT THIS FOR FLAKE8!
         my_str = str(new_p)
 
-        last = char.join(my_str[i:i+group]
-                         for i in range(0, len(my_str), group))
+        last = char.join(my_str[i : i + group] for i in range(0, len(my_str), group))
         return last
 
     # Extract out the details of the switch module and the port number
@@ -281,8 +287,7 @@ def Evaluate(config_file, nm_list, unified_os):
         """
         if debug:
             print(f"Checking interface {intf}.")
-        obj = re.search(
-          r'(?:Ethernet|GigE|channel)(\d+)\/(\d+)\/(\d+)$', intf)
+        obj = re.search(r"(?:Ethernet|GigE|channel)(\d+)\/(\d+)\/(\d+)$", intf)
         if obj is not None:
             if debug:
                 print(f"obj.group(0) = {obj.group(0)}")
@@ -292,7 +297,7 @@ def Evaluate(config_file, nm_list, unified_os):
             port = obj.group(3)
             Sub_module = obj.group(2)
         else:
-            obj = re.search(r'(?:channel)(\d+)$', intf)
+            obj = re.search(r"(?:channel)(\d+)$", intf)
             if debug:
                 print(f"obj.group(0) = {obj.group(0)}")
                 print(f"obj.group(1) = {obj.group(1)}")
@@ -307,9 +312,19 @@ def Evaluate(config_file, nm_list, unified_os):
     return Interfaces, Others, port_dict, switch_dict
 
 
-def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
-                  Intf_list, Other_list, switch_dict, nm_list, unified_os,
-                  meraki_api_key):
+def MerakiConfig(
+    dashboard,
+    organization_id,
+    switch_path,
+    sw_list,
+    port_dict,
+    Intf_list,
+    Other_list,
+    switch_dict,
+    nm_list,
+    unified_os,
+    meraki_api_key,
+):
     """
     This parent function will convert Catalyst switch config features to
     Meraki features and send them to Dashboard to program Meraki switches.
@@ -329,36 +344,38 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
 
     # Make sure that the switches we are translating to have the same
     # number of ports
-    sw_check_list=list()
+    sw_check_list = list()
     for serial in sw_list:
-        sw_check_list.append({'serial': serial, 'ports': 0})
+        sw_check_list.append({"serial": serial, "ports": 0})
     for port in Intf_list:
-        if not port.startswith('Vlan'):
+        if not port.startswith("Vlan"):
             if debug:
                 print(f"port = {port}")
                 print(f"port_dict[port] = {port_dict[port]}")
-            if port_dict[port]['sub_module'] == '0':
-                sw_check_list[int(port_dict[port]['sw_module']
-                  )-1]['ports'] += 1
+            if port_dict[port]["sub_module"] == "0":
+                sw_check_list[int(port_dict[port]["sw_module"]) - 1]["ports"] += 1
     if debug:
         print(f"sw_check_list = {sw_check_list}")
     for sw in sw_check_list:
         try:
             model = dashboard.organizations.getOrganizationInventoryDevice(
-              organization_id, sw['serial'])['model']
+                organization_id, sw["serial"]
+            )["model"]
             if debug:
                 print(f"model = {model}")
         except:
-            print("Couldn't get switch ports for serial number: "+
-                  f"{sw['serial']}.")
+            print("Couldn't get switch ports for serial number: " + f"{sw['serial']}.")
             sys.exit()
-        port_max = int(re.search(r'-(\d{1,2})',model).group(1))
+        port_max = int(re.search(r"-(\d{1,2})", model).group(1))
         if debug:
-            print(f"Switch with serial number {sw['serial']} has "+
-                  f"{port_max} ports.")
-        if not port_max == sw['ports']:
-            print(f"Switch with serial number {sw['serial']} has {port_max} "+
-                  f"ports, not {sw['ports']}!")
+            print(
+                f"Switch with serial number {sw['serial']} has " + f"{port_max} ports."
+            )
+        if not port_max == sw["ports"]:
+            print(
+                f"Switch with serial number {sw['serial']} has {port_max} "
+                + f"ports, not {sw['ports']}!"
+            )
             sys.exit()
 
     # Create batch action lists
@@ -381,8 +398,9 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
     args = list(dict())
 
     # Loop to go through all the ports of the switches
-    def loop_configure_meraki(port_dict, Intf_list, switch_dict, unified_os,
-        meraki_api_key):
+    def loop_configure_meraki(
+        port_dict, Intf_list, switch_dict, unified_os, meraki_api_key
+    ):
         """
         This sub-function does the actual work of setting the meraki functions
         based on the dictionary of IOSXE ports and features from Evaluate.
@@ -392,27 +410,33 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
         :return: NONE - modifies global variables in the parent function
         """
 
+        # For encyclopedia exec() snippets (e.g. L3 routing HTTP in mc_pedia2).
+        MERAKI_DRY_RUN = mc_meraki_dry_run.MERAKI_DRY_RUN
+        meraki_requests_request = mc_meraki_dry_run.meraki_requests_request
+
         # Create a place to hold the Dashboard URL for each switch
         # Configure the switch_name in the Dashboard
         if debug:
             print(f"switch_dict = {switch_dict}")
-        for key, val in mc_pedia['switch'].items():
+        for key, val in mc_pedia["switch"].items():
             if not switch_dict[key] == []:
-                if (val['translatable'] == "✓" and
-                    val['meraki']['skip'] == "post_process") or \
-                     val['meraki']['skip'] == "post_ports":
+                if (
+                    val["translatable"] == "✓"
+                    and val["meraki"]["skip"] == "post_process"
+                ) or val["meraki"]["skip"] == "post_ports":
                     if debug:
                         print(f"key = {key}, val = {val}")
-                    if val['meraki']['skip'] == "post_ports":
+                    if val["meraki"]["skip"] == "post_ports":
                         post_ports_list.append([key, True])
                     newvals = {}
-                    exec(val['meraki'].get('post_process'), locals(), newvals)
+                    exec(val["meraki"].get("post_process"), locals(), newvals)
                     if debug:
                         print(f"newvals = {newvals}")
-                    return_vals = newvals['return_vals']
+                    return_vals = newvals["return_vals"]
                     if debug:
-                        print(f"newvals['return_vals'] = " +
-                              f"{newvals['return_vals']}")
+                        print(
+                            f"newvals['return_vals'] = " + f"{newvals['return_vals']}"
+                        )
                     n = 0
                     while n < len(return_vals):
                         switch_dict[return_vals[n]] = newvals[return_vals[n]]
@@ -423,58 +447,57 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
 
         # Loop to get all the interfaces in the port_dict
         y = 0
-        while y <= len(Intf_list)-1:
+        while y <= len(Intf_list) - 1:
             interface_descriptor = Intf_list[y]
             intf_settings = port_dict[interface_descriptor]
             if debug:
-                print("\n----------- "+interface_descriptor+" -----------")
+                print("\n----------- " + interface_descriptor + " -----------")
                 pprint.pprint(intf_settings)
 
             # Check the switch that mapped to those catalyst ports
             try:
-                switch_num = int(intf_settings['sw_module'])
+                switch_num = int(intf_settings["sw_module"])
             except:
                 switch_num = 1
             if not switch_num == 0:
                 switch_num -= 1
 
-            if 'Vlan' not in interface_descriptor:
+            if "Vlan" not in interface_descriptor:
                 # Setup the features for a physical interface
-                if intf_settings['sub_module'] == "1":
+                if intf_settings["sub_module"] == "1":
                     if not nm_list[switch_num] == "":
-                        for regex in nm_dict[nm_list[switch_num]]['ports']:
-                            if re.match(regex,interface_descriptor):
+                        for regex in nm_dict[nm_list[switch_num]]["ports"]:
+                            if re.match(regex, interface_descriptor):
                                 if debug:
-                                    print(f"I matched {interface_descriptor}"+
-                                          f" to {regex}\n")
-                                port = "1_"+nm_list[switch_num]
-                                port += "_"+intf_settings['port']
-                                args.append([sw_list[switch_num],
-                                             port, {}])
+                                    print(
+                                        f"I matched {interface_descriptor}"
+                                        + f" to {regex}\n"
+                                    )
+                                port = "1_" + nm_list[switch_num]
+                                port += "_" + intf_settings["port"]
+                                args.append([sw_list[switch_num], port, {}])
                 else:
-                    args.append([sw_list[switch_num],
-                                 intf_settings['port'], {}])
+                    args.append([sw_list[switch_num], intf_settings["port"], {}])
                 # Setup the default features
-                args[y][2].update({
-                    'enabled': True,
-                    'tags': [],
-                    'poeEnabled': True,
-                    'isolationEnable': False,
-                    'rstpEnabled': True,
-                    'accessPolicyType': 'Open'})
-                for key, val in mc_pedia['port'].items():
+                args[y][2].update(
+                    {
+                        "enabled": True,
+                        "tags": [],
+                        "poeEnabled": True,
+                        "isolationEnable": False,
+                        "rstpEnabled": True,
+                        "accessPolicyType": "Open",
+                    }
+                )
+                for key, val in mc_pedia["port"].items():
                     newvals = {}
-                    if val['meraki']['skip'] is not True:
+                    if val["meraki"]["skip"] is not True:
                         # Apply any post processing for Meraki config
-                        if val['meraki']['skip'] in [
-                                                     'post_process',
-                                                     'post_ports']:
-                            exec(val['meraki'].get('post_process'),
-                                                   locals(),
-                                                   newvals)
+                        if val["meraki"]["skip"] in ["post_process", "post_ports"]:
+                            exec(val["meraki"].get("post_process"), locals(), newvals)
                             if debug:
                                 print(f"newvals = {newvals}")
-                            if val['meraki']['skip'] == 'post_process':
+                            if val["meraki"]["skip"] == "post_process":
                                 if not newvals[key] == "":
                                     # Apply post processing port setting
                                     # returned for that key
@@ -484,161 +507,179 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
                             # for this interface
                             args[y][2].update({key: intf_settings[key]})
                         except:
-                            if "default" in val['meraki']:
+                            if "default" in val["meraki"]:
                                 # We weren't given a value for this feature,
                                 # apply the Meraki default value
-                                intf_settings[key] = val['meraki']['default']
+                                intf_settings[key] = val["meraki"]["default"]
                                 args[y][2].update({key: intf_settings[key]})
                         if "return_vals" in newvals:
                             # We must have called a post-process feature in
                             # the encyclopedia that also has a
                             # post-port-process, so let's keep the extra
                             # return values for that extra process
-                            return_vals = newvals['return_vals']
+                            return_vals = newvals["return_vals"]
                             if debug:
-                                print("newvals['return_vals'] = " +
-                                      f"{newvals['return_vals']}")
+                                print(
+                                    "newvals['return_vals'] = "
+                                    + f"{newvals['return_vals']}"
+                                )
                             n = 0
                             while n < len(return_vals):
                                 if debug:
-                                    print(f"return_vals[{n}] = " +
-                                          f"{return_vals[n]}")
-                                    print("post_ports_list = " +
-                                          f"{post_ports_list}")
+                                    print(f"return_vals[{n}] = " + f"{return_vals[n]}")
+                                    print("post_ports_list = " + f"{post_ports_list}")
                                 # Data returned for post_ports_processing
                                 # looks like:
                                 # encyclopedia_key, [a list of values]
                                 # There can be multiple instances, so we will
                                 # append them all to a list of lists
                                 post_ports_list.append(
-                                    [return_vals[n],
-                                     newvals[return_vals[n]]])
+                                    [return_vals[n], newvals[return_vals[n]]]
+                                )
                                 if debug:
-                                    print("post_ports_list = " +
-                                          f"{post_ports_list}")
+                                    print("post_ports_list = " + f"{post_ports_list}")
                                 n += 1
                 try:
                     # If port was disabled, disable it in the port)_dict
-                    args[y][2].update({'enabled': False
-                                       if intf_settings["active"] == "false"
-                                       else True})
+                    args[y][2].update(
+                        {
+                            "enabled": (
+                                False if intf_settings["active"] == "false" else True
+                            )
+                        }
+                    )
                 except:
                     pass
                 # Check if the interface mode is configured as Access
-                if intf_settings['type'] == "access":
+                if intf_settings["type"] == "access":
                     # For access ports, apply port security and sticky MACs
                     # as needed
                     try:
-                        if not intf_settings['mac'] == []:
+                        if not intf_settings["mac"] == []:
                             pass
                     except:
                         pass
                     try:
-                        if not intf_settings['Port_Sec'] == "":
-                            mac_limit = intf_settings['Port_Sec']
+                        if not intf_settings["Port_Sec"] == "":
+                            mac_limit = intf_settings["Port_Sec"]
                     except:
-                        intf_settings['Port_Sec'] = ""
-                    if not intf_settings['Port_Sec'] == "":
-                        args[y][2].update({
-                            'accessPolicyType': 'Sticky MAC allow list',
-                            'stickyMacAllowList': json.dumps(
-                              intf_settings['mac']),
-                            'stickyMacAllowListLimit': mac_limit})
+                        intf_settings["Port_Sec"] = ""
+                    if not intf_settings["Port_Sec"] == "":
+                        args[y][2].update(
+                            {
+                                "accessPolicyType": "Sticky MAC allow list",
+                                "stickyMacAllowList": json.dumps(intf_settings["mac"]),
+                                "stickyMacAllowListLimit": mac_limit,
+                            }
+                        )
 
             else:
                 # Setup the features for a logical L3 interface
                 # Setup the default features
                 stack_id = ""
-                if 'switchStackId' in returns_dict:
-                    stack_id = returns_dict['switchStackId']
-                args.append([returns_dict['networkId'],
-                            stack_id,
-                            interface_descriptor,
-                            intf_settings['vlan'],
-                            {}])
-                for key, val in mc_pedia['layer3'].items():
+                if "switchStackId" in returns_dict:
+                    stack_id = returns_dict["switchStackId"]
+                args.append(
+                    [
+                        returns_dict["networkId"],
+                        stack_id,
+                        interface_descriptor,
+                        intf_settings["vlan"],
+                        {},
+                    ]
+                )
+                for key, val in mc_pedia["layer3"].items():
                     newvals = {}
-                    if val['meraki']['skip'] is not True:
+                    if val["meraki"]["skip"] is not True:
                         # Apply any post processing for Meraki config
-                        if val['meraki']['skip'] in ['post_process',
-                                                     'post_ports']:
-                            exec(val['meraki'].get('post_process'),
-                                                   locals(),
-                                                   newvals)
+                        if val["meraki"]["skip"] in ["post_process", "post_ports"]:
+                            exec(val["meraki"].get("post_process"), locals(), newvals)
                             if debug:
                                 print(f"newvals = {newvals}")
-                            if val['meraki']['skip'] == 'post_process':
-                                if not newvals[key] == "":
-                                    # Apply post processing port setting
-                                    # returned for that feature
-                                    intf_settings[key] = newvals[key]
+                            if val["meraki"]["skip"] == "post_process":
+                                try:
+                                    if not newvals[key] == "":
+                                        # Apply post processing port setting
+                                        # returned for that feature
+                                        intf_settings[key] = newvals[key]
+                                except KeyError:
+                                    if debug:
+                                        print(
+                                            f"KeyError: {key} not found in newvals for {interface_descriptor}"
+                                        )
                         if debug:
-                            print(f"key = {key}, " +
-                                  f"newvals[key] = {newvals[key]}")
+                            print(f"key = {key}, " + f"newvals[key] = {newvals[key]}")
                         try:
                             # Update the features we will later apply
                             # for this interface
                             args[y][4].update({key: intf_settings[key]})
                         except:
-                            if "default" in val['meraki']:
+                            if "default" in val["meraki"]:
                                 # We weren't given a value for this feature,
                                 # apply the Meraki default value
-                                intf_settings[key] = val['meraki']['default']
+                                intf_settings[key] = val["meraki"]["default"]
                                 args[y][4].update({key: intf_settings[key]})
                         if "return_vals" in newvals:
                             # We must have called a post_process feature in
                             # the encyclopedia that also has a
                             # post_port_process, so let's keep the extra
                             # return values for that extra process
-                            return_vals = newvals['return_vals']
+                            return_vals = newvals["return_vals"]
                             if debug:
-                                print("newvals['return_vals'] = " +
-                                      f"{newvals['return_vals']}")
+                                print(
+                                    "newvals['return_vals'] = "
+                                    + f"{newvals['return_vals']}"
+                                )
                             # On L3 interfaces, save the extra return values
                             # in the port_dict for that port for
                             # post_ports processing
                             n = 0
                             while n < len(return_vals):
                                 if debug:
-                                    print(f"return_vals[{n}] = " +
-                                          f"{return_vals[n]}")
+                                    print(f"return_vals[{n}] = " + f"{return_vals[n]}")
                                 args[y][4].update(
-                                  {return_vals[n]: newvals[return_vals[n]]})
+                                    {return_vals[n]: newvals[return_vals[n]]}
+                                )
                                 if debug:
-                                    print(f"args for {interface_descriptor}" +
-                                          f" = {args[y][4]}")
+                                    print(
+                                        f"args for {interface_descriptor}"
+                                        + f" = {args[y][4]}"
+                                    )
                                 n += 1
                 if debug:
                     print(f"args[{y}] = {args[y]}")
             # Append args to the port_dict as meraki_args
-            port_dict[interface_descriptor]['meraki_args'] = args[y]
+            port_dict[interface_descriptor]["meraki_args"] = args[y]
 
             # Append the port update call to Dashboard to the batch list
             if debug:
-                print("Number of sub lists in action_list is " +
-                      f"{len(action_list)}")
+                print("Number of sub lists in action_list is " + f"{len(action_list)}")
                 try:
-                    print("Number of batch actions in action_list" +
-                          f"[{switch_num}] is {len(action_list[switch_num])}")
+                    print(
+                        "Number of batch actions in action_list"
+                        + f"[{switch_num}] is {len(action_list[switch_num])}"
+                    )
                 except:
                     pass
 
-            if not len(action_list) == switch_num+1:
+            if not len(action_list) == switch_num + 1:
                 # We are on to the next switch, so I want a new sublist
                 action_list.append([])
             # If it's a physical interface,
             # Add this action to the action_list sublist for the switch
-            if 'Vlan' not in interface_descriptor:
+            if "Vlan" not in interface_descriptor:
                 try:
                     action_list[switch_num].append(
                         dashboard.batch.switch.updateDeviceSwitchPort(
-                            args[y][0],
-                            args[y][1],
-                            **args[y][2]))
+                            args[y][0], args[y][1], **args[y][2]
+                        )
+                    )
                 except:
                     unconf_ports[switch_num].append(args[y][1])
-                    print("We caught an exception configuring " +
-                          f"{args[y][1]} on {switch_num}")
+                    print(
+                        "We caught an exception configuring "
+                        + f"{args[y][1]} on {switch_num}"
+                    )
                 if not args[y][1] in unconf_ports[switch_num]:
                     conf_ports[switch_num].append(args[y][1])
             y += 1
@@ -664,77 +705,87 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
                 # Call the post-port process for that feature if
                 # there is one in the PORTS section of the encyclopedia
                 newvals = {}
-                if short_list[item] in mc_pedia['port'].keys():
-                    exec(mc_pedia['port'][short_list[item]]['meraki'].get(
-                      'post_ports_process'), locals(), newvals)
+                if short_list[item] in mc_pedia["port"].keys():
+                    exec(
+                        mc_pedia["port"][short_list[item]]["meraki"].get(
+                            "post_ports_process"
+                        ),
+                        locals(),
+                        newvals,
+                    )
                     if "return_vals" in newvals:
-                        return_vals = newvals['return_vals']
+                        return_vals = newvals["return_vals"]
                         if "channel_port_dict" in return_vals:
                             if debug:
-                                print("newvals['channel_port_dict'] = " +
-                                      f"{newvals['channel_port_dict']}")
-                            for a_port in newvals['channel_port_dict']:
+                                print(
+                                    "newvals['channel_port_dict'] = "
+                                    + f"{newvals['channel_port_dict']}"
+                                )
+                            for a_port in newvals["channel_port_dict"]:
                                 if debug:
                                     print(f"a_port = {a_port}")
-                                port_dict[a_port] = newvals[
-                                    'channel_port_dict'][a_port]
+                                port_dict[a_port] = newvals["channel_port_dict"][a_port]
                                 if debug:
-                                    print("port_dict[a_port] = " +
-                                          f"{port_dict[a_port]}")
-                        if 'conf_ports' in return_vals:
-                            cp_list = newvals['conf_ports']
+                                    print(
+                                        "port_dict[a_port] = " + f"{port_dict[a_port]}"
+                                    )
+                        if "conf_ports" in return_vals:
+                            cp_list = newvals["conf_ports"]
                             if debug:
                                 print(f"cp_list = {cp_list}")
                             for port in cp_list:
-                                switch_num = "stack" if len(
-                                    sw_list) > 1 else 0
+                                switch_num = "stack" if len(sw_list) > 1 else 0
                                 conf_ports[switch_num].append(port)
-                        if 'unconf_ports' in return_vals:
-                            up_list = newvals['unconf_ports']
+                        if "unconf_ports" in return_vals:
+                            up_list = newvals["unconf_ports"]
                             if debug:
                                 print(f"up_list = {up_list}")
                             for port in up_list:
-                                switch_num = "stack" if len(
-                                    sw_list) > 1 else 0
+                                switch_num = "stack" if len(sw_list) > 1 else 0
                                 unconf_ports[switch_num].append(port)
                 item += 1
 
             # This is used for switch-level post ports processes
             item = 0
             if debug:
-              print(f"sw_list = {sw_list}")
-              print(f"locals() = {locals()}")
+                print(f"sw_list = {sw_list}")
+                print(f"locals() = {locals()}")
             while item < len(short_list):
                 if debug:
                     print(f"short_list[{item}] = {short_list[item]}")
                 # Call the post-port process for that feature if
                 # there is one in the SWITCH section of the encyclopedia
                 newvals = {}
-                if short_list[item] in mc_pedia['switch'].keys():
-                    exec(mc_pedia['switch'][short_list[item]]['meraki'].get(
-                        'post_ports_process'), locals(), newvals)
+                if short_list[item] in mc_pedia["switch"].keys():
+                    exec(
+                        mc_pedia["switch"][short_list[item]]["meraki"].get(
+                            "post_ports_process"
+                        ),
+                        locals(),
+                        newvals,
+                    )
                     if debug:
                         print(f"return_vals = {return_vals}")
                     if "return_vals" in newvals:
-                        return_vals = newvals['return_vals']
+                        return_vals = newvals["return_vals"]
                         pass
                 item += 1
 
         if debug:
             print(f"\n\naction_list = {action_list}\n\n")
-    loop_configure_meraki(port_dict, Intf_list, switch_dict, unified_os,
-        meraki_api_key)
+
+    loop_configure_meraki(port_dict, Intf_list, switch_dict, unified_os, meraki_api_key)
 
     # Combine all of the action_list sublists into a larger set for batching
     x = 0
-    while x <= len(action_list)-1:
+    while x <= len(action_list) - 1:
         all_actions.extend(action_list[x])
         x += 1
     if debug:
         print(f"all_actions = {all_actions}")
 
     # Save an action batch file for the port features
-    # dir = os.path.join(os.getcwd(),"../../files")
+    # dir = os.path.join(os.getcwd(), DEFAULT_FILES_FOLDER)
     # with open(os.path.join(dir,switch_path+".ab0"), 'w') as file:
     #    file.write(json.dumps(all_actions)) # use `json.loads` to reverse
     #    file.close()
@@ -743,34 +794,45 @@ def MerakiConfig(dashboard, organization_id, switch_path, sw_list, port_dict,
         print(f"Number of batch actions for Dashboard: {len(action_list)}\n")
         print(f"Args listdict is: {args}\n")
 
-    test_helper = batch_helper.BatchHelper(dashboard,
-                                           organization_id,
-                                           all_actions,
-                                           linear_new_batches=False,
-                                           actions_per_new_batch=100)
+    test_helper = batch_helper.BatchHelper(
+        dashboard,
+        organization_id,
+        all_actions,
+        linear_new_batches=False,
+        actions_per_new_batch=100,
+    )
     test_helper.prepare()
     # test_helper.generate_preview()
     test_helper.execute()
     if debug:
-        print(f'helper status is {test_helper.status}')
+        print(f"helper status is {test_helper.status}")
 
     # try:
     batches_report = dashboard.organizations.getOrganizationActionBatches(
-        organization_id)
+        organization_id
+    )
     # except:
     #    pass
-    new_batches_statuses = [{'id': batch['id'], 'status': batch['status']}
-                            for batch in batches_report if batch['id']
-                            in test_helper.submitted_new_batches_ids]
+    new_batches_statuses = [
+        {"id": batch["id"], "status": batch["status"]}
+        for batch in batches_report
+        if batch["id"] in test_helper.submitted_new_batches_ids
+    ]
     if debug:
-        print(f'Batch status returned is: {new_batches_statuses}')
-    failed_batch_ids = [batch['id'] for batch in new_batches_statuses
-                        if batch['status']['failed']]
+        print(f"Batch status returned is: {new_batches_statuses}")
+    failed_batch_ids = [
+        batch["id"] for batch in new_batches_statuses if batch["status"]["failed"]
+    ]
     if debug:
-        print(f'Failed batch IDs are as follows: {failed_batch_ids}')
+        print(f"Failed batch IDs are as follows: {failed_batch_ids}")
 
     if debug:
         print(f"\nport_dict = {port_dict}\n")
 
-    return conf_ports, unconf_ports, port_dict, \
-        returns_dict['urls'], returns_dict['networkId']
+    return (
+        conf_ports,
+        unconf_ports,
+        port_dict,
+        returns_dict["urls"],
+        returns_dict["networkId"],
+    )

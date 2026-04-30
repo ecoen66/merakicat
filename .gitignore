@@ -13,6 +13,7 @@ files/*.docx
 files/*.ab0
 files/*.ab1
 files/*.pd
+files/*.txt
 *.log
 
 # webexteamsbot
@@ -146,3 +147,8 @@ merakicat.bbprojectd/ecoen.bbprojectsettings
 merakicat.bbprojectd/Chat Worksheet.bbaiworksheet
 .DS_Store
 src/merakicat/testscript.sh
+.vscode/
+.cursor/
+~*.xlsx
+*.xlsx
+textfsm_test.py

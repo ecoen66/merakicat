@@ -7,3 +7,14 @@ build-backend = "setuptools.build_meta"
 [tool.setup.packages.find]
 where =["src"]
 
+[tool.ty.environment]
+root = ["./src/merakicat"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = [
+    "I",        # Sort imports properly
+    "A",        # detect shadowed builtins
+]

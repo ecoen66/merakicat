@@ -1,4 +1,5 @@
 import os
+from mc_constants import DEFAULT_FILES_FOLDER
 try:
     from mc_user_info import DEBUG, DEBUG_FILE
 except ImportError:
@@ -26,7 +27,7 @@ def FileExists(filespec):
             does_exist = True
             filespec = working_file
             break
-        test_file = "../../files/" + os.path.split(working_file)[1]
+        test_file = os.path.join(DEFAULT_FILES_FOLDER, os.path.split(working_file)[1])
         if debug:
             print(f"x = {x}")
             print(f"test_file = {test_file}")

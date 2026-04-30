@@ -1,5 +1,6 @@
 from netmiko import ConnectHandler
 import os
+from mc_constants import DEFAULT_FILES_FOLDER
 try:
     from mc_user_info import DEBUG
 except ImportError:
@@ -39,7 +40,7 @@ def GetConfig(host_id, ios_username, ios_password, ios_port, ios_secret):
     config = net_connect.send_command('show running-config')
     net_connect.send_command('term len 24')
     net_connect.disconnect()
-    dir = os.path.join(os.getcwd(), "../../files")
+    dir = os.path.join(os.getcwd(), DEFAULT_FILES_FOLDER)
     config_file = os.path.join(dir, switch_name + ".cfg")
     file = open(config_file, "w")
     file.writelines(config)

@@ -1,5 +1,17 @@
 # History
 
+## 1.1.0 (4-30-2026)
+
+  - Added `check hosts`, `get cloud-id`, and `get cloud-ids` commands (currently CLI mode only).
+  - Removed references to `bulk_check.sh` which has been replaced by `check hosts`.
+  - Added checks in Register() to see if the switch has already been claimed in the Dashboard,
+    or if the switch already has a Cloud ID before registering the switch to generate one.
+    This speeds up the process for those two cases and protects against initiating a 
+    migration to Cloud Managed if the switch is already claimed an in a network.
+  - Started implementing a `--dry-run` feature. Not exposed in help because it a work in progress.
+  - Fix issue with determining the Organization ID if the user has access to more than one org.
+  - Added support for IE-3500 series switches
+
 ## 1.0.1 (11-16-2025)
 
   - Fixed issue with single switch "stacks".

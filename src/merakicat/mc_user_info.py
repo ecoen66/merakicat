@@ -1,5 +1,5 @@
 # Do you want a ton of debug output on the console?
-DEBUG = False # ALL DEBUGS
+DEBUG = False  # ALL DEBUGS
 DEBUG_MAIN = False
 DEBUG_TRANSLATOR = False
 DEBUG_CHECKER = False

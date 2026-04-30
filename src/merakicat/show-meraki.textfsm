@@ -1,0 +1,13 @@
+Value switch_num (\d+)
+Value pid (\S+)
+Value serial_number (\S+)
+Value cloud_id (\S+)
+Value mac_address (\S+)
+Value migration_status (\S+)
+Value mode (\S+)
+
+Start
+  ^Switch\s+Serial\s+Migration\s*$$
+  ^Num\s+PID\s+Number\s+Cloud ID\s+Mac Address\s+Status\s+Mode\s*$$
+  ^-+\s*$$
+  ^${switch_num}\s+${pid}\s+${serial_number}\s+${cloud_id}\s+${mac_address}\s+${migration_status}\s+${mode}\s*$$ -> Record

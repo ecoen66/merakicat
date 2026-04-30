@@ -24,7 +24,8 @@ requirements = [
     "meraki==1.46.0",
     "python-docx==1.1.2",
     "docx2pdf==0.1.8",
-    "requests==2.31.0"
+    "requests==2.31.0",
+    "openpyxl==3.1.5",
     ]
 
 setup_requirements = [ ]

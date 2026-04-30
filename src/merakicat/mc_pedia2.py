@@ -40,7 +40,8 @@ The 'iosxe' value is the python code (as a string) to extract information from t
 switch config and set a value based on that information.
 
 The OPTIONAL 'note' value provides additional information regarding this feature being
-unsupported by Meraki. This is used for reporting.
+unsupported by Meraki. This is used for reporting. If the string "Not Supported" is used,
+then the feature is reported as not supported by Meraki.
 
 The OPTIONAL 'url' value provides a link to documentation for additional information for
 this unsupported element -- also for reporting.
