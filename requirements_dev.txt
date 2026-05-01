@@ -20,3 +20,4 @@ ciscoconfparse2>=0.5
 python-docx>=1.1.0
 docx2pdf>=0.1.8
 requests>=2.31.0
+openpyxl==3.1.5

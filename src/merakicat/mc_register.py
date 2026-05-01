@@ -1,14 +1,84 @@
-from netmiko import ConnectHandler
-from mc_get_nms import GetNmList
+import os
 import re
 import time
+from dataclasses import dataclass
+
+import textfsm
+from mc_get_nms import GetNmList
+from mc_meraki_dry_run import MERAKI_DRY_RUN
+from mc_utils import normalize_mac
+from netmiko import BaseConnection, ConnectHandler
+from ntc_templates.parse import parse_output
+
 try:
     from mc_user_info import DEBUG, DEBUG_REGISTER
 except ImportError:
     DEBUG = DEBUG_REGISTER = False
 
 
-def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
+@dataclass(frozen=True)
+class MgmtCommands:
+    show_mgmt: str
+    connect_mgmt: str
+    no_connect_mgmt: str
+
+
+def get_mgmt_commands_for_model(switch_model: str) -> MgmtCommands:
+    """Return platform-specific management commands."""
+    if re.match(r"IE-350.-.*", switch_model):
+        connect_mgmt = "service cloud-mgmt connect"
+        return MgmtCommands(
+            show_mgmt="show cloud-mgmt",
+            connect_mgmt=connect_mgmt,
+            no_connect_mgmt=f"no {connect_mgmt}",
+        )
+
+    connect_mgmt = "service meraki connect"
+    return MgmtCommands(
+        show_mgmt="show meraki",
+        connect_mgmt=connect_mgmt,
+        no_connect_mgmt=f"no {connect_mgmt}",
+    )
+
+
+def get_switch_model(net_connect: BaseConnection) -> str:
+    # return ""
+    """Get switch model from parsed 'show inventory' output."""
+    show_inventory = net_connect.send_command("show inventory")
+    show_inventory_parsed = parse_output(
+        platform="cisco_ios",
+        command="show inventory",
+        data=show_inventory,
+    )
+
+    if not show_inventory_parsed:
+        return ""
+
+    model_keys = ("model", "pid", "platform", "chassis", "chassis_type")
+    for row in show_inventory_parsed:
+        if not isinstance(row, dict):
+            continue
+        for key in model_keys:
+            value = row.get(key)
+            if value:
+                return str(value)
+
+    first_row = show_inventory_parsed[0]
+    if isinstance(first_row, dict):
+        for value in first_row.values():
+            if value:
+                return str(value)
+    return ""
+
+
+def Register(
+    host_id,
+    ios_username,
+    ios_password,
+    ios_port,
+    ios_secret,
+    inventory_by_mac: dict[str, dict],
+):
     """
     This function will check a Catalyst IOSXE switch for compatibility with
     Meraki management prior to registering the switch (or stack) to Dashboard.
@@ -25,6 +95,9 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
     :param ios_password: Password for SSH
     :param ios_port: Port number for SSH
     :param ios_secret: IOSXE secret password for CLI escalation
+    :param inventory_by_mac: Optional map from normalized base Ethernet MAC to
+        Dashboard inventory device dict; from get_switch_inventory_by_mac().
+        When omitted, inventory-based early return is skipped.
     :return: A string indicating success or failure to be used in reporting,
     :      : a list with any issues encountered, and lists of registered
     :      : switches, the Meraki serial numbers assigned, and a list of the
@@ -36,37 +109,52 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
     issues = list()
     registered_switches = list()
     registered_serials = list()
-    nm_list = list()
+    already_claimed = False
 
     # SSH to the switch with netmiko, read the config, grab the hostname,
     # write the config out to a file using hostname as part of the filespec
     session_info = {
-        'device_type': 'cisco_xe',
-        'host': host_id,
-        'username': ios_username,
-        'password': ios_password,
-        'port': ios_port,         # optional, defaults to 22
-        'secret': ios_secret,     # optional, defaults to ''
+        "device_type": "cisco_xe",
+        "host": host_id,
+        "username": ios_username,
+        "password": ios_password,
+        "port": ios_port,  # optional, defaults to 22
+        "secret": ios_secret,  # optional, defaults to ''
     }
     net_connect = ConnectHandler(**session_info)
     net_connect.enable()
-    switch_name = net_connect.find_prompt()
-    switch_name = switch_name[:len(switch_name) - 1]
 
     # Grab the switches in the stack
-    r = net_connect.send_command('show switch')
-    qty_switches = len(r.split("\n"))-8
+    show_switch = net_connect.send_command("show switch")
+    qty_switches = len(show_switch.split("\n")) - 8 #type: ignore
 
     # Grab the uplink module in each switch
-    nm_list = GetNmList(host_id, ios_username,
-                          ios_password, ios_port, ios_secret)
+    nm_list = GetNmList(host_id, ios_username, ios_password, ios_port, ios_secret)
 
     # Check the version of IOSXE running on the switch
-    r = net_connect.send_command('show version').split("\n")
-    version = r[1].split("Version")[1].strip()[:8].strip(',')
+    r = net_connect.send_command("show version").split("\n") # type: ignore
+    base_ethernet_macs = []
+    
+    # Determine the base mac address (more than one if a stack)
+    show_switch_parsed = parse_output(
+        platform="cisco_ios",
+        command="show switch",
+        data=show_switch
+    )
+
+    for item in show_switch_parsed:
+        mac_address = item['mac_address']
+        base_ethernet_macs.append(normalize_mac(mac_address))
+
+    version_line = r[1] if len(r) > 1 else ""
+    version_match = re.search(r"Version\s+([0-9A-Za-z.\-]+)", version_line)
+    version = version_match.group(1).strip(",") if version_match else "0.0.0"
     if debug:
         print(f"In Register, version = {version}")
-    v = list(map(int, version.split('.')))
+    v = [int(x) for x in re.findall(r"\d+", version)]
+    while len(v) < 3:
+        v.append(0)
+    v = v[:3]
     if debug:
         print(f"In Register, v = {v}")
     if v[0] < 17:
@@ -74,11 +162,15 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
             if v[2] < 1:
                 issues.append("IOSXE version {version} is less than 17.10.1")
         elif v[1] == 13 and v[2] == 1:
-            issues.append("There is a known issue registering to " +
-                          "Dashboard from IOSXE 17.13.1")
+            issues.append(
+                "There is a known issue registering to "
+                + "Dashboard from IOSXE 17.13.1"
+            )
         elif v[1] == 15 and v[2] == 3:
-            issues.append("There is a known issue registering to " +
-                          "Dashboard from IOSXE 17.15.3")
+            issues.append(
+                "There is a known issue registering to "
+                + "Dashboard from IOSXE 17.15.3"
+            )
 
     # Check for unified versions of IOSXE
     unified_os = False
@@ -92,18 +184,18 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
     # Check that the "Before you Begin" features are configured
 
     #  ip name-server
-    r = net_connect.send_command('show ip name-servers')
-    if len(r) == 16 and r[0:15] == '255.255.255.255':
+    r = net_connect.send_command("show ip name-servers")
+    if len(r) == 16 and r[0:15] == "255.255.255.255": # type: ignore
         issues.append("No ip name-server found.")
 
     #  interface vlan {vlan-id}
     #   ip address
     #   <no shutdown>
-    r = net_connect.send_command('show ip int brief | include Vlan')
-    r_more = r.split("\n")
+    r = net_connect.send_command("show ip int brief | include Vlan")
+    r_more = r.split("\n") # type: ignore
     x = 0
     good_vlans = 0
-    while x <= len(r_more)-1:
+    while x <= len(r_more) - 1:
         vlan, ip, ok, method, status, protocol = r_more[x].split()
         if not ip == "unassigned" and status == "up" and protocol == "up":
             good_vlans += 1
@@ -112,25 +204,25 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
         issues.append("No L3 interface found.")
 
     #  ip default-gateway  == OR == ip route 0.0.0.0 0.0.0.0
-    r = net_connect.send_command('show ip route 0.0.0.0')
+    r = net_connect.send_command("show ip route 0.0.0.0")
     if r == "% Network not in table":
         issues.append("No default route found.")
 
     # With that out of the way, we can check meraki compatibility
-    r = net_connect.send_command('show meraki compatibility')
-    r_more = r.split("\n")
+    r = net_connect.send_command("show meraki compatibility")
+    r_more = r.split("\n") # type: ignore
 
     # Check Boot Mode
     if v[0] >= 17 and v[1] >= 15:
-      if not r_more[6].find("Incompatible") == -1:
-          issues.append("Boot mode must be set to INSTALL.")
-          if debug:
-              print("Boot mode must be set to INSTALL.")
+        if not r_more[6].find("Incompatible") == -1:
+            issues.append("Boot mode must be set to INSTALL.")
+            if debug:
+                print("Boot mode must be set to INSTALL.")
     else:
-      if not r_more[3].find("Incompatible") == -1:
-          issues.append("Boot mode must be set to INSTALL.")
-          if debug:
-              print("Boot mode must be set to INSTALL.")
+        if not r_more[3].find("Incompatible") == -1:
+            issues.append("Boot mode must be set to INSTALL.")
+            if debug:
+                print("Boot mode must be set to INSTALL.")
 
     # Check the line for each switch
     found_sw_num = [item for item in r_more if "Switch#" in item]
@@ -141,15 +233,17 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
         print(f"lines_to_test = {lines_to_test}, x = {x}")
     while x < lines_to_test:
         if debug:
-            print(f"Testing: {r_more[x+first_sw_line]}")
+            print(f"Testing: {r_more[x + first_sw_line]}")
 
         # Check a switch line to see if the word Incompatible shows up
-        res = [i for i in range(len(r_more[x+first_sw_line]))
-               if r_more[x+first_sw_line].startswith(" - Incompatible", i)]
+        res = [
+            i
+            for i in range(len(r_more[x + first_sw_line]))
+            if r_more[x + first_sw_line].startswith(" - Incompatible", i)
+        ]
         if not len(res) == 0:
-
             # It did... not sure how many times...
-            bad_switch = r_more[x+first_sw_line].split()[0]
+            bad_switch = r_more[x + first_sw_line].split()[0]
             issues.append("Issues with switch " + bad_switch + ":")
             if debug:
                 print("Issues with switch " + bad_switch + ":")
@@ -158,17 +252,17 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
             # shows up on the switch line
             y = 0
             while y < len(res):
-                offense = r_more[x+first_sw_line]
+                offense = r_more[x + first_sw_line]
 
                 # If "Incompatible" shows up before character 50...
                 # then it is an issue with the switch model
                 if res[y] < 50:
-                    details = offense[:res[y]].strip().split()[1]
+                    details = offense[: res[y]].strip().split()[1]
                     if debug:
                         print("  Switch Model = " + details)
                     issues.append("  Switch Model = " + details)
                 else:
-                    details = offense[res[y-1]+15:res[y]].strip()
+                    details = offense[res[y - 1] + 15 : res[y]].strip()
 
                     # If "Incompatible" shows up past character 80...
                     # then it is an issue with the NM model
@@ -177,7 +271,6 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
                             print("  NM Module Model = " + details)
                         issues.append("  NM Module Model = " + details)
                     else:
-
                         # Otherwise, it is an issue with the Bootloader
                         if debug:
                             print("  Bootloader Version = " + details)
@@ -186,56 +279,121 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
         x += 1
 
     # If we had any issues to this point, return with issues
-    if not len(issues) == 0:
+    if len(issues) != 0:
         net_connect.disconnect()
-        return "unsuccessfully", issues, registered_switches, [], nm_list
+        return (
+            "unsuccessfully",
+            issues,
+            registered_switches,
+            [],
+            nm_list,
+            unified_os,
+            already_claimed,
+        )
 
-    # Register all switches in the stack to the Meraki Dashboard
-    # net_connect.enable()
-    if unified_os == False:
-        r = net_connect.send_command_timing('service meraki register switch all',
-                                            strip_prompt=False,
-                                            strip_command=False)
+    # Check the inventory we downloaded from the Dashboard first to see if the switch is already claimed
+    matching_serials = []
+    for base_mac in base_ethernet_macs:
+        device = inventory_by_mac.get(base_mac)
+        if not device:
+            continue
+        serial = device.get("serial")
+        if serial and serial not in matching_serials:
+            matching_serials.append(serial)
+    if len(matching_serials) > 0:
+        registered_serials = matching_serials
+        already_claimed = True
+        net_connect.disconnect()
+        return (
+            "successfully",
+            issues,
+            registered_switches,
+            registered_serials,
+            nm_list,
+            unified_os,
+            already_claimed,
+        )
+    
+    # Check to see if the switch already has a Cloud ID
+    # Get the directory this python script is in
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    template_file = os.path.join(script_dir, "show-meraki.textfsm")
+    with open(template_file) as template_file_fh:
+        fsm = textfsm.TextFSM(template_file_fh)
+
+    switch_model = get_switch_model(net_connect)
+    mgmt_commands = get_mgmt_commands_for_model(switch_model)
+
+    r = net_connect.send_command_timing(
+        mgmt_commands.show_mgmt, strip_prompt=True, strip_command=True
+    )
+    if debug:
+        print(r)
+    show_meraki_parsed = fsm.ParseTextToDicts(r)
+    if show_meraki_parsed and len(show_meraki_parsed) > 0 and 'cloud_id' in show_meraki_parsed[0]:
+        registered_serials = [item['cloud_id'] for item in show_meraki_parsed]
+        already_claimed = False
+        net_connect.disconnect()
+        return (
+            "successfully",
+            issues,
+            registered_switches,
+            registered_serials,
+            nm_list,
+            unified_os,
+            already_claimed,
+        )
+
+    # Register all switches in the stack to the Meraki Dashboard, get the Cloud ID, then cancel the registration
+    if unified_os is False:
+        r = net_connect.send_command_timing(
+            "service meraki register switch all",
+            strip_prompt=False,
+            strip_command=False,
+        )
         if debug:
             print(r)
-        if not r.find("Are you sure") == -1:
-            r = net_connect.send_command_timing('yes',
-                                                strip_prompt=False,
-                                                strip_command=False)
+        if not r.find("Are you sure") == -1: # type: ignore
+            r = net_connect.send_command_timing(
+                "yes", strip_prompt=False, strip_command=False
+            )
             if debug:
                 print(r)
     else:
-        r = net_connect.send_command_timing('conf t',
-                                                strip_prompt=False,
-                                                strip_command=False)
-        if debug:
-            print(r)
-        r = net_connect.send_command_timing('service meraki connect',
-                                                strip_prompt=False,
-                                                strip_command=False)
-        if debug:
-            print(r)
-        r = net_connect.send_command_timing('exit',
-                                                strip_prompt=False,
-                                                strip_command=False)
-        if debug:
-            print(r)
-        # Add a delay here because the Cloud ID doesn't immediately show up
-        time.sleep(10)
-        r = net_connect.send_command_timing('show meraki',
-                                                strip_prompt=False,
-                                                strip_command=False)
-        if debug:
-            print(r)
+        if MERAKI_DRY_RUN:
+            print(f"[DRY-RUN] Skipped: {mgmt_commands.connect_mgmt}")
+        else:
+            r = net_connect.send_command_timing(
+                "conf t", strip_prompt=False, strip_command=False
+            )
+            if debug:
+                print(r)
+            r = net_connect.send_command_timing(
+                mgmt_commands.connect_mgmt, strip_prompt=False, strip_command=False
+            )
+            if debug:
+                print(r)
+            r = net_connect.send_command_timing(
+                "exit", strip_prompt=False, strip_command=False
+            )
+            if debug:
+                print(r)
+            # Add a delay here because the Cloud ID doesn't immediately show up
+            time.sleep(10)
+            r = net_connect.send_command_timing(
+                mgmt_commands.show_mgmt, strip_prompt=False, strip_command=False
+            )
+            if debug:
+                print(r)
 
     # Add logic to parse for issues in Conversion Status column
     #
     #
 
     top = -1
-    bottom = -1
+    # bottom = -1
 
-    r_more = r.split("\n")
+    r_more = r.split("\n") # type: ignore
     if debug:
         print(f"r_more = {r_more}")
 
@@ -245,10 +403,18 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
 
     # If there were no lines in the results, then we've got a problem...
     if top == -1:
-        return ("unsuccessfully", ["No registration status returned."],
-                registered_switches, nm_list)
+        net_connect.disconnect()
+        return (
+            "unsuccessfully",
+            ["No registration status returned."],
+            registered_switches,
+            [],
+            nm_list,
+            unified_os,
+            already_claimed,
+        )
     if debug:
-        print(f'top = {top}')
+        print(f"top = {top}")
 
     # Find the "Please note..."" line number (y) below the table in the output
     # regex = re.compile("^Please note")
@@ -265,30 +431,51 @@ def Register(host_id, ios_username, ios_password, ios_port, ios_secret):
     while z < qty_switches + top:
         switch_result = r_more[z].split()
         registered_serials.append(switch_result[3])
-        registered_switches.append({
-            'switch_num': switch_result[0],
-            'PID': switch_result[1],
-            'cat_serial': switch_result[2],
-            'meraki_serial': switch_result[3],
-            'mac_address': switch_result[4],
-            'migration_status': switch_result[5],
-            'mode': switch_result[6]
-        })
+        registered_switches.append(
+            {
+                "switch_num": switch_result[0],
+                "PID": switch_result[1],
+                "cat_serial": switch_result[2],
+                "meraki_serial": switch_result[3],
+                "mac_address": switch_result[4],
+                "migration_status": switch_result[5],
+                "mode": switch_result[6],
+            }
+        )
         z += 1
     if unified_os:
-        r = net_connect.send_command_timing('conf t',
-                                                strip_prompt=False,
-                                                strip_command=False)
-        if debug:
-            print(r)
-        r = net_connect.send_command_timing('no service meraki connect',
-                                                strip_prompt=False,
-                                                strip_command=False)
-        if debug:
-            print(r)
+        if not MERAKI_DRY_RUN:
+            r = net_connect.send_command_timing(
+                "conf t", strip_prompt=False, strip_command=False
+            )
+            if debug:
+                print(r)
+            r = net_connect.send_command_timing(
+                mgmt_commands.no_connect_mgmt,
+                strip_prompt=False,
+                strip_command=False,
+            )
+            if debug:
+                print(r)
+        else:
+            print(f"[DRY-RUN] Skipped: {mgmt_commands.no_connect_mgmt}")
     net_connect.disconnect()
     if debug:
-        print("successfully", issues, registered_switches,
-              registered_serials, nm_list, unified_os)
-    return ("successfully", issues, registered_switches,
-            registered_serials, nm_list, unified_os)
+        print(
+            "successfully",
+            issues,
+            registered_switches,
+            registered_serials,
+            nm_list,
+            unified_os,
+            already_claimed,
+        )
+    return (
+        "successfully",
+        issues,
+        registered_switches,
+        registered_serials,
+        nm_list,
+        unified_os,
+        already_claimed,
+    )
