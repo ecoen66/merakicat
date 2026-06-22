@@ -1,5 +1,5 @@
-import subprocess
 import platform
+import subprocess
 
 
 def Ping(host, quiet=False):
@@ -25,6 +25,6 @@ def Ping(host, quiet=False):
         )
 
     if not quiet:
-        print(f"reachable:  {reachable}")
+        print(f"Device reachable:  {reachable}")
 
     return reachable

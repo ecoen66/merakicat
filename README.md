@@ -81,6 +81,7 @@ pip install -r requirements_dev.txt
 # Usage
 
  - The easiest way to use this module is to set a few environment variables
+ - You can also put the same `KEY=value` entries in a `.env` file (see `.env.example`).
 
     > Note: As an alternative, you may edit the variables in mc_user_info.py.  Although more convenient, it is less secure.
 
@@ -141,6 +142,10 @@ Migrate a Catalyst switch to a Meraki switch - register, claim & translate:
 ```
 migrate [host <FQDN or IP address>] [to <Meraki network name>] [with timing]
 ```
+List all Meraki networks in the configured organization:
+```
+get networks
+```
 Create a demo report for all features currently in the feature encyclopedia:
 ```
 demo report
@@ -175,6 +180,11 @@ Get Cloud IDs for hosts listed in a CSV or Excel file (use `hosts_template.xlsx`
 ```
 cd src/merakicat
 python merakicat.py get cloud-ids <filespec> [with timing]
+```
+List all Meraki networks in the configured organization:
+```
+cd src/merakicat
+python merakicat.py get networks
 ```
 Register a Catalyst switch or stack to the Meraki Dashboard:
 ```

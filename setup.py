@@ -26,6 +26,7 @@ requirements = [
     "docx2pdf==0.1.8",
     "requests==2.31.0",
     "openpyxl==3.1.5",
+    "python-dotenv>=1.0.0",
     ]
 
 setup_requirements = [ ]
