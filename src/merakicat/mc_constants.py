@@ -1,4 +1,4 @@
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 REPO_RAW_URL = "https://raw.githubusercontent.com/ecoen66/merakicat"
 REPO_API_URL = "https://api.github.com/repos/ecoen66/merakicat"
