@@ -23,6 +23,7 @@ from datetime import datetime
 from functools import reduce
 from importlib import import_module
 from itertools import islice
+from typing import Literal
 from urllib.error import HTTPError, URLError
 
 import docx
@@ -38,10 +39,31 @@ from docx.shared import Inches
 from docx2pdf import convert
 from mc_cfg_check import CheckFeatures
 from mc_claim import Claim
+from mc_cloud_id import (
+    extract_cloud_ids_for_dashboard_paste,
+    format_cloud_id_lookup_msg,
+    format_get_cloud_id_msg,
+    get_cloud_ids_for_host,
+    write_cloud_ids_log,
+)
 from mc_cloud_mon import CloudSwitch
-from mc_constants import DEFAULT_FILES_FOLDER
+from mc_config import (
+    IOS_PASSWORD,
+    IOS_PORT,
+    IOS_SECRET,
+    IOS_USERNAME,
+    MERAKI_API_KEY,
+    MERAKI_ORG_NAME,
+    TEAMS_BOT_APP_NAME,
+    TEAMS_BOT_EMAIL,
+    TEAMS_BOT_TOKEN,
+    TEAMS_EMAILS,
+    validate,
+)
+from mc_constants import DEFAULT_FILES_FOLDER, REPO_API_URL, REPO_RAW_URL, VERSION
 from mc_file_exists import FileExists
 from mc_get_config import GetConfig
+from mc_get_networks import get_networks
 from mc_get_nms import GetNmList
 from mc_hostnames_file import load_hostnames_from_file
 from mc_inventory import get_switch_inventory_by_mac
@@ -55,6 +77,7 @@ from mc_ping import Ping
 from mc_register import Register
 from mc_splitcheck_serials import SplitCheckSerials
 from mc_translate import Evaluate, MerakiConfig
+from mc_utils import check_host_minimum_ios
 from netmiko.exceptions import ConnectionException, NetmikoTimeoutException
 from paramiko.ssh_exception import AuthenticationException
 from tabulate import tabulate
@@ -62,80 +85,54 @@ from webex_bot.models.command import Command
 from webex_bot.models.response import Response
 from webex_bot.webex_bot import WebexBot
 
-# Strip --dry-run before BOT detection and before Dashboard init (module scope).
-MERAKI_DRY_RUN = "--dry-run" in sys.argv
-if MERAKI_DRY_RUN:
-    sys.argv = [sys.argv[0]] + [a for a in sys.argv[1:] if a != "--dry-run"]
-set_meraki_dry_run(MERAKI_DRY_RUN)
-
-tabulate.PRESERVE_WHITESPACE = True     #type: ignore
-
-try:
-    from mc_user_info import IOS_PASSWORD, IOS_PORT, IOS_SECRET, IOS_USERNAME  #type: ignore
-except ImportError:
-    IOS_USERNAME = IOS_PASSWORD = IOS_SECRET = IOS_PORT = None
-try:
-    from mc_user_info import TEAMS_BOT_EMAIL, TEAMS_BOT_TOKEN  #type: ignore
-except ImportError:
-    TEAMS_BOT_TOKEN = TEAMS_BOT_EMAIL = None
-try:
-    from mc_user_info import TEAMS_BOT_APP_NAME, TEAMS_EMAILS  #type: ignore
-except ImportError:
-    TEAMS_BOT_APP_NAME = TEAMS_EMAILS = None
-try:
-    from mc_user_info import MERAKI_API_KEY  #type: ignore
-except ImportError:
-    MERAKI_API_KEY = None
-try:
-    from mc_user_info import MERAKI_ORG_NAME  #type: ignore
-except ImportError:
-    MERAKI_ORG_NAME = None
-try:
-    from mc_user_info import DEBUG, DEBUG_MAIN, PDF
-except ImportError:
-    DEBUG = DEBUG_MAIN = PDF = False
-debug = DEBUG or DEBUG_MAIN
-
-# Check to see if we have the most recent encyclopedia
-# and update it if not
-dstFile = "mc_pedia2.py"
-filetime = time.strftime("%a, %d %b %Y %X GMT", time.gmtime(os.path.getmtime(dstFile)))
-if debug:
-    print("Checking if the local encyclopedia is older than a day.")
-    print("File Last Modified: {0}".format(filetime))
-url = "https://raw.githubusercontent.com/ecoen66/merakicat\
-/main/src/merakicat/mc_pedia2.py"
-if debug:
-    print(f"url = {url}")
-if not os.path.exists(dstFile) or (os.path.getmtime(dstFile) < time.time() - 86400):
-    if debug:
-        print("It's been at least a day since we updated the encyclopedia.")
-        print("Downloading a fresh copy.")
-    try:
-        urllib.request.urlretrieve(url, dstFile)
-        if debug:
-            print("Done.")
-    except HTTPError as error:
-        print(error.status, error.reason)
-    except URLError as error:
-        print(error.reason)
-    except TimeoutError:
-        print("Request timed out")
-else:
-    if debug:
-        print("Not old enough to update.")
-
-mc_pedia = import_module("mc_pedia2").mc_pedia
-
-# If we were run without arguments, run as a BOT
-# Otherwise, we will attempt to use the args in batch mode
+# Populated by initialize_merakicat() from main().
+MERAKI_DRY_RUN = False
+FORCE_PEDIA_REFRESH = False
+DEBUG = False
+DEBUG_MAIN = False
+PDF = False
+debug = False
+mc_pedia = {}
 BOT = False
-if len(sys.argv) == 1:
-    BOT = True
+ios_username = ""
+ios_password = ""
+ios_secret = ""
+ios_port = 22
+meraki_api_key = ""
+meraki_org_name = ""
+bot = None
+bot_commands = []
+command_list = []
+payload = None
+organizations = {}
+api = ""
+configured_ports = defaultdict(list)
+unconfigured_ports = defaultdict(list)
+unified_os = False
+command_line_msg = Response()
+times = False
+report = False
+detailed = False
+config_file = ""
+host_id = ""
+nm_list = []
+meraki_serials = []
+meraki_orgs = []
+meraki_networks = []
+meraki_org = ""
+meraki_net = ""
+meraki_net_name = ""
+meraki_urls = []
+bot_email = ""
+bot_app_name = ""
+teams_token = ""
+teams_emails = []
+bot_fname = ""
 
 
 class RunCheck(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="check",
             help_message="Check a Catalyst switch config for both translatable and possible \
@@ -144,11 +141,12 @@ Meraki features",
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
 
 class RunRegister(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="register",
             help_message="Register a Catalyst switch to the Meraki Dashboard",
@@ -156,11 +154,12 @@ class RunRegister(Command):
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
 
 class RunClaim(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="claim",
             help_message="Claim Catalyst switches to a Meraki Network",
@@ -168,11 +167,12 @@ class RunClaim(Command):
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
 
 class RunTranslate(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="translate",
             help_message="Translate a Catalyst switch config from a file or \
@@ -181,11 +181,12 @@ host to claimed Meraki serial numbers",
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
 
 class RunMigrate(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="migrate",
             help_message="Migrate a Catalyst switch to a Meraki switch - \
@@ -194,11 +195,12 @@ register, claim & translate",
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
 
 class RunDemo(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="demo",
             help_message="Create a demo report for all features currently in \
@@ -207,11 +209,12 @@ the feature encyclopedia",
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
 
 class RunHelp(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="help|?",
             help_message="Get help",
@@ -219,11 +222,12 @@ class RunHelp(Command):
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
 
 class RunHello(Command):
-    def __init__(self):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
         super().__init__(
             command_keyword="hello|hi",
             help_message="Say hello",
@@ -231,198 +235,15 @@ class RunHello(Command):
         )
 
     def execute(self, message, attachment_actions, activity):
-        return greeting(attachment_actions)
+        return greeting(attachment_actions, self.dashboard_api)
 
-
-if BOT:
-    # Retrieve required details from environment variables or mc_user_info.py file
-    bot_email = os.getenv("TEAMS_BOT_EMAIL", TEAMS_BOT_EMAIL)
-    bot_app_name = os.getenv("TEAMS_BOT_APP_NAME", TEAMS_BOT_APP_NAME)
-    teams_token = os.getenv("TEAMS_BOT_TOKEN", TEAMS_BOT_TOKEN)
-    
-    teams_emails = os.getenv("TEAMS_EMAILS", TEAMS_EMAILS)
-    missing_vars = []
-    if not bot_email:
-        missing_vars.append("bot_email")
-    if not bot_app_name:
-        missing_vars.append("bot_app_name")
-    if not teams_token:
-        missing_vars.append("items_token")
-    if not teams_emails:
-        missing_vars.append("teams_email")
-
-    if missing_vars:
-        print(f"Error: required setting(s) not set: {', '.join(missing_vars)}")
-        sys.exit(1)
-
-    # Convert teams emails to a list if it was a comma delimited string set by an env variable
-    if isinstance(teams_emails, str):
-        teams_emails = teams_emails.split(",")
-
-    # Get the Bot's first name in case we are
-    # directly addressed in room with multiple users
-    bot_fname = bot_app_name.split()[0].strip() # type: ignore - we knowbot_app_name is not None
-
-# Setup some global variables
-payload = {}
-organizations = {}
-api = ""
-payload = None
-configured_ports = defaultdict(list)
-unconfigured_ports = defaultdict(list)
-unified_os = False
-command_line_msg = Response()
-times = False
-report = False
-detailed = False
-
-# Setup some global, stateful variables
-config_file = ""
-host_id = ""
-nm_list = list()
-meraki_serials = list()
-meraki_orgs = list()
-meraki_networks = list()
-meraki_org = ""
-meraki_org_name = ""
-meraki_net = ""
-meraki_net_name = ""
-meraki_urls = list()
-
-# Retrieve required Meraki details from environment variables
-meraki_api_key = os.getenv("MERAKI_API_KEY")
-meraki_org_name = os.getenv("MERAKI_ORG_NAME")
-# If the required details were not in the environment variables
-# grab them from the mc_user_info.py file
-if meraki_api_key is None:
-    meraki_api_key = MERAKI_API_KEY
-if meraki_org_name is None:
-    meraki_org_name = MERAKI_ORG_NAME
-
-# Retrieve required SSH details from environment variables
-ios_username = os.getenv("IOS_USERNAME")
-ios_password = os.getenv("IOS_PASSWORD")
-ios_secret = os.getenv("IOS_SECRET")
-ios_port = os.getenv("IOS_PORT")
-# If the required details were not in the environment variables
-# grab them from the mc_user_info.py file
-if ios_username is None:
-    ios_username = IOS_USERNAME
-if ios_password is None:
-    ios_password = IOS_PASSWORD
-if ios_secret is None:
-    ios_secret = IOS_SECRET
-if ios_port is None:
-    ios_port = IOS_PORT
-    if ios_port is None:
-        ios_port = 22
-
-# Request the lists of Organizations and their Networks from Dashboard
-if not meraki_api_key == "" and not meraki_org_name == "":
-    if debug:
-        print("Trying to setup a dashboard instance")
-    dashboard = meraki.DashboardAPI(
-        api_key=meraki_api_key, output_log=False, suppress_logging=True
-    )
-    if MERAKI_DRY_RUN:
-        apply_dry_run_session(dashboard)
-
-    if debug:
-        print("Got it, now trying to get the list of Orgs")
-    # Even though, right now this app only supports a single Org...
-    try:
-        meraki_orgs = dashboard.organizations.getOrganizations()
-    except meraki.exceptions.APIError:
-        print("We were unable to get the list of Orgs.")
-        sys.exit()
-    if debug:
-        print(f"meraki_orgs = {meraki_orgs}")
-    x = 0
-    while x <= len(meraki_orgs) - 1:
-        if meraki_orgs[x]["name"] == meraki_org_name:
-            try:
-                raw_nets = dashboard.organizations.getOrganizationNetworks(
-                    organizationId=meraki_orgs[x]["id"]
-                )
-            except meraki.exceptions.APIError:
-                print(
-                    "We were unable to get the list of networks"
-                    + f" for {meraki_orgs[x]['name']}."
-                )
-                sys.exit()
-            if debug:
-                print(raw_nets)
-            y = 0
-            while y <= len(raw_nets) - 1:
-                meraki_networks.append(raw_nets[y])
-                y += 1
-            break
-        x += 1
-    if debug:
-        print(f"meraki_networks = {meraki_networks}")
-
-    matched_org = None
-    for org in meraki_orgs:
-        if org.get("name") == meraki_org_name:
-            matched_org = org
-            break
-    if matched_org:
-        meraki_org = matched_org["id"]
-        if debug:
-            print(f"meraki_org = {meraki_org}")
-            print(f"meraki_org_name = {meraki_org_name}")
-    else:
-        print(f'Error: No organization found matching "{meraki_org_name}".')
-        sys.exit()
-
-if BOT:
-    # If any of the required bot variables are missing, terminate the app
-    # if not bot_email or not teams_token or not bot_url or not bot_app_name:
-    if not bot_email or not teams_token or not bot_app_name:
-        print(
-            "merakicat.py - Missing Environment Variable. Please see"
-            + " the 'Usage' section in the README."
-        )
-        if not bot_email:
-            print("TEAMS_BOT_EMAIL")
-        if not teams_token:
-            print("TEAMS_BOT_TOKEN")
-        if not bot_app_name:
-            print("TEAMS_BOT_APP_NAME")
-        # Removed bot_url from the check as it is not used in the code -- remove permanently once verified
-        # if not bot_url:
-        #     print("TEAMS_BOT_URL")
-        sys.exit()
-
-    # Create a Bot Object
-    #
-    # Example: How to limit the approved Webex Teams accounts for interaction
-    # List of email accounts of approved users to talk with the bot
-    # approved_users = [
-    #     "josmith@demo.local",
-    # ]
-
-    if debug:
-        print(f"teams_emails = {teams_emails}")
-
-    bot = WebexBot(
-        teams_token,
-        bot_name=bot_app_name,
-        # Comment out the approved_users lines if you don't care...
-        approved_users=teams_emails,
-        # approved_domains=[],
-        # approved_rooms=[],
-        threads=False,
-        help_command=RunHelp(),
-        log_level="ERROR",
-    )
 
 # The greeting processes user input before calling the correct command.
 # The default behavior of the bot is to return the 'help' command response
 # If there is an English language command line, try to work with that.
 
 
-def greeting(incoming_msg):
+def greeting(incoming_msg, dashboard: meraki.DashboardAPI | None):
 
     global config_file, host_id, meraki_net, meraki_net_name
     global meraki_serials, times, report, detailed
@@ -523,7 +344,7 @@ def greeting(incoming_msg):
             r = "You need to enter a Meraki network to register into."
             response.markdown = r
         else:
-            response.markdown = check_network(incoming_msg, dest_net, targets=targets)
+            response.markdown = check_network(incoming_msg, dest_net, dashboard, targets=targets)
 
     # If the user asked for a report, we will try to give it to them
     report = False
@@ -546,7 +367,7 @@ def greeting(incoming_msg):
                     response.markdown = r
                 else:
                     # We did, so mess with it!
-                    response.markdown = cloud_switch(incoming_msg, host=host_id)
+                    response.markdown = cloud_switch(incoming_msg, dashboard, host=host_id)
             elif not len(user_text.split()) >= 3:
                 r = "Syntax is **cloud (host <_fqdn or ip address_>**"
                 response.markdown = r
@@ -561,9 +382,9 @@ def greeting(incoming_msg):
                         response.markdown = r
                         return response
                     if BOT:
-                        response.html = cloud_switch(incoming_msg, host=host_id)
+                        response.html = cloud_switch(incoming_msg, dashboard, host=host_id)
                     else:
-                        response.markdown = cloud_switch(incoming_msg, host=host_id)
+                        response.markdown = cloud_switch(incoming_msg, dashboard, host=host_id)
                 else:
                     r = "I'm sorry, but I don't have a host that we are "
                     r += "working with."
@@ -611,7 +432,7 @@ def greeting(incoming_msg):
                 else:
                     # We did, so migrate it!
                     response.markdown = migrate_switch(
-                        incoming_msg, host=host_id, dest_net=meraki_net
+                        incoming_msg, dashboard, host=host_id, dest_net=meraki_net
                     )
 
             # Well, did they type more after "migrate" ?
@@ -660,7 +481,7 @@ def greeting(incoming_msg):
                             response.markdown = r
                         else:
                             r = migrate_switch(
-                                incoming_msg, host=host, dest_net=dest_net
+                                incoming_msg, dashboard, host=host, dest_net=dest_net
                             )
                             response.markdown = r
                     else:
@@ -673,7 +494,7 @@ def greeting(incoming_msg):
                     r += "working with.  Use the **/check** command."
                     response.markdown = r
             else:
-                response.markdown = migrate_switch(incoming_msg, dest_net=dest_net)
+                response.markdown = migrate_switch(incoming_msg, dashboard, dest_net=dest_net)
 
         case "translate":
             # If the only thing the user typed was "translate""...
@@ -691,6 +512,7 @@ def greeting(incoming_msg):
                         serials = meraki_serials
                         r = translate_switch(
                             incoming_msg,
+                            dashboard,
                             config=config_file,
                             host=host_id,
                             serials=serials,
@@ -733,7 +555,7 @@ def greeting(incoming_msg):
                             response.markdown = r
                         else:
                             r = translate_switch(
-                                incoming_msg, config=maybe_file, serials=serials
+                                incoming_msg, dashboard, config=maybe_file, serials=serials
                             )
                             response.markdown = r
                     else:
@@ -758,7 +580,7 @@ def greeting(incoming_msg):
                             response.markdown = r
                         else:
                             r = translate_switch(
-                                incoming_msg, host=host_id, serials=serials
+                                incoming_msg, dashboard, host=host_id, serials=serials
                             )
                             response.markdown = r
                         return response
@@ -778,16 +600,19 @@ def greeting(incoming_msg):
                         response.markdown = r
                     else:
                         response.markdown = translate_switch(
-                            incoming_msg, serials=serials
+                            incoming_msg, dashboard, serials=serials
                         )
 
         case "get":
-            if not len(user_text.split()) >= 3:
-                r = "Syntax is **get (cloud-id <_fqdn or ip address_> | "
-                r += "cloud-ids <_filespec_>)**"
-                response.markdown = r
-            elif user_text.lower().startswith("get"):
-                if re.search(r"\bcloud-ids\s+", user_text, re.IGNORECASE):
+            if dashboard is None:
+                response.markdown = (
+                    "This command requires Meraki Dashboard access; run with credentials configured."
+                )
+                return response
+            if user_text.lower().startswith("get"):
+                if re.fullmatch(r"get\s+networks\s*", user_text, re.IGNORECASE):
+                    response.markdown = get_networks(dashboard, meraki_org)
+                elif re.search(r"\bcloud-ids\s+", user_text, re.IGNORECASE):
                     rest = re.split(
                         r"\bcloud-ids\s+", user_text, maxsplit=1, flags=re.IGNORECASE
                     )
@@ -812,7 +637,9 @@ def greeting(incoming_msg):
 
                                 def get_cloud_ids_worker(_idx, hn):
                                     if not Ping(hn, quiet=True):
-                                        rp, ln = format_get_cloud_id_msg(hn, "Unable to ping")
+                                        rp, ln = format_get_cloud_id_msg(
+                                            hn, "Unable to ping", bot=BOT
+                                        )
                                         return {
                                             "host": hn,
                                             "cloud_ids_by_host": {hn: []},
@@ -823,7 +650,14 @@ def greeting(incoming_msg):
                                     started = time.time()
                                     try:
                                         cloud_ids_by_host, already_claimed = (
-                                            get_cloud_id_for_host(hn, inventory_by_mac)
+                                            get_cloud_ids_for_host(
+                                                hn,
+                                                ios_username,
+                                                ios_password,
+                                                ios_port,
+                                                ios_secret,
+                                                inventory_by_mac,
+                                            )
                                         )
                                         timing_short = ""
                                         if times:
@@ -835,29 +669,45 @@ def greeting(incoming_msg):
                                             cloud_ids_by_host,
                                             already_claimed,
                                             timing_short=timing_short,
+                                            bot=BOT,
                                         )
                                     except AuthenticationException:
                                         cloud_ids_by_host = {hn: []}
                                         already_claimed = False
                                         rp, ln = format_get_cloud_id_msg(
-                                            hn, "SSH authentication failed"
+                                            hn, "SSH authentication failed", bot=BOT
                                         )
                                     except NetmikoTimeoutException as exc:
                                         cloud_ids_by_host = {hn: []}
                                         already_claimed = False
                                         rp, ln = format_get_cloud_id_msg(
-                                            hn, f"SSH connection timed out: {exc}"
+                                            hn,
+                                            f"SSH connection timed out: {exc}",
+                                            bot=BOT,
                                         )
                                     except ConnectionException as exc:
                                         cloud_ids_by_host = {hn: []}
                                         already_claimed = False
                                         rp, ln = format_get_cloud_id_msg(
-                                            hn, f"SSH connection failed: {exc}"
+                                            hn,
+                                            f"SSH connection failed: {exc}",
+                                            bot=BOT,
                                         )
-                                    except Exception as exc:
+                                    except Exception:
                                         cloud_ids_by_host = {hn: []}
                                         already_claimed = False
-                                        rp, ln = format_get_cloud_id_msg(hn, f"error: {exc}")
+                                        timing_short = ""
+                                        if times:
+                                            timing_short = " (%.2fs)" % round(
+                                                (time.time() - started), 2
+                                            )
+                                        rp, ln = format_cloud_id_lookup_msg(
+                                            hn,
+                                            cloud_ids_by_host,
+                                            already_claimed,
+                                            timing_short=timing_short,
+                                            bot=BOT,
+                                        )
                                     return {
                                         "host": hn,
                                         "cloud_ids_by_host": cloud_ids_by_host,
@@ -913,8 +763,13 @@ def greeting(incoming_msg):
                         )
                         started = time.time()
                         try:
-                            cloud_ids_by_host, already_claimed = get_cloud_id_for_host(
-                                host, inventory_by_mac
+                            cloud_ids_by_host, already_claimed = get_cloud_ids_for_host(
+                                host,
+                                ios_username,
+                                ios_password,
+                                ios_port,
+                                ios_secret,
+                                inventory_by_mac,
                             )
                             timing_short = ""
                             if times:
@@ -926,29 +781,39 @@ def greeting(incoming_msg):
                                 cloud_ids_by_host,
                                 already_claimed,
                                 timing_short=timing_short,
+                                bot=BOT,
                             )
                         except AuthenticationException:
                             response_piece, _log_line = format_get_cloud_id_msg(
-                                host, "SSH authentication failed"
+                                host, "SSH authentication failed", bot=BOT
                             )
                         except NetmikoTimeoutException as exc:
                             response_piece, _log_line = format_get_cloud_id_msg(
-                                host, f"SSH connection timed out: {exc}"
+                                host, f"SSH connection timed out: {exc}", bot=BOT
                             )
                         except ConnectionException as exc:
                             response_piece, _log_line = format_get_cloud_id_msg(
-                                host, f"SSH connection failed: {exc}"
+                                host, f"SSH connection failed: {exc}", bot=BOT
                             )
-                        except Exception as exc:
-                            response_piece, _log_line = format_get_cloud_id_msg(
-                                host, f"error: {exc}"
+                        except Exception:
+                            timing_short = ""
+                            if times:
+                                timing_short = " (%.2fs)" % round(
+                                    (time.time() - started), 2
+                                )
+                            response_piece, _log_line = format_cloud_id_lookup_msg(
+                                host,
+                                {host: []},
+                                False,
+                                timing_short=timing_short,
+                                bot=BOT,
                             )
                         if BOT:
                             response.html = response_piece
                         else:
                             response.markdown = response_piece
                 else:
-                    r = "Syntax is **get (cloud-id <_fqdn or ip address_> | "
+                    r = "Syntax is **get (networks | cloud-id <_fqdn or ip address_> | "
                     r += "cloud-ids <_filespec_>)**"
                     response.markdown = r
 
@@ -1121,7 +986,7 @@ def greeting(incoming_msg):
                     response.markdown = r
                 else:
                     # We did, so translate it!
-                    response.markdown = register_switch(incoming_msg, host=host_id)
+                    response.markdown = register_switch(incoming_msg, dashboard, host=host_id)
             # Well, did they type more after "register" ?
             elif user_text.lower().startswith("register"):
                 # Did they type "register file <something>" ?
@@ -1133,7 +998,7 @@ def greeting(incoming_msg):
                             r = "I was unable to ping that host."
                             response.markdown = r
                             return response
-                        response.markdown = register_switch(incoming_msg, host=host_id)
+                        response.markdown = register_switch(incoming_msg, dashboard, host=host_id)
                     else:
                         # They did not, so BUMP the user.
                         r = "I'm sorry, but I don't have a host that we are "
@@ -1167,7 +1032,7 @@ def greeting(incoming_msg):
                     else:
                         # We did, so claim it!
                         r = claim_switch(
-                            incoming_msg, dest_net=meraki_net, serials=meraki_serials
+                            incoming_msg, dashboard, dest_net=meraki_net, serials=meraki_serials
                         )
                         response.markdown = r
 
@@ -1235,7 +1100,7 @@ def greeting(incoming_msg):
                         # All good, let's go claim the serial numbers to
                         # the network
                         response.markdown = claim_switch(
-                            incoming_msg, dest_net=dest_net, serials=serials
+                            incoming_msg, dashboard, dest_net=dest_net, serials=serials
                         )
 
         case "help" | "?":
@@ -1247,9 +1112,10 @@ def greeting(incoming_msg):
                 response.markdown = r
                 for line in bot_commands:
                     response.markdown += "\n" + line[0] + ": " + line[1]
+                response.markdown += f"\n\nMerakicat version {VERSION}"
             else:
                 r = (
-                    "\n\n"
+                    f"\nMerakicat version {VERSION}\n\n"
                     + tabulate(command_list, headers=["Command Format", "Function"])
                     + "\n"
                 )
@@ -1313,104 +1179,20 @@ def write_check_hosts_log(contents: str) -> str:
     return log_file
 
 
-def write_cloud_ids_log(contents: str, cloud_ids: list[str] | None = None) -> str:
-    """Write get-cloud-ids output to DEFAULT_FILES_FOLDER and return file path."""
-    output_dir = os.path.join(os.getcwd(), DEFAULT_FILES_FOLDER)
-    os.makedirs(output_dir, exist_ok=True)
-    log_file = os.path.join(
-        output_dir, f"get-cloud-ids-{get_log_filename_suffix()}.log"
-    )
-    if cloud_ids is None:
-        cloud_ids = []
-    with open(log_file, "w") as fh:
-        fh.write(contents)
-        fh.write("\n")
-        fh.write(
-            "==========Cloud IDs one per line for pasting into the Meraki Dashboard excluding those already claimed==========\n"
+def minimum_ios_message(status) -> str:
+    """Return a user-facing message for failed minimum IOS/model checks."""
+    if status.reason == "not_met":
+        return (
+            "IOS XE version not supported "
+            + f"({status.current_version} < {status.required_version})"
         )
-        if len(cloud_ids) == 0:
-            fh.write("(none)\n")
-        else:
-            fh.write("\n".join(cloud_ids) + "\n")
-    return log_file
-
-
-def format_get_cloud_id_msg(host_label: str, msg: str) -> tuple[str, str]:
-    # Keep output aligned for typical IPv4 addresses and short host labels.
-    log_line = f"{host_label:<15} {msg}\n"
-    if BOT:
-        response_piece = "<h3>" + host_label + "</h3><p>" + msg + "</p>"
-    else:
-        response_piece = log_line
-    return response_piece, log_line
-
-
-def extract_cloud_ids_for_dashboard_paste(
-    cloud_ids_with_claimed: list[tuple[dict[str, list[str]], bool]],
-) -> list[str]:
-    """
-    Build the Cloud ID paste list for the Meraki Dashboard.
-
-    Entries with already_claimed True (from Register()) are omitted.
-    """
-    cloud_ids = []
-    seen = set()
-    for cloud_ids_by_host, already_claimed in cloud_ids_with_claimed:
-        if already_claimed:
-            continue
-        for ids_for_host in cloud_ids_by_host.values():
-            for cloud_id in ids_for_host:
-                if cloud_id not in seen:
-                    seen.add(cloud_id)
-                    cloud_ids.append(cloud_id)
-    return cloud_ids
-
-
-def format_cloud_id_lookup_msg(
-    host: str,
-    cloud_ids_by_host: dict[str, list[str]],
-    already_claimed: bool,
-    timing_short: str = "",
-) -> tuple[str, str]:
-    """Build host output/log lines from Cloud IDs and already_claimed state."""
-    cloud_ids_for_host = cloud_ids_by_host.get(host, [])
-    if len(cloud_ids_for_host) > 0:
-        already_claimed_msg = " (already claimed) " if already_claimed else ""
-        msg = ", ".join(cloud_ids_for_host) + already_claimed_msg + timing_short
-    else:
-        msg = "No Cloud ID returned." + timing_short
-    return format_get_cloud_id_msg(host, msg)
-
-
-def get_cloud_id_for_host(
-    host: str, inventory_by_mac: dict[str, dict]
-) -> tuple[dict[str, list[str]], bool]:
-    """Return host-keyed Cloud IDs and already_claimed state."""
-
-    global host_id, times
-
-    host_id = host
-
-    (
-        status,
-        _issues,
-        _registered_switches,
-        registered_serials,
-        _nm,
-        _uos,
-        already_claimed,
-    ) = Register(
-        host,
-        ios_username,
-        ios_password,
-        ios_port,
-        ios_secret,
-        inventory_by_mac
-    )
-
-    if status == "successfully" and len(registered_serials) > 0:
-        return {host: registered_serials}, already_claimed
-    return {host: []}, False
+    if status.reason == "unsupported_model":
+        return f"Switch model {status.model} is not supported"
+    if status.reason == "unknown_model":
+        return "Could not determine switch model"
+    if status.reason == "unknown_version":
+        return "Could not determine current IOS version"
+    return "Switch firmware check failed"
 
 
 # Create functions that will be linked to bot commands to add capabilities
@@ -1473,7 +1255,48 @@ def check_feature_counts(can_list_doc, not_list_doc):
     return n_not_available, n_not_translatable
 
 
-def check_network(incoming_msg, dest_net, targets=["C9300", "9200"]):
+def format_precheck_console(issues: list[str]) -> str:
+    """Format registration readiness issues for CLI output."""
+    if not issues:
+        return ""
+    out = "\n\nRegistration readiness issues:\n"
+    for issue in issues:
+        if issue.startswith("  "):
+            out += f"  {issue}\n"
+        else:
+            out += f"  - {issue}\n"
+    return out
+
+
+def format_precheck_html(issues: list[str]) -> str:
+    """Format registration readiness issues for BOT HTML output."""
+    if not issues:
+        return ""
+    items = []
+    for issue in issues:
+        escaped = (
+            issue.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+        items.append(f"<li>{escaped}</li>")
+    return (
+        "<h4>Registration readiness issues</h4><ul>"
+        + "".join(items)
+        + "</ul>"
+    )
+
+
+def add_precheck_issues_to_docx(document, precheck_issues: list[str] | None) -> None:
+    """Add registration readiness checks section to a docx report."""
+    if not precheck_issues:
+        return
+    document.add_heading("Registration readiness checks", level=2)
+    for issue in precheck_issues:
+        document.add_paragraph(issue, style="List Bullet")
+
+
+def check_network(incoming_msg, dest_net, dashboard, targets=["C9300", "9200"]):
     """
     This function will get a list of all switches in a Meraki network, parse
     it for any cloud-monitored Catalyst switches that cold be cloud-managed.
@@ -1582,7 +1405,7 @@ def check_network(incoming_msg, dest_net, targets=["C9300", "9200"]):
                         incoming_msg, config=config_file, report_label=sw_name
                     )  
                     if BOT:
-                        create_message(user_roomId, response.markdown)  #type: ignore
+                        create_message(user_roomId, response.markdown) 
                     else:
                         print(response.markdown)  #type: ignore
         x += 1
@@ -1633,6 +1456,8 @@ def check_switch(
     """
 
     start_time = time.time()
+    min_ios_status = None
+    precheck_issues: list[str] = []
 
     if set_session_globals:
         global config_file, host_id
@@ -1649,10 +1474,43 @@ def check_switch(
                 if set_session_globals:
                     host_id = host
 
+                min_ios_status = check_host_minimum_ios(
+                    host, ios_username, ios_password, ios_port, ios_secret
+                )
+                if min_ios_status.reason in {"unsupported_model", "unknown_model"}:
+                    model_label = min_ios_status.model if min_ios_status.model else "unknown"
+                    if cli_one_line:
+                        label = (
+                            report_label
+                            if report_label is not None
+                            else (host or model_label or "switch")
+                        )
+                        out = (
+                            f"{label}: Switch model {model_label} is not supported\n"
+                        )
+                        if return_counts:
+                            return out, 0, 0
+                        return out
+                    if BOT:
+                        return (
+                            "<h3>Unsupported switch model</h3><p>"
+                            + f"Switch model <b>{model_label}</b> is not supported."
+                            + "</p>"
+                        )
+                    return (
+                        f"Switch model {model_label} is not supported."
+                    )
+
             # Get the config file from a switch/stack
-            switch_name, config = GetConfig(
-                host, ios_username, ios_password, ios_port, ios_secret
+            switch_name, config, precheck = GetConfig(
+                host,
+                ios_username,
+                ios_password,
+                ios_port,
+                ios_secret,
+                run_prechecks=True,
             )
+            precheck_issues = precheck.issues
 
         # Update the global stateful variable for later (single-threaded / bot use)
         if set_session_globals:
@@ -1730,8 +1588,62 @@ def check_switch(
     all_list_doc.extend(can_list_doc)
     all_list_doc.extend(not_list_doc)
 
+    if min_ios_status is not None:
+        if min_ios_status.reason == "met":
+            min_notes = f"IOS {min_ios_status.current_version} supported"
+            min_available = "Yes"
+            min_translatable = ""
+            min_more_info = (
+                "https://documentation.meraki.com/Switching/Cloud_Management_with_IOS_XE"
+            )
+        elif min_ios_status.reason == "not_met":
+            min_notes = (
+                "Version not supported "
+                + f"({min_ios_status.current_version} < "
+                + f"{min_ios_status.required_version})"
+            )
+            min_available = "No"
+            min_translatable = ""
+            min_more_info = (
+                "https://documentation.meraki.com/Switching/Cloud_Management_with_IOS_XE"
+            )
+        elif min_ios_status.reason == "unsupported_model":
+            min_notes = (
+                "minimum IOS unknown "
+                + f"(no mapping for model {min_ios_status.model})"
+            )
+            min_available = "Unknown"
+            min_translatable = ""
+            min_more_info = ""
+        elif min_ios_status.reason == "unknown_version":
+            min_notes = (
+                "minimum IOS unknown "
+                + "(could not determine current IOS version)"
+            )
+            min_available = "Unknown"
+            min_translatable = ""
+            min_more_info = ""
+        else:
+            min_notes = "minimum IOS unknown (could not determine model)"
+            min_available = "Unknown"
+            min_translatable = ""
+            min_more_info = ""
+
+        all_list.append(
+            ["Supported firmware", min_available, min_translatable]
+        )
+        all_list_console.append(
+            [
+                "Supported firmware",
+                min_available,
+                min_translatable,
+                min_notes,
+                min_more_info,
+            ]
+        )
+
     if BOT:
-        tabulate.PRESERVE_WHITESPACE = True  #type: ignore
+        tabulate.PRESERVE_WHITESPACE = True  
         # Build the report.
         if debug:
             print(f"all_list = {all_list}")
@@ -1780,7 +1692,14 @@ def check_switch(
         new_report = (
             "<h3>Merakicat Feature Report for " + switch_name + "</h3><br>" + new_report
         )
-        fname = check_report_writer(switch_name, can_list_doc, not_list_doc)
+        new_report += format_precheck_html(precheck_issues)
+        fname = check_report_writer(
+            switch_name,
+            can_list_doc,
+            not_list_doc,
+            min_ios_status=min_ios_status,
+            precheck_issues=precheck_issues,
+        )
         timing = ""
         if times:
             timing = "<br>=== That config check took %s seconds" % str(
@@ -1809,7 +1728,13 @@ def check_switch(
     else:
         if debug:
             print(f"all_list = {all_list}")
-        fname = check_report_writer(switch_name, can_list_doc, not_list_doc)
+        fname = check_report_writer(
+            switch_name,
+            can_list_doc,
+            not_list_doc,
+            min_ios_status=min_ios_status,
+            precheck_issues=precheck_issues,
+        )
         timing = ""
         if times:
             timing = "\n=== That config check took %s seconds" % str(
@@ -1823,10 +1748,10 @@ def check_switch(
             timing_short = ""
             if times:
                 timing_short = " (%.2fs)" % round((time.time() - start_time), 2)
-            if n_na == 0 and n_nt == 0:
+            if n_na == 0 and n_nt == 0 and not precheck_issues:
                 line = (
                     f"{label}: All configured features are available and "
-                    f"translatable; details in {fname}"
+                    f"translatable"
                 )
             else:
                 parts = []
@@ -1834,7 +1759,31 @@ def check_switch(
                     parts.append(f"{n_na} feature(s) not available in Meraki")
                 if n_nt:
                     parts.append(f"{n_nt} feature(s) not translatable")
-                line = f"{label}: " + "; ".join(parts) + f"; details in {fname}"
+                if precheck_issues:
+                    parts.append(f"{len(precheck_issues)} precheck(s) failed")
+                line = f"{label}: " + "; ".join(parts)
+            if min_ios_status is not None:
+                if min_ios_status.reason == "met":
+                    pass
+                elif min_ios_status.reason == "not_met":
+                    line += (
+                        "; IOS XE version not supported "
+                        + f"({min_ios_status.current_version} < "
+                        + f"{min_ios_status.required_version})"
+                    )
+                elif min_ios_status.reason == "unsupported_model":
+                    line += (
+                        "; minimum IOS unknown "
+                        + f"(no mapping for model {min_ios_status.model})"
+                    )
+                elif min_ios_status.reason == "unknown_version":
+                    line += (
+                        "; minimum IOS unknown "
+                        + "(could not determine current IOS version)"
+                    )
+                else:
+                    line += "; minimum IOS unknown (could not determine model)"
+            line += f"; details in {fname}"
             out = line + timing_short + "\n"
             if return_counts:
                 return out, n_na, n_nt
@@ -1852,6 +1801,7 @@ def check_switch(
         out = (
             "\n\n"
             + report
+            + format_precheck_console(precheck_issues)
             + "\n\nPlease review the results above, or "
             + "in the file "
             + fname
@@ -1871,7 +1821,7 @@ def check_switch(
         return out
 
 
-def cloud_switch(incoming_msg, host=""):
+def cloud_switch(incoming_msg, dashboard, host=""):
     """ """
 
     start_time = time.time()
@@ -1947,9 +1897,25 @@ def cloud_switch(incoming_msg, host=""):
     return "Well, that was fun!" + timing
 
 
-def check_report_writer(switch_name, can_list_doc, not_list_doc):
+def check_report_writer(
+    switch_name,
+    can_list_doc,
+    not_list_doc,
+    min_ios_status=None,
+    precheck_issues=None,
+):
 
     global detailed
+
+    def _display_ios_version(version: str) -> str:
+        parts = version.split(".")
+        normalized_parts = []
+        for part in parts:
+            if part.isdigit():
+                normalized_parts.append(str(int(part)))
+            else:
+                normalized_parts.append(part)
+        return ".".join(normalized_parts)
 
     document = docx.Document()
     section = document.sections[0]
@@ -2023,6 +1989,50 @@ def check_report_writer(switch_name, can_list_doc, not_list_doc):
                     paragraph = document.add_paragraph()
                     paragraph.text += "\t" + str(ios_line[0].linenum)
                     paragraph.text += "\t" + ios_line[0].text + "\n"
+        if min_ios_status is not None:
+            heading = document.add_heading(
+                "Supported firmware?", level=2
+            )
+            paragraph = document.add_paragraph()
+            if min_ios_status.reason == "met":
+                status_text = (
+                    "IOS "
+                    + f"{_display_ios_version(min_ios_status.current_version)} "
+                    + "supported"
+                )
+                add_hyperlink(
+                    paragraph,
+                    status_text,
+                    "https://documentation.meraki.com/Switching/Cloud_Management_with_IOS_XE",
+                    "0000FF",
+                    False,
+                )
+            elif min_ios_status.reason == "not_met":
+                status_text = (
+                    "Version not supported "
+                    + f"({min_ios_status.current_version} < "
+                    + f"{min_ios_status.required_version})"
+                )
+                add_hyperlink(
+                    paragraph,
+                    status_text,
+                    "https://documentation.meraki.com/Switching/Cloud_Management_with_IOS_XE",
+                    "0000FF",
+                    False,
+                )
+            elif min_ios_status.reason == "unsupported_model":
+                paragraph.text = (
+                    "minimum IOS unknown "
+                    + f"(no mapping for model {min_ios_status.model})"
+                )
+            elif min_ios_status.reason == "unknown_version":
+                paragraph.text = (
+                    "minimum IOS unknown "
+                    + "(could not determine current IOS version)"
+                )
+            else:
+                paragraph.text = "minimum IOS unknown (could not determine model)"
+        add_precheck_issues_to_docx(document, precheck_issues)
     else:
         # Report as a table
         table = document.add_table(rows=1, cols=4)
@@ -2073,6 +2083,68 @@ def check_report_writer(switch_name, can_list_doc, not_list_doc):
             p_table = cells[2].paragraphs[0]
             p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             add_hyperlink(p_table, line[3], line[4], "0000FF", False)
+
+        if min_ios_status is not None:
+            row = table.add_row()
+            set_col_widths(row)
+            cells = row.cells
+            cells[0].text = "Supported firmware"
+            cells[1].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            cells[2].paragraphs[0].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            if min_ios_status.reason == "met":
+                cells[1].text = "Yes"
+                cells[2].text = ""
+                status_text = (
+                    "IOS "
+                    + f"{_display_ios_version(min_ios_status.current_version)} "
+                    + "supported"
+                )
+                p_table = cells[3].paragraphs[0]
+                p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                add_hyperlink(
+                    p_table,
+                    status_text,
+                    "https://documentation.meraki.com/Switching/Cloud_Management_with_IOS_XE",
+                    "0000FF",
+                    False,
+                )
+            elif min_ios_status.reason == "not_met":
+                cells[1].text = "No"
+                cells[2].text = ""
+                status_text = (
+                    "Version not supported "
+                    + f"({min_ios_status.current_version} < "
+                    + f"{min_ios_status.required_version})"
+                )
+                p_table = cells[3].paragraphs[0]
+                p_table.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                add_hyperlink(
+                    p_table,
+                    status_text,
+                    "https://documentation.meraki.com/Switching/Cloud_Management_with_IOS_XE",
+                    "0000FF",
+                    False,
+                )
+            elif min_ios_status.reason == "unsupported_model":
+                cells[1].text = "Unknown"
+                cells[2].text = ""
+                cells[3].text = (
+                    "minimum IOS unknown "
+                    + f"(no mapping for model {min_ios_status.model})"
+                )
+            elif min_ios_status.reason == "unknown_version":
+                cells[1].text = "Unknown"
+                cells[2].text = ""
+                cells[3].text = (
+                    "minimum IOS unknown "
+                    + "(could not determine current IOS version)"
+                )
+            else:
+                cells[1].text = "Unknown"
+                cells[2].text = ""
+                cells[3].text = "minimum IOS unknown (could not determine model)"
+
+        add_precheck_issues_to_docx(document, precheck_issues)
 
     # Write out the report as a docx file
     path = os.path.join(os.getcwd(), DEFAULT_FILES_FOLDER)
@@ -2149,7 +2221,7 @@ def add_hyperlink(paragraph, text, url, color, underline):
     return hyperlink
 
 
-def register_switch(incoming_msg, host="", called=""):
+def register_switch(incoming_msg, dashboard, host="", called=""):
     """
     This function will register a Catalyst switch to the Meraki Dashboard.
     :param incoming_msg: The incoming message object from Teams
@@ -2172,6 +2244,15 @@ def register_switch(incoming_msg, host="", called=""):
         # We were passed a hostname or IP address...
         # Update the global stateful variable for later
         host_id = host
+
+    support_status = check_host_minimum_ios(
+        host, ios_username, ios_password, ios_port, ios_secret
+    )
+    if support_status.reason != "met":
+        msg = minimum_ios_message(support_status)
+        if called == "":
+            return f"We were unsuccessful registering {host}:\n\n{msg}\n"
+        return ("unsuccessfully", [msg], [])
 
     # SSH to the switch with netmiko, read the config, grab the hostname,
     # write the config out to a file using the hostname as part of the
@@ -2243,7 +2324,7 @@ def register_switch(incoming_msg, host="", called=""):
         return (status, issues, registered_switches)
 
 
-def claim_switch(incoming_msg, dest_net=meraki_net, serials=meraki_serials, called=""):
+def claim_switch(incoming_msg, dashboard, dest_net=meraki_net, serials=meraki_serials, called=""):
     """
     This function will Claim a Registered Catalyst switch in the Dashboard.
     :param incoming_msg: The incoming message object from Teams
@@ -2322,6 +2403,7 @@ def claim_switch(incoming_msg, dest_net=meraki_net, serials=meraki_serials, call
 
 def translate_switch(
     incoming_msg,
+    dashboard,
     config=config_file,
     host=host_id,
     serials: list[int | str] = meraki_serials,
@@ -2371,6 +2453,11 @@ def translate_switch(
             if host == "":
                 host = host_id
             host_id = host
+            support_status = check_host_minimum_ios(
+                host_id, ios_username, ios_password, ios_port, ios_secret
+            )
+            if support_status.reason != "met":
+                return minimum_ios_message(support_status)
             # SSH to the switch with netmiko, read the config, grab the
             # switch name, write the config out to a file using the switch
             # name as part of the filespec
@@ -2511,7 +2598,7 @@ def translate_switch(
     return r
 
 
-def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
+def migrate_switch(incoming_msg, dashboard, host=host_id, dest_net=meraki_net):
     """
     This function will register a Catalyst switch stack to the Meraki
     Dashboard, claim the stack to a Meraki Network, then translate the
@@ -2547,6 +2634,11 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     else:
         # We were passed a hostname or IP address...
         host_id = host
+    support_status = check_host_minimum_ios(
+        host_id, ios_username, ios_password, ios_port, ios_secret
+    )
+    if support_status.reason != "met":
+        return minimum_ios_message(support_status)
 
     # Were we passed a Meraki Network?
     if dest_net == "":
@@ -2602,7 +2694,7 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     register_start_time = time.time()
 
     status, issues, registered_switches = register_switch(
-        incoming_msg, host=host_id, called="yes"
+        incoming_msg, dashboard, host=host_id, called="yes"
     )
 
     if debug:
@@ -2637,7 +2729,7 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     # Claim the switch stack to a Network in the Meraki dashboard
     claim_start_time = time.time()
     status, issues, ac_switches, claimed_switches = claim_switch(
-        incoming_msg, dest_net=meraki_net, serials=meraki_serials, called="yes"
+        incoming_msg, dashboard, dest_net=meraki_net, serials=meraki_serials, called="yes"
     )
     if debug:
         print("in migrate after claim_switch, meraki_serials = " + f"{meraki_serials}")
@@ -2659,7 +2751,7 @@ def migrate_switch(incoming_msg, host=host_id, dest_net=meraki_net):
     # Translate the switch stack to the Meraki switches we just claimed
     translate_start_time = time.time()
     r = "\n\n" + translate_switch(
-        incoming_msg, config=config_file, serials=meraki_serials, verb="migrate"
+        incoming_msg, dashboard, config=config_file, serials=meraki_serials, verb="migrate"
     )
     blurb = "\nTranslated " + switch_name + ".cfg to Meraki switches "
     blurb += string_serials + " based on encyclopedia " + mc_pedia["version"]
@@ -2727,149 +2819,446 @@ def create_message_with_attachment(rid, msgtxt, attachment):
     return response.json()
 
 
-# If we are in BOT mode, set up some bot stuff
-if BOT:
-    # Set the bot greeting.
-    # bot.set_greeting(greeting)
+def init_dry_run_argv() -> None:
+    """Strip --dry-run from argv and configure dry-run Meraki session."""
+    global MERAKI_DRY_RUN
+    MERAKI_DRY_RUN = "--dry-run" in sys.argv
+    if MERAKI_DRY_RUN:
+        sys.argv = [sys.argv[0]] + [a for a in sys.argv[1:] if a != "--dry-run"]
+    set_meraki_dry_run(MERAKI_DRY_RUN)
+  
 
-    # Add new commands to the bot.
-    bot_commands = list(list())
-    bot_commands.extend(
-        [
-            ["* **help**", "Get help."],
-            [
-                "* **check [network _Meraki network name_] [with timing] \
-[with details]**",
-                "Check the configs of cloud monitored Catalyst switches \
-for both translatable and possible Meraki features",
-            ],
-            [
-                "* **check _drag-and-drop files_ [with timing] [with details]**",
-                "Check one or more Catalyst switch config files for both \
-translatable and possible Meraki features",
-            ],
-            [
-                "* **check [host _FQDN or IP address_ | file _filespec_] \
-[with timing] [with details]**",
-                "Check a Catalyst switch config for both translatable \
-and possible Meraki features",
-            ],
-            # TODO: Implement check hosts and cloud ID commands for the BOT
-#             [
-#                 "* **check hosts _filespec_ [with timing] [with details]**",
-#                 "Check each hostname from a CSV or Excel file with a \
-# Hostname column",
-#             ],
-            [
-                "* **register [host _FQDN or IP address_] [with timing] \
-[with details]**",
-                "Register a Catalyst switch to the Meraki Dashboard",
-            ],
-            # [
-            #     "* **get cloud-id _FQDN or IP address_ [with timing]**",
-            #     "Get the Cloud ID for a Catalyst switch",
-            # ],
-            # [
-            #     "* **get cloud-ids _filespec_ [with timing]**",
-            #     "Get Cloud IDs for hosts listed in a CSV or Excel file",
-            # ],
-            [
-                "* **claim [_Meraki serial numbers_] [to _Meraki network \
-name_] [with timing]**",
-                "Claim Catalyst switches to a Meraki Network",
-            ],
-            [
-                "* **translate [host _FQDN or IP address_ | file _filespec_] \
-[to _Meraki serial numbers_] [with timing]**",
-                "Translate a Catalyst switch config from a file or host to claimed \
-Meraki serial numbers",
-            ],
-            [
-                "* **migrate [host _FQDN or IP address_] [to _Meraki network name_] \
-[with timing]**",
-                "Migrate a Catalyst switch to a Meraki switch - register, claim & \
-translate",
-            ],
-            [
-                "* **demo report**",
-                "Create a demo report for all features currently in the feature \
-encyclopedia",
-            ],
+def init_force_pedia_refresh_argv() -> None:
+    """Strip --force-pedia-refresh from argv and configure pedia refresh."""
+    global FORCE_PEDIA_REFRESH
+    FORCE_PEDIA_REFRESH = "--force-pedia-refresh" in sys.argv
+    if FORCE_PEDIA_REFRESH:
+        sys.argv = [sys.argv[0]] + [
+            a for a in sys.argv[1:] if a != "--force-pedia-refresh"
         ]
+
+
+def get_repo_file_commit_epoch(file_path: str) -> float | None:
+    """Return the latest repo commit time for a file path."""
+    commits_url = f"{REPO_API_URL}/commits"
+    try:
+        response = requests.get(
+            commits_url,
+            params={"path": file_path, "per_page": 1},
+            timeout=10,
+        )
+    except requests.RequestException as error:
+        if debug:
+            print(f"Unable to query commit date for {file_path}: {error}")
+        return None
+
+    if response.status_code != 200:
+        if debug:
+            print(
+                f"Unable to query commit date for {file_path}: "
+                f"{response.status_code}"
+            )
+        return None
+
+    commit_data = response.json()
+    if not commit_data:
+        return None
+
+    date_text = commit_data[0].get("commit", {}).get("committer", {}).get("date")
+    if not date_text:
+        return None
+
+    try:
+        return datetime.fromisoformat(date_text.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        if debug:
+            print(f"Invalid commit date returned for {file_path}: {date_text}")
+        return None
+
+
+def should_download_repo_file(local_file: str, repo_file: str) -> bool:
+    """Return True only when local file is missing or older than the repo copy."""
+    if FORCE_PEDIA_REFRESH or not os.path.exists(local_file):
+        return True
+
+    repo_commit_epoch = get_repo_file_commit_epoch(repo_file)
+    if repo_commit_epoch is None:
+        return False
+
+    return os.path.getmtime(local_file) < repo_commit_epoch
+
+
+def init_debug_flags() -> None:
+    global DEBUG, DEBUG_MAIN, PDF, debug
+    try:
+        user_info = import_module("mc_user_info")
+    except ImportError:
+        DEBUG = False
+        DEBUG_MAIN = False
+        PDF = False
+    else:
+        DEBUG = getattr(user_info, "DEBUG", False)
+        DEBUG_MAIN = getattr(user_info, "DEBUG_MAIN", False)
+        PDF = getattr(user_info, "PDF", False)
+    debug = DEBUG or DEBUG_MAIN
+
+
+def init_mc_pedia() -> None:
+    global mc_pedia
+    dstFile = "mc_pedia2.py"
+    repo_pedia_path = "src/merakicat/mc_pedia2.py"
+    filetime = (
+        time.strftime("%a, %d %b %Y %X GMT", time.gmtime(os.path.getmtime(dstFile)))
+        if os.path.exists(dstFile)
+        else "not found"
     )
+    if debug:
+        print("Checking if the local encyclopedia is older than the repo copy.")
+        print("File Last Modified: {0}".format(filetime))
+    url = f"{REPO_RAW_URL}/main/src/merakicat/mc_pedia2.py"
+    if debug:
+        print(f"url = {url}")
+    if should_download_repo_file(dstFile, repo_pedia_path):
+        if debug:
+            print("Downloading a fresh copy of the encyclopedia.")
+        try:
+            urllib.request.urlretrieve(url, dstFile)
+            if debug:
+                print("Done.")
+        except HTTPError as error:
+            print(error.status, error.reason)
+        except URLError as error:
+            print(error.reason)
+        except TimeoutError:
+            print("Request timed out")
+    else:
+        if debug:
+            print("Local encyclopedia is newer than repo. Skipping download.")
 
-    bot.add_command(RunHello())
-    bot.add_command(RunHelp())
-    bot.add_command(RunCheck())
-    bot.add_command(RunRegister())
-    bot.add_command(RunClaim())
-    bot.add_command(RunTranslate())
-    bot.add_command(RunMigrate())
-    bot.add_command(RunDemo())
+    compat_dst_file = "mc_min_ios_version.py"
+    repo_compat_path = "src/merakicat/mc_min_ios_version.py"
+    compat_url = f"{REPO_RAW_URL}/main/src/merakicat/mc_min_ios_version.py"
+    if should_download_repo_file(compat_dst_file, repo_compat_path):
+        try:
+            urllib.request.urlretrieve(compat_url, compat_dst_file)
+            if debug:
+                print("Updated minimum IOS version compatibility file.")
+        except HTTPError as error:
+            # Silently skip if the compatibility file is not in the repo.
+            if error.status != 404:
+                print(error.status, error.reason)
+        except URLError as error:
+            print(error.reason)
+        except TimeoutError:
+            print("Request timed out")
 
-else:
-    command_list = list(list())
-    command_list.extend(
-        [
-            ["help", "This list of commands"],
-            [
-                "check network <Meraki network name> [with timing] [with details]",
-                "Check the configs of cloud monitored Catalyst switches for both \
-translatable and possible Meraki features",
-            ],
-            [
-                "check host <FQDN or IP address> | file <filespec> [with timing] \
-[with details]",
-                "Check a Catalyst switch config for both translatable and possible \
-Meraki features",
-            ],
-            [
-                "check hosts <filespec> [with timing]",
-                "Check a list of switches specified in a CSV or Excel file (use `hosts_template.xlsx` as a template)",
-            ],
-            [
-                "get cloud-id <FQDN or IP address> [with timing]",
-                "Get the Cloud ID for a Catalyst switch",
-            ],
-            [
-                "get cloud-ids <filespec> [with timing]",
-                "Get Cloud IDs for hosts listed in a CSV or Excel file (use `hosts_template.xlsx` as a template)",
-            ],
-            [
-                "register host <FQDN or IP address> [with timing]",
-                "Register a Catalyst switch to the Meraki Dashboard",
-            ],
-            [
-                "claim <Meraki serial numbers> to <Meraki network name> [with \
-timing]",
-                "Claim Catalyst switches to a Meraki Network",
-            ],
-            [
-                "translate host <FQDN or IP address> | file <filespec> to <Meraki \
-serial numbers> [with timing]",
-                "Translate a Catalyst switch config from a file or host to claimed \
-Meraki serial numbers",
-            ],
-            [
-                "migrate host <FQDN or IP address> to <Meraki network name> [with \
-timing]",
-                "Migrate a Catalyst switch to a Meraki switch - register, claim & \
-translate",
-            ],
-            [
-                "demo report",
-                "Create a demo report for all features currently in the feature \
-encyclopedia",
-            ],
-        ]
-    )
+    mc_pedia = import_module("mc_pedia2").mc_pedia
 
 
-# BOT or not?
-if __name__ == "__main__":
+def set_bot_from_argv() -> None:
+    """Set global BOT from whether the process was launched with no CLI arguments."""
+    global BOT
+    BOT = len(sys.argv) == 1
+
+
+def cli_startup_kind() -> Literal["bot", "cli_help", "cli_demo", "cli_full"]:
+    """Classify startup after dry-run argv normalization; BOT must already be set."""
     if BOT:
-        # Run Bot
-        # bot.run(host="0.0.0.0", port=5000)
+        return "bot"
+    text = " ".join(sys.argv[1:]).lower().strip()
+    if text in ("help", "?"):
+        return "cli_help"
+    if text == "demo report":
+        return "cli_demo"
+    return "cli_full"
+
+
+def apply_runtime_globals_from_config() -> None:
+    """Copy IOS, Meraki, and (when BOT) Teams settings from mc_config into module globals."""
+    global ios_username, ios_password, ios_secret, ios_port, meraki_api_key, meraki_org_name
+    global bot_email, bot_app_name, teams_token, teams_emails, bot_fname
+    ios_username = IOS_USERNAME
+    ios_password = IOS_PASSWORD
+    ios_secret = IOS_SECRET
+    ios_port = IOS_PORT
+    meraki_api_key = MERAKI_API_KEY
+    meraki_org_name = MERAKI_ORG_NAME
+    if BOT:
+        bot_email = TEAMS_BOT_EMAIL
+        bot_app_name = TEAMS_BOT_APP_NAME
+        teams_token = TEAMS_BOT_TOKEN
+        teams_emails = TEAMS_EMAILS
+        bot_fname = bot_app_name.split()[0].strip()
+
+
+def init_shared_globals() -> None:
+    global payload, organizations, api, configured_ports, unconfigured_ports, unified_os
+    global command_line_msg, times, report, detailed
+    global config_file, host_id, nm_list, meraki_serials, meraki_orgs, meraki_networks
+    global meraki_org, meraki_net, meraki_net_name, meraki_urls
+    payload = {}
+    organizations = {}
+    api = ""
+    payload = None
+    configured_ports = defaultdict(list)
+    unconfigured_ports = defaultdict(list)
+    unified_os = False
+    command_line_msg = Response()
+    times = False
+    report = False
+    detailed = False
+    config_file = ""
+    host_id = ""
+    nm_list = list()
+    meraki_serials = list()
+    meraki_orgs = list()
+    meraki_networks = list()
+    meraki_org = ""
+    meraki_net = ""
+    meraki_net_name = ""
+    meraki_urls = list()
+
+
+def init_dashboard_and_meraki_org():
+    global meraki_orgs, meraki_networks, meraki_org
+    if debug:
+        print("Trying to setup a dashboard instance")
+    dashboard_api = meraki.DashboardAPI(
+        api_key=meraki_api_key, output_log=False, suppress_logging=True
+    )
+    if MERAKI_DRY_RUN:
+        apply_dry_run_session(dashboard_api)
+
+    if debug:
+        print("Got it, now trying to get the list of Orgs")
+    try:
+        meraki_orgs = dashboard_api.organizations.getOrganizations()
+    except meraki.exceptions.APIError:
+        print("We were unable to get the list of Orgs.")
+        sys.exit()
+    if debug:
+        print(f"meraki_orgs = {meraki_orgs}")
+    x = 0
+    while x <= len(meraki_orgs) - 1:
+        if meraki_orgs[x]["name"] == meraki_org_name:
+            try:
+                raw_nets = dashboard_api.organizations.getOrganizationNetworks(
+                    organizationId=meraki_orgs[x]["id"]
+                )
+            except meraki.exceptions.APIError:
+                print(
+                    "We were unable to get the list of networks"
+                    + f" for {meraki_orgs[x]['name']}."
+                )
+                sys.exit()
+            if debug:
+                print(raw_nets)
+            y = 0
+            while y <= len(raw_nets) - 1:
+                meraki_networks.append(raw_nets[y])
+                y += 1
+            break
+        x += 1
+    if debug:
+        print(f"meraki_networks = {meraki_networks}")
+
+    matched_org = None
+    for org in meraki_orgs:
+        if org.get("name") == meraki_org_name:
+            matched_org = org
+            break
+    if matched_org:
+        print(f"Connected to organization: {meraki_org_name}\n")
+        meraki_org = matched_org["id"]
+        if debug:
+            print(f"meraki_org = {meraki_org}")
+            print(f"meraki_org_name = {meraki_org_name}")
+    else:
+        print(f'Error: No organization found matching "{meraki_org_name}".')
+        sys.exit()
+
+    return dashboard_api
+
+
+def init_webex_bot_if_bot(dashboard_api) -> None:
+    global bot
+    if not BOT:
+        return
+    if debug:
+        print(f"teams_emails = {teams_emails}")
+    bot = WebexBot(
+        teams_token,
+        bot_name=bot_app_name,
+        # Comment out the approved_users lines if you don't care...
+        approved_users=teams_emails,
+        # approved_domains=[],
+        # approved_rooms=[],
+        threads=False,
+        help_command=RunHelp(dashboard_api),
+        log_level="ERROR",
+    )
+
+
+def register_bot_commands_or_cli_help(dashboard_api: meraki.DashboardAPI | None) -> None:
+    global bot_commands, command_list
+    if BOT:
+        bot_commands = list(list())
+        bot_commands.extend(
+            [
+                ["* **help**", "Get help."],
+                [
+                    "* **check [network _Meraki network name_] [with timing] \
+[with details]**",
+                    "Check the configs of cloud monitored Catalyst switches \
+for both translatable and possible Meraki features",
+                ],
+                [
+                    "* **check _drag-and-drop files_ [with timing] [with details]**",
+                    "Check one or more Catalyst switch config files for both \
+translatable and possible Meraki features",
+                ],
+                [
+                    "* **check [host _FQDN or IP address_ | file _filespec_] \
+[with timing] [with details]**",
+                    "Check a Catalyst switch config for both translatable \
+and possible Meraki features",
+                ],
+                [
+                    "* **register [host _FQDN or IP address_] [with timing] \
+[with details]**",
+                    "Register a Catalyst switch to the Meraki Dashboard",
+                ],
+                [
+                    "* **claim [_Meraki serial numbers_] [to _Meraki network \
+name_] [with timing]**",
+                    "Claim Catalyst switches to a Meraki Network",
+                ],
+                [
+                    "* **translate [host _FQDN or IP address_ | file _filespec_] \
+[to _Meraki serial numbers_] [with timing]**",
+                    "Translate a Catalyst switch config from a file or host to claimed \
+Meraki serial numbers",
+                ],
+                [
+                    "* **migrate [host _FQDN or IP address_] [to _Meraki network name_] \
+[with timing]**",
+                    "Migrate a Catalyst switch to a Meraki switch - register, claim & \
+translate",
+                ],
+                [
+                    "* **get networks**",
+                    "List all Meraki networks in the configured organization",
+                ],
+                [
+                    "* **demo report**",
+                    "Create a demo report for all features currently in the feature \
+encyclopedia",
+                ],
+            ]
+        )
+        bot.add_command(RunHello(dashboard_api))
+        bot.add_command(RunHelp(dashboard_api))
+        bot.add_command(RunCheck(dashboard_api))
+        bot.add_command(RunRegister(dashboard_api))
+        bot.add_command(RunClaim(dashboard_api))
+        bot.add_command(RunTranslate(dashboard_api))
+        bot.add_command(RunMigrate(dashboard_api))
+        bot.add_command(RunDemo(dashboard_api))
+    else:
+        command_list = list(list())
+        command_list.extend(
+            [
+                ["help", "This list of commands"],
+                [
+                    "check network <Meraki network name> [with timing] [with details]",
+                    "Check the configs of cloud monitored Catalyst switches for both \
+translatable and possible Meraki features",
+                ],
+                [
+                    "check host <FQDN or IP address> | file <filespec> [with timing] \
+[with details]",
+                    "Check a Catalyst switch config for both translatable and possible \
+Meraki features",
+                ],
+                [
+                    "check hosts <filespec> [with timing]",
+                    "Check a list of switches specified in a CSV or Excel file (use `hosts_template.xlsx` as a template)",
+                ],
+                [
+                    "get cloud-id <FQDN or IP address> [with timing]",
+                    "Get the Cloud ID for a Catalyst switch",
+                ],
+                [
+                    "get cloud-ids <filespec> [with timing]",
+                    "Get Cloud IDs for hosts listed in a CSV or Excel file (use `hosts_template.xlsx` as a template)",
+                ],
+                [
+                    "get networks",
+                    "List all Meraki networks in the configured organization",
+                ],
+                [
+                    "register host <FQDN or IP address> [with timing]",
+                    "Register a Catalyst switch to the Meraki Dashboard",
+                ],
+                [
+                    "claim <Meraki serial numbers> to <Meraki network name> [with \
+timing]",
+                    "Claim Catalyst switches to a Meraki Network",
+                ],
+                [
+                    "translate host <FQDN or IP address> | file <filespec> to <Meraki \
+serial numbers> [with timing]",
+                    "Translate a Catalyst switch config from a file or host to claimed \
+Meraki serial numbers",
+                ],
+                [
+                    "migrate host <FQDN or IP address> to <Meraki network name> [with \
+timing]",
+                    "Migrate a Catalyst switch to a Meraki switch - register, claim & \
+translate",
+                ],
+                [
+                    "demo report",
+                    "Create a demo report for all features currently in the feature \
+encyclopedia",
+                ],
+            ]
+        )
+
+
+def initialize_merakicat() -> meraki.DashboardAPI | None:
+    tabulate.PRESERVE_WHITESPACE = True  # type: ignore
+    init_dry_run_argv()
+    init_force_pedia_refresh_argv()
+    init_debug_flags()
+    set_bot_from_argv()
+    kind = cli_startup_kind()
+
+    # Don't need to validate environment variables for CLI help or demo report
+    if kind == "cli_help":
+        init_shared_globals()
+        register_bot_commands_or_cli_help(None)
+        return None
+
+    if kind == "cli_demo":
+        init_mc_pedia()
+        init_shared_globals()
+        register_bot_commands_or_cli_help(None)
+        return None
+
+    init_mc_pedia()
+    validate(BOT, require_operational=True)
+    apply_runtime_globals_from_config()
+    init_shared_globals()
+    dashboard_api = init_dashboard_and_meraki_org()
+    init_webex_bot_if_bot(dashboard_api)
+    register_bot_commands_or_cli_help(dashboard_api)
+    return dashboard_api
+
+
+def main() -> None:
+    dashboard_api = initialize_merakicat()
+    if BOT:
         bot.run()
     else:
         if debug:
@@ -2884,4 +3273,8 @@ if __name__ == "__main__":
         command_line_msg.text = text
         if debug:
             print(f"command_line_msg = {command_line_msg}")
-        print(greeting(command_line_msg).markdown)
+        print(greeting(command_line_msg, dashboard_api).markdown)
+
+
+if __name__ == "__main__":
+    main()

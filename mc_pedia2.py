@@ -874,7 +874,7 @@ type = 'access' if type == 'host' else type
             'iosxe': "allowedVlans = child.re_match_typed(regex=r'\sswitchport\strunk\sallowed\svlan\s+(\S.*)')"
         },
 
-        'nativeVlan': {
+        'vlan': {
             'name': "Native VLAN",
             'support':"✓",
             'translatable':"✓",
@@ -883,10 +883,10 @@ type = 'access' if type == 'host' else type
                 'skip': False,
                 'default': '1'
             },
-            'iosxe': "nativeVlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')"
+            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\strunk\snative\svlan\s+(\S.*)')"
         },
 
-        'dataVlan': {
+        'vlan': {
             'name': "Data VLAN",
             'support':"✓",
             'translatable':"✓",
@@ -895,7 +895,7 @@ type = 'access' if type == 'host' else type
                 'skip': False,
                 'default': '1'
             },
-            'iosxe': "dataVlan = child.re_match_typed(regex=r'\sswitchport\svlan\s+(\S.*)')"
+            'iosxe': "vlan = child.re_match_typed(regex=r'\sswitchport\svlan\s+(\S.*)')"
         },
 
         'voiceVlan': {
@@ -1666,10 +1666,10 @@ def index_mc_pedia(index_args):
     print(blurb+"==============================\n")
     for key,value in mc_pedia.items():
         if key in ["version","dated"]:
-            print(f"{key}: {value}\n")
+            print(key+": "+value+"\n")
         else:
-            print(f"{key}:\n")
-            for k,v in value.items(): # type: ignore
+            print(key+":\n")
+            for k,v in value.items():
                 skip = 0
                 if "translatable" in index_args:
                     if "translatable" not in v:
@@ -1683,9 +1683,9 @@ def index_mc_pedia(index_args):
                         skip = 1
                 if skip == 0:
                     if "name" in v:
-                        print(f" - {v['name']}\n")
+                        print(" - "+v['name']+"\n")
                     else:
-                        print(f" - {k} (for Meraki)\n")
+                        print(" - "+k+" (for Meraki)\n")
     if len(index_args) == 0:
         print("\n\nTo print the index based on either supported and translatable items or both, enter")
         print("    python mc_pedia.py [support] [translatable]")

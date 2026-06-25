@@ -1,59 +1,66 @@
+from typing import Any
+
 from netmiko import ConnectHandler
-import re
+
 try:
     from mc_user_info import DEBUG
 except ImportError:
     DEBUG = False
 
 
-def GetNmList(host_id, ios_username, ios_password, ios_port, ios_secret):
-    """
-    This function will check a Catalyst IOSXE switch for compatibility with
-    Meraki management prior to registering the switch (or stack) to Dashboard.
-    Items checked include:
-        - A stack of 1-8 switches
-        - The version of IOSXE
-        - An ip name-server
-        - A layer-3 interface that is operational
-        - A default route
-        - Succesful results of Meraki registration
-    ** Need to add show meraki compatibility check. **
-    :param host: The switch or stack to SSH into
-    :param username: Username for SSH
-    :param password: Password for SSH
-    :param port: Port number for SSH
-    :param secret: IOSXE secret password for CLI escalation
-    :return: A list of NM modules for all switches in the stack
-    """
+def GetNmList(
+    host_id: str | None = None,
+    ios_username: str | None = None,
+    ios_password: str | None = None,
+    ios_port: int | None = None,
+    ios_secret: str | None = None,
+    *,
+    net_connect: Any | None = None,
+) -> list[str]:
+    """Collect NM uplink module models for each switch in a stack."""
+    if net_connect is not None and host_id is not None:
+        raise ValueError("Pass either net_connect or host_id, not both")
+    if net_connect is None and host_id is None:
+        raise ValueError("Pass either net_connect or host_id")
 
     debug = DEBUG
 
-    nm_list = list()
+    own_connection = net_connect is None
+    if own_connection:
+        if (
+            ios_username is None
+            or ios_password is None
+            or ios_port is None
+            or ios_secret is None
+        ):
+            raise ValueError(
+                "ios_username, ios_password, ios_port, and ios_secret are required"
+            )
+        session_info = {
+            "device_type": "cisco_xe",
+            "host": host_id,
+            "username": ios_username,
+            "password": ios_password,
+            "port": ios_port,
+            "secret": ios_secret,
+        }
+        net_connect = ConnectHandler(**session_info)
+        net_connect.enable()
 
-    # SSH to the switch with netmiko, read the config, grab the hostname,
-    # write the config out to a file using hostname as part of the filespec
-    session_info = {
-        'device_type': 'cisco_xe',
-        'host': host_id,
-        'username': ios_username,
-        'password': ios_password,
-        'port': ios_port,         # optional, defaults to 22
-        'secret': ios_secret,     # optional, defaults to ''
-    }
-    net_connect = ConnectHandler(**session_info)
-    net_connect.enable()
-    switch_name = net_connect.find_prompt()
-    switch_name = switch_name[:len(switch_name) - 1]
+    nm_list: list[str] = []
 
     # Grab the switches in the stack
-    r = net_connect.send_command('show switch')
-    qty_switches = len(r.split("\n"))-8
+    r = str(net_connect.send_command("show switch"))
+    qty_switches = len(r.split("\n")) - 8
 
     # Grab the uplink module in each switch
     x = 1
     while x <= qty_switches:
-        r = net_connect.send_command('show inventory "Switch ' +
-                                     str(x) + ' FRU Uplink Module 1"')
+        r = str(
+            net_connect.send_command(
+                'show inventory "Switch ' + str(x) + ' FRU Uplink Module 1"'
+            )
+        )
         if debug:
             print(f"For switch {x}, r = {r}")
         if debug:
@@ -66,5 +73,6 @@ def GetNmList(host_id, ios_username, ios_password, ios_port, ios_secret):
     if debug:
         print(f"For the {qty_switches} switches in the stack, " +
               f"the NM modules are {nm_list}")
-    net_connect.disconnect()
-    return(nm_list)
+    if own_connection:
+        net_connect.disconnect()
+    return nm_list
