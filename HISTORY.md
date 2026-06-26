@@ -1,5 +1,10 @@
 # History
 
+## 1.2.2 (6-26-2026)
+
+- Removed duplicate `mc_pedia2.py` file from repo root
+- Patched `mc_prechecks.py` to account for an unconfigured, default VLAN 1
+
 ## 1.2.0 (6-22-2026)
 
 - Added a "get networks" command that lists all the networks in the org
@@ -15,7 +20,7 @@
   - Removed references to `bulk_check.sh` which has been replaced by `check hosts`.
   - Added checks in Register() to see if the switch has already been claimed in the Dashboard,
     or if the switch already has a Cloud ID before registering the switch to generate one.
-    This speeds up the process for those two cases and protects against initiating a 
+    This speeds up the process for those two cases and protects against initiating a
     migration to Cloud Managed if the switch is already claimed an in a network.
   - Started implementing a `--dry-run` feature. Not exposed in help because it a work in progress.
   - Fix issue with determining the Organization ID if the user has access to more than one org.
