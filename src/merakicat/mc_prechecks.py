@@ -68,7 +68,7 @@ def prechecks(net_connect: Any) -> PrecheckResult:
             issues.append(
                 "There is a known issue registering to "
                 + "Dashboard from IOSXE 17.15.3"
-            )
+            )196289728
 
     unified_os = unified_os_from_version(v)
 
@@ -81,7 +81,10 @@ def prechecks(net_connect: Any) -> PrecheckResult:
     x = 0
     good_vlans = 0
     while x <= len(r_more) - 1:
-        vlan, ip, ok, method, status, protocol = r_more[x].split()
+        try:
+            vlan, ip, ok, method, status, protocol = r_more[x].split()
+        except:
+            vlan, ip, ok, method, status, status2, protocol = r_more[x].split()
         if not ip == "unassigned" and status == "up" and protocol == "up":
             good_vlans += 1
         x += 1
