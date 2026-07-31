@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Dry-run helpers for Meraki Dashboard traffic.
 
@@ -28,10 +27,10 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
-from meraki.rest_session import RestSession
+from meraki.session import RestSession
 
 # Synced from merakicat CLI via set_meraki_dry_run() before mc_translate is imported.
 MERAKI_DRY_RUN = False
@@ -63,7 +62,7 @@ _DASHBOARD_API_ATTRS = (
 )
 
 
-def _session_constructor_kwargs(base: RestSession) -> Dict[str, Any]:
+def _session_constructor_kwargs(base: RestSession) -> dict[str, Any]:
     """Copy kwargs from an existing RestSession (private attrs; SDK-internal)."""
     return {
         "logger": base._logger,
@@ -157,7 +156,7 @@ def meraki_requests_request(
     url: str,
     *,
     dry_run: bool,
-    headers: Optional[dict] = None,
+    headers: dict | None = None,
     **kwargs: Any,
 ) -> requests.Response:
     """

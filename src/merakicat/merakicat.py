@@ -315,7 +315,7 @@ def greeting(incoming_msg, dashboard: meraki.DashboardAPI | None):
                 if debug:
                     print(f"maybe_targets = {maybe_targets}")
                 if not len(maybe_targets) == 0:
-                    targets = re.split(";|,|\s", maybe_targets)
+                    targets = re.split(r";|,|\s", maybe_targets)
                     if debug:
                         print(
                             f"regex.split(user_text)[0] = {regex.split(user_text)[0]}"
