@@ -68,7 +68,7 @@ def prechecks(net_connect: Any) -> PrecheckResult:
             issues.append(
                 "There is a known issue registering to "
                 + "Dashboard from IOSXE 17.15.3"
-            )196289728
+            )
 
     unified_os = unified_os_from_version(v)
 
