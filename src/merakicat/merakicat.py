@@ -16,6 +16,7 @@ import os
 import re
 import shutil
 import sys
+import textwrap
 import time
 import urllib.request
 from collections import defaultdict
@@ -77,6 +78,20 @@ from mc_ping import Ping
 from mc_register import Register
 from mc_splitcheck_serials import SplitCheckSerials
 from mc_translate import Evaluate, MerakiConfig
+from mc_upgrade import (
+    UPGRADE_SUMMARY_TITLE,
+    confirm_upgrade,
+    format_upgrade_command_log_lines,
+    format_upgrade_result_line,
+    format_upgrade_summary,
+    normalize_software_url,
+    parse_upgrade_cli_tokens,
+    preflight_software_server,
+    resolve_ios_software_dir,
+    take_ios_software_dir,
+    upgrade_host,
+    upgrade_hosts,
+)
 from mc_utils import check_host_minimum_ios
 from netmiko.exceptions import ConnectionException, NetmikoTimeoutException
 from paramiko.ssh_exception import AuthenticationException
@@ -87,6 +102,8 @@ from webex_bot.webex_bot import WebexBot
 
 # Populated by initialize_merakicat() from main().
 MERAKI_DRY_RUN = False
+UPGRADE_ALLOW_DOWNGRADE = False
+UPGRADE_IOS_SOFTWARE_DIR = ""
 FORCE_PEDIA_REFRESH = False
 DEBUG = False
 DEBUG_MAIN = False
@@ -212,11 +229,26 @@ the feature encyclopedia",
         return greeting(attachment_actions, self.dashboard_api)
 
 
+class RunUpgrade(Command):
+    def __init__(self, dashboard_api):
+        self.dashboard_api = dashboard_api
+        super().__init__(
+            command_keyword="upgrade",
+            help_message="Upgrade IOS software on a Catalyst switch or list of hosts "
+            "(-y skips confirmation; --allow-downgrade permits downgrading to older "
+            "version; --ios-software <directory> selects the local image directory)",
+            delete_previous_message=True,
+        )
+
+    def execute(self, message, attachment_actions, activity):
+        return greeting(attachment_actions, self.dashboard_api)
+
+
 class RunHelp(Command):
     def __init__(self, dashboard_api):
         self.dashboard_api = dashboard_api
         super().__init__(
-            command_keyword="help|?",
+            command_keyword="help|?|--help",
             help_message="Get help",
             delete_previous_message=True,
         )
@@ -236,6 +268,149 @@ class RunHello(Command):
 
     def execute(self, message, attachment_actions, activity):
         return greeting(attachment_actions, self.dashboard_api)
+
+
+# CLI help wrapping. Other tables are left at their natural width.
+HELP_FALLBACK_COLUMNS = 80
+HELP_TEXT_MARGIN = 4
+# tabulate's "simple" format separates columns with two spaces, and each
+# column is at least as wide as its header plus this padding.
+HELP_COLUMN_GAP = 2
+HELP_HEADER_PAD = 2
+
+
+def cli_help_columns() -> int:
+    """Return the width available for CLI help text.
+
+    Returns:
+        int: Terminal columns minus a margin. 80 columns are assumed when
+        the terminal width cannot be read.
+    """
+    try:
+        columns = shutil.get_terminal_size(
+            fallback=(HELP_FALLBACK_COLUMNS, 24)
+        ).columns
+    except (OSError, ValueError):
+        columns = HELP_FALLBACK_COLUMNS
+    if not isinstance(columns, int) or columns < 1:
+        columns = HELP_FALLBACK_COLUMNS
+    usable = columns - HELP_TEXT_MARGIN
+    if usable < 1:
+        return 1
+    return usable
+
+
+def help_column_natural_width(rows: list[list[str]], index: int, header: str) -> int:
+    """Return the unwrapped width of one help column.
+
+    Parameters:
+        rows (list[list[str]]): Help rows of command text and description.
+        index (int): Column index.
+        header (str): Column header.
+
+    Returns:
+        int: Longest line in the column, at least the header width tabulate uses.
+    """
+    width = len(header) + HELP_HEADER_PAD
+    for row in rows:
+        for line in row[index].splitlines() or [""]:
+            if len(line) > width:
+                width = len(line)
+    return width
+
+
+def help_column_widths(natural: list[int], floors: list[int], budget: int) -> list[int]:
+    """Split the help-table budget across the command and description columns.
+
+    Parameters:
+        natural (list[int]): Unwrapped width of each column.
+        floors (list[int]): Narrowest useful width of each column.
+        budget (int): Usable columns for the whole table, including the gap.
+
+    Returns:
+        list[int]: Maximum width for each column.
+    """
+    available = budget - HELP_COLUMN_GAP
+    if available < 2:
+        return [1, 1]
+    if natural[0] + natural[1] <= available:
+        return [natural[0], natural[1]]
+    if available <= floors[0] + floors[1]:
+        command = max(1, available // 2)
+        return [command, available - command]
+
+    preferred_command = max(floors[0], (available * 55) // 100)
+    command = min(natural[0], preferred_command)
+    if available - command < floors[1]:
+        command = available - floors[1]
+    if command < floors[0]:
+        command = floors[0]
+    if command >= available:
+        command = available - 1
+    return [command, available - command]
+
+
+def wrap_help_cell(text: str, width: int) -> str:
+    """Wrap one help cell on spaces, keeping explicit line breaks.
+
+    Parameters:
+        text (str): Cell text.
+        width (int): Maximum line width.
+
+    Returns:
+        str: Wrapped text without a trailing blank line.
+    """
+    if width < 1:
+        width = 1
+    lines: list[str] = []
+    for paragraph in text.splitlines() or [""]:
+        wrapped = textwrap.wrap(
+            paragraph,
+            width=width,
+            break_long_words=True,
+            break_on_hyphens=False,
+        )
+        if wrapped:
+            lines.extend(wrapped)
+        else:
+            lines.append("")
+    return "\n".join(lines)
+
+
+def format_cli_help_table(rows: list[list[str]]) -> str:
+    """Render CLI help wrapped so it fits the terminal.
+
+    Parameters:
+        rows (list[list[str]]): Command format and function description pairs.
+
+    Returns:
+        str: Help table whose lines stay inside the terminal width.
+    """
+    headers = ["Command Format", "Function"]
+    budget = cli_help_columns()
+    natural = [
+        help_column_natural_width(rows, index, header)
+        for index, header in enumerate(headers)
+    ]
+    floors = [len(header) + HELP_HEADER_PAD for header in headers]
+    widths = help_column_widths(natural, floors, budget)
+    last_index = len(rows) - 1
+    separated: list[list[str]] = []
+    for index, row in enumerate(rows):
+        cells = [wrap_help_cell(row[column], widths[column]) for column in range(2)]
+        if index != last_index:
+            # splitlines() drops a single trailing newline, so two are required
+            # to leave one blank line between commands.
+            cells = [f"{cell}\n\n" for cell in cells]
+        separated.append(cells)
+    return tabulate(
+        separated,
+        headers=headers,
+        maxheadercolwidths=widths,
+        preserve_whitespace=True,
+        break_long_words=True,
+        break_on_hyphens=False,
+    )
 
 
 # The greeting processes user input before calling the correct command.
@@ -1103,7 +1278,10 @@ def greeting(incoming_msg, dashboard: meraki.DashboardAPI | None):
                             incoming_msg, dashboard, dest_net=dest_net, serials=serials
                         )
 
-        case "help" | "?":
+        case "upgrade":
+            response.markdown = handle_upgrade_command(user_text)
+
+        case "help" | "?" | "--help":
             if BOT:
                 # Lookup details about sender for our default response
                 sender = bot.teams.people.get(incoming_msg.personId)
@@ -1116,7 +1294,7 @@ def greeting(incoming_msg, dashboard: meraki.DashboardAPI | None):
             else:
                 r = (
                     f"\nMerakicat version {VERSION}\n\n"
-                    + tabulate(command_list, headers=["Command Format", "Function"])
+                    + format_cli_help_table(command_list)
                     + "\n"
                 )
                 response.markdown = r
@@ -1177,6 +1355,357 @@ def write_check_hosts_log(contents: str) -> str:
     with open(log_file, "w") as fh:
         fh.write(contents)
     return log_file
+
+
+def write_upgrade_hosts_log(contents: str) -> str:
+    """Write upgrade-hosts output to DEFAULT_FILES_FOLDER and return file path."""
+    output_dir = os.path.join(os.getcwd(), DEFAULT_FILES_FOLDER)
+    os.makedirs(output_dir, exist_ok=True)
+    log_file = os.path.join(
+        output_dir, f"upgrade-hosts-{get_log_filename_suffix()}.log"
+    )
+    with open(log_file, "w") as fh:
+        fh.write(contents)
+    return log_file
+
+
+def handle_upgrade_command(user_text: str) -> str:
+    """Parse and run upgrade host / upgrade hosts CLI commands.
+
+    Parameters:
+        user_text (str): Full user command text beginning with upgrade.
+
+    Returns:
+        str: Markdown/CLI response text for the greeting dispatcher.
+    """
+    syntax = (
+        "Syntax is **upgrade host <_fqdn or ip_> [<_url_>] [-y] "
+        "[--allow-downgrade] [--ios-software <_directory_>]** or "
+        "**upgrade hosts <_filespec_> [<_url_>] [-y] "
+        "[--allow-downgrade] [--ios-software <_directory_>]**"
+    )
+    if user_text.lower().strip() == "upgrade":
+        return syntax
+
+    if re.search(r"\bhosts\b", user_text, re.IGNORECASE):
+        rest = re.split(
+            r"\bhosts\s*", user_text, maxsplit=1, flags=re.IGNORECASE
+        )
+        if len(rest) < 2 or not rest[1].strip():
+            return (
+                "Syntax is **upgrade hosts <_filespec_> [<_url_>] [-y] "
+                "[--allow-downgrade] [--ios-software <_directory_>]** "
+                "(CSV or Excel with a Hostname column)."
+            )
+        try:
+            target, yes_flag, software_url, allow_downgrade, ios_software_dir = (
+                parse_upgrade_cli_tokens(rest[1])
+            )
+        except ValueError as err:
+            return str(err)
+        allow_downgrade = allow_downgrade or UPGRADE_ALLOW_DOWNGRADE
+        if not target:
+            return (
+                "Syntax is **upgrade hosts <_filespec_> [<_url_>] [-y] "
+                "[--allow-downgrade] [--ios-software <_directory_>]** "
+                "(CSV or Excel with a Hostname column)."
+            )
+        maybe_file, exists = FileExists(target)
+        if not exists:
+            return "I'm sorry, but I could not find that file."
+        try:
+            hostnames = load_hostnames_from_file(maybe_file)
+        except ValueError as err:
+            return str(err)
+        resolved_dir, dir_error = resolve_cli_ios_software_dir(ios_software_dir)
+        if dir_error:
+            return dir_error
+        resolved_url, url_error = resolve_upgrade_software_url(software_url, yes_flag)
+        if url_error:
+            return url_error
+        preflight_error = ensure_upgrade_software_ready(resolved_url, resolved_dir)
+        if preflight_error:
+            return preflight_error
+        if not confirm_upgrade_or_abort(
+            resolved_url, hostnames, yes_flag, resolved_dir
+        ):
+            return "Upgrade cancelled."
+        return run_upgrade_hosts_command(
+            hostnames,
+            resolved_url,
+            allow_downgrade=allow_downgrade,
+            ios_software_dir=resolved_dir,
+        )
+
+    if re.search(r"\bhost\b", user_text, re.IGNORECASE):
+        rest = re.split(
+            r"\bhost\s*", user_text, maxsplit=1, flags=re.IGNORECASE
+        )
+        if len(rest) < 2 or not rest[1].strip():
+            return (
+                "Syntax is **upgrade host <_fqdn or ip_> [<_url_>] [-y] "
+                "[--allow-downgrade] [--ios-software <_directory_>]**."
+            )
+        try:
+            target, yes_flag, software_url, allow_downgrade, ios_software_dir = (
+                parse_upgrade_cli_tokens(rest[1])
+            )
+        except ValueError as err:
+            return str(err)
+        allow_downgrade = allow_downgrade or UPGRADE_ALLOW_DOWNGRADE
+        if not target:
+            return (
+                "Syntax is **upgrade host <_fqdn or ip_> [<_url_>] [-y] "
+                "[--allow-downgrade] [--ios-software <_directory_>]**."
+            )
+        resolved_dir, dir_error = resolve_cli_ios_software_dir(ios_software_dir)
+        if dir_error:
+            return dir_error
+        resolved_url, url_error = resolve_upgrade_software_url(software_url, yes_flag)
+        if url_error:
+            return url_error
+        preflight_error = ensure_upgrade_software_ready(resolved_url, resolved_dir)
+        if preflight_error:
+            return preflight_error
+        if not confirm_upgrade_or_abort(
+            resolved_url, [target], yes_flag, resolved_dir
+        ):
+            return "Upgrade cancelled."
+        return run_upgrade_host_command(
+            target,
+            resolved_url,
+            allow_downgrade=allow_downgrade,
+            ios_software_dir=resolved_dir,
+        )
+
+    return syntax
+
+
+def resolve_upgrade_software_url(
+    software_url: str | None, yes_flag: bool
+) -> tuple[str, str]:
+    """Resolve the software URL, prompting when allowed.
+
+    Parameters:
+        software_url (str | None): URL from the command line, if any.
+        yes_flag (bool): True when -y was supplied.
+
+    Returns:
+        tuple[str, str]: (normalized_url, error_message). error_message is
+        empty on success.
+    """
+    if software_url:
+        return normalize_software_url(software_url), ""
+    if yes_flag:
+        return (
+            "",
+            (
+                "A software URL is required when using -y. "
+                "Example: upgrade host 10.0.0.1 http://server:8000/ -y"
+            ),
+        )
+    if BOT:
+        return (
+            "",
+            (
+                "A software URL is required. "
+                "Example: upgrade host 10.0.0.1 http://server:8000/ -y"
+            ),
+        )
+    prompted = input(
+        "Enter the URL that serves the ios-software directory "
+        "(e.g. http://server:8000/): "
+    ).strip()
+    if not prompted:
+        return "", "No software URL provided; upgrade cancelled."
+    return normalize_software_url(prompted), ""
+
+
+def ensure_upgrade_software_ready(
+    software_url: str, ios_software_dir: str
+) -> str:
+    """Verify the software HTTP server before contacting any switch.
+
+    Parameters:
+        software_url (str): Base URL serving the ios-software directory.
+        ios_software_dir (str): Local image directory.
+
+    Returns:
+        str: Empty string when the server and directory layout are ready,
+        otherwise an error message.
+    """
+    normalized = normalize_software_url(software_url)
+    print(f"Checking HTTP server at {normalized}")
+    error = preflight_software_server(software_url, ios_software_dir)
+    if error:
+        return error
+    print(
+        "HTTP server is available and no software directory contains more than one .bin file."
+    )
+    return ""
+
+
+def resolve_cli_ios_software_dir(
+    ios_software_dir: str | None,
+) -> tuple[str, str]:
+    """Resolve the local ios-software directory for an upgrade command.
+
+    Parameters:
+        ios_software_dir (str | None): Directory parsed from the command, if any.
+            An argv --ios-software value is used when the command omits one.
+
+    Returns:
+        tuple[str, str]: (absolute_path, error_message). error_message is
+        empty on success.
+    """
+    chosen = ios_software_dir or UPGRADE_IOS_SOFTWARE_DIR or None
+    try:
+        return resolve_ios_software_dir(chosen), ""
+    except FileNotFoundError as exc:
+        return "", str(exc)
+
+
+def confirm_upgrade_or_abort(
+    software_url: str,
+    hosts: list[str],
+    yes_flag: bool,
+    ios_software_dir: str = "",
+) -> bool:
+    """Confirm upgrade unless -y was given.
+
+    Parameters:
+        software_url (str): Resolved software base URL.
+        hosts (list[str]): Target hosts.
+        yes_flag (bool): True when -y was supplied.
+        ios_software_dir (str): Local directory the images are selected from.
+
+    Returns:
+        bool: True when the upgrade should proceed.
+    """
+    if yes_flag:
+        return True
+    if BOT:
+        print(
+            "Upgrade confirmation is interactive; include -y to proceed in bot mode."
+        )
+        return False
+    return confirm_upgrade(software_url, hosts, ios_software_dir)
+
+
+def run_upgrade_host_command(
+    host: str,
+    software_url: str,
+    *,
+    allow_downgrade: bool = False,
+    ios_software_dir: str | None = None,
+) -> str:
+    """Run upgrade against a single host and return a summary string.
+
+    Parameters:
+        host (str): FQDN or IP address.
+        software_url (str): Normalized software base URL.
+        allow_downgrade (bool): Replace when running version differs from image.
+        ios_software_dir (str | None): Local image directory.
+
+    Returns:
+        str: Result text for the operator.
+    """
+
+    def on_command(command: str) -> None:
+        print(f"Issuing: {command}")
+
+    def on_status(message: str) -> None:
+        print(message)
+
+    result = upgrade_host(
+        host,
+        software_url,
+        ios_username,
+        ios_password,
+        ios_port,
+        ios_secret,
+        dry_run=MERAKI_DRY_RUN,
+        quiet_ping=False,
+        allow_downgrade=allow_downgrade,
+        ios_software_dir=ios_software_dir,
+        on_command=None if MERAKI_DRY_RUN else on_command,
+        on_status=None if MERAKI_DRY_RUN else on_status,
+    )
+    summary = format_upgrade_summary([result])
+    if BOT:
+        return summary
+    # CLI: print once here; main() also prints response.markdown, so return empty.
+    print(summary, end="")
+    return ""
+
+
+def run_upgrade_hosts_command(
+    hostnames: list[str],
+    software_url: str,
+    *,
+    allow_downgrade: bool = False,
+    ios_software_dir: str | None = None,
+) -> str:
+    """Run parallel upgrades for a host list and return a summary string.
+
+    Parameters:
+        hostnames (list[str]): Hosts from CSV/Excel.
+        software_url (str): Normalized software base URL.
+        allow_downgrade (bool): Replace when running version differs from image.
+        ios_software_dir (str | None): Local image directory.
+
+    Returns:
+        str: Result text for the operator.
+    """
+    log_parts: list[str] = []
+
+    def on_complete(result) -> None:
+        line = format_upgrade_result_line(result)
+        print(line, end="")
+        command_lines = format_upgrade_command_log_lines(result)
+        if command_lines:
+            log_parts.append(command_lines)
+        log_parts.append(line)
+
+    def on_host_status(hostname: str, message: str) -> None:
+        host_prefix = f"{hostname}: "
+        aligned_prefix = f"{host_prefix:<17}"
+        print(f"{aligned_prefix}{message}", flush=True)
+
+    def on_host_command(hostname: str, command: str) -> None:
+        host_prefix = f"{hostname}: "
+        aligned_prefix = f"{host_prefix:<17}"
+        print(f"{aligned_prefix}Issuing: {command}", flush=True)
+
+    results = upgrade_hosts(
+        hostnames,
+        software_url,
+        ios_username,
+        ios_password,
+        ios_port,
+        ios_secret,
+        dry_run=MERAKI_DRY_RUN,
+        allow_downgrade=allow_downgrade,
+        ios_software_dir=ios_software_dir,
+        on_complete=on_complete,
+        on_status=None if MERAKI_DRY_RUN else on_host_status,
+        on_command=None if MERAKI_DRY_RUN else on_host_command,
+    )
+    report = "".join(log_parts)
+    if not MERAKI_DRY_RUN:
+        summary = format_upgrade_summary(results)
+        if summary:
+            titled_summary = f"{UPGRADE_SUMMARY_TITLE}\n{summary}"
+            if report and not report.endswith("\n"):
+                report += "\n"
+            report += f"\n{titled_summary}"
+            print()
+            print(titled_summary, end="")
+    log_file = write_upgrade_hosts_log(report)
+    print("\nLog written to " + os.path.abspath(log_file))
+    if BOT:
+        return report
+    return ""
 
 
 def minimum_ios_message(status) -> str:
@@ -2826,7 +3355,34 @@ def init_dry_run_argv() -> None:
     if MERAKI_DRY_RUN:
         sys.argv = [sys.argv[0]] + [a for a in sys.argv[1:] if a != "--dry-run"]
     set_meraki_dry_run(MERAKI_DRY_RUN)
-  
+
+
+def init_allow_downgrade_argv() -> None:
+    """Strip --allow-downgrade / --allow_downgrade from argv for upgrade commands."""
+    global UPGRADE_ALLOW_DOWNGRADE
+    allow_flags = {"--allow-downgrade", "--allow_downgrade"}
+    UPGRADE_ALLOW_DOWNGRADE = any(flag in sys.argv for flag in allow_flags)
+    if UPGRADE_ALLOW_DOWNGRADE:
+        sys.argv = [sys.argv[0]] + [
+            a for a in sys.argv[1:] if a not in allow_flags
+        ]
+
+
+def init_ios_software_dir_argv() -> None:
+    """Strip --ios-software <directory> from argv for upgrade commands.
+
+    A path is captured from argv before the command text is joined, so
+    directory names that contain spaces stay intact. A missing path is left
+    in argv so the upgrade parser can report it.
+    """
+    global UPGRADE_IOS_SOFTWARE_DIR
+    try:
+        remaining, directory = take_ios_software_dir(sys.argv[1:])
+    except ValueError:
+        return
+    if directory is not None:
+        UPGRADE_IOS_SOFTWARE_DIR = directory
+        sys.argv = [sys.argv[0]] + remaining
 
 def init_force_pedia_refresh_argv() -> None:
     """Strip --force-pedia-refresh from argv and configure pedia refresh."""
@@ -2966,7 +3522,7 @@ def cli_startup_kind() -> Literal["bot", "cli_help", "cli_demo", "cli_full"]:
     if BOT:
         return "bot"
     text = " ".join(sys.argv[1:]).lower().strip()
-    if text in ("help", "?"):
+    if text in ("help", "?", "--help"):
         return "cli_help"
     if text == "demo report":
         return "cli_demo"
@@ -3105,7 +3661,7 @@ def register_bot_commands_or_cli_help(dashboard_api: meraki.DashboardAPI | None)
         bot_commands = list(list())
         bot_commands.extend(
             [
-                ["* **help**", "Get help."],
+                ["* **help** | **--help**", "Get help."],
                 [
                     "* **check [network _Meraki network name_] [with timing] \
 [with details]**",
@@ -3154,6 +3710,22 @@ translate",
                     "Create a demo report for all features currently in the feature \
 encyclopedia",
                 ],
+                [
+                    "* **upgrade host _FQDN or IP address_ [_url_] [-y] [--allow-downgrade] "
+                    "[--ios-software _directory_]**",
+                    "Upgrade IOS software on a Catalyst switch\n"
+                    "Checks the HTTP server and image directories before connecting. "
+                    "(-y skips confirmation; --allow-downgrade permits downgrading to "
+                    "older version; --ios-software selects the local image directory)",
+                ],
+                [
+                    "* **upgrade hosts _filespec_ [_url_] [-y] [--allow-downgrade] "
+                    "[--ios-software _directory_]**",
+                    "Upgrade IOS software on hosts listed in a CSV or Excel file\n"
+                    "Checks the HTTP server and image directories before connecting. "
+                    "(-y skips confirmation; --allow-downgrade permits downgrading to "
+                    "older version; --ios-software selects the local image directory)",
+                ],
             ]
         )
         bot.add_command(RunHello(dashboard_api))
@@ -3164,11 +3736,12 @@ encyclopedia",
         bot.add_command(RunTranslate(dashboard_api))
         bot.add_command(RunMigrate(dashboard_api))
         bot.add_command(RunDemo(dashboard_api))
+        bot.add_command(RunUpgrade(dashboard_api))
     else:
         command_list = list(list())
         command_list.extend(
             [
-                ["help", "This list of commands"],
+                ["help | --help", "This list of commands"],
                 [
                     "check network <Meraki network name> [with timing] [with details]",
                     "Check the configs of cloud monitored Catalyst switches for both \
@@ -3218,6 +3791,26 @@ timing]",
 translate",
                 ],
                 [
+                    "upgrade host <FQDN or IP address> [<url>] [-y] [--allow-downgrade] "
+                    "[--ios-software <directory>]",
+                    "Upgrade IOS software on a Catalyst switch from a URL serving the "
+                    "ios-software directory\n"
+                    "Checks the HTTP server and image directories before connecting. "
+                    "(-y skips confirmation; --allow-downgrade permits downgrading to "
+                    "older version; --ios-software <directory> selects the local image "
+                    "directory)",
+                ],
+                [
+                    "upgrade hosts <filespec> [<url>] [-y] [--allow-downgrade] "
+                    "[--ios-software <directory>]",
+                    "Upgrade IOS software on hosts listed in a CSV or Excel file (use "
+                    "`hosts_template.xlsx` as a template)\n"
+                    "Checks the HTTP server and image directories before connecting. "
+                    "(-y skips confirmation; --allow-downgrade permits downgrading to "
+                    "older version; --ios-software <directory> selects the local image "
+                    "directory)",
+                ],
+                [
                     "demo report",
                     "Create a demo report for all features currently in the feature \
 encyclopedia",
@@ -3229,6 +3822,8 @@ encyclopedia",
 def initialize_merakicat() -> meraki.DashboardAPI | None:
     tabulate.PRESERVE_WHITESPACE = True  # type: ignore
     init_dry_run_argv()
+    init_allow_downgrade_argv()
+    init_ios_software_dir_argv()
     init_force_pedia_refresh_argv()
     init_debug_flags()
     set_bot_from_argv()

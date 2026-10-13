@@ -1,5 +1,8 @@
 # History
 
+## 1.3.0 (10-13-2026)
+- Added `upgrade host` and `upgrade hosts` commands to perform automated IOS software upgrades
+
 ## 1.2.2 (6-26-2026)
 
 - Removed duplicate `mc_pedia2.py` file from repo root

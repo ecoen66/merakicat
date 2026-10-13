@@ -152,3 +152,6 @@ src/merakicat/testscript.sh
 ~*.xlsx
 *.xlsx
 textfsm_test.py
+*.bin
+ios-software.26/
+ios-software.17/

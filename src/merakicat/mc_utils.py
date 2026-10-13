@@ -46,35 +46,78 @@ def get_switch_model(net_connect: BaseConnection) -> str:
     return ""
 
 
-def parse_ios_version(show_version_output: str) -> str:
-    """Extract IOS version from show version output using parse_output first."""
-    parsed = parse_output(
-        platform="cisco_ios",
-        command="show version",
-        data=show_version_output,
-    )
-    if not parsed:
-        return ""
+def parse_ios_version(show_version_output: str) -> list[str]:
+    """Extract SW Version values from the switch table in show version output.
 
-    for row in parsed:
-        if not isinstance(row, dict):
+    Parses the trailing table of the form:
+
+        Switch Ports Model              SW Version        SW Image              Mode
+        ------ ----- -----              ----------        ----------            ----
+        *    1 28    C9200L-24PXG-4X    17.18.04          CAT9K_LITE_IOSXE      INSTALL
+
+    Parameters:
+        show_version_output (str): Raw output from 'show version'.
+
+    Returns:
+        list[str]: SW Version strings in table order (one per stack member).
+    """
+    versions: list[str] = []
+    in_table = False
+    for raw_line in show_version_output.splitlines():
+        line = raw_line.rstrip()
+        if re.search(r"Switch\s+Ports\s+Model\s+SW Version", line, re.IGNORECASE):
+            in_table = True
             continue
-        for key in ("version", "os_version", "software_version"):
-            value = row.get(key)
-            if value:
-                return str(value)
+        if not in_table:
+            continue
+        stripped = line.strip()
+        if not stripped:
+            if versions:
+                break
+            continue
+        if set(stripped) <= {"-", " "}:
+            continue
+        match = re.match(
+            r"^\*?\s*\d+\s+\d+\s+\S+\s+(\d+(?:\.\d+)+)\s+\S+",
+            stripped,
+        )
+        if match:
+            versions.append(match.group(1))
+            continue
+        if versions:
+            break
+    return versions
 
-    return ""
 
+def version_tuple(version: str) -> tuple[int, ...]:
+    """Convert a dotted IOS version string into a comparable integer tuple.
 
-def _version_tuple(version: str) -> tuple[int, ...]:
+    Parameters:
+        version (str): IOS version such as '17.18.04'.
+
+    Returns:
+        tuple[int, ...]: Numeric components for comparison.
+    """
     parts = [int(x) for x in re.findall(r"\d+", version)]
     return tuple(parts)
 
 
 def check_minimum_ios_version(model: str, current_version: str) -> MinIosCheckResult:
-    """Evaluate whether model/version satisfies the minimum required IOS."""
-    required_version = mc_min_ios_version.get(model, "")
+    """Evaluate whether model/version satisfies the minimum required IOS.
+
+    Parameters:
+        model (str): Switch model identifier.
+        current_version (str): Running IOS version on the switch.
+
+    Returns:
+        MinIosCheckResult: Evaluation result including required version and status.
+    """
+    compat_entry = mc_min_ios_version.get(model)
+    required_version = ""
+    if isinstance(compat_entry, dict):
+        required_version = str(compat_entry.get("version", ""))
+    elif isinstance(compat_entry, str):
+        required_version = compat_entry
     if not model:
         return MinIosCheckResult(
             model="",
@@ -100,7 +143,7 @@ def check_minimum_ios_version(model: str, current_version: str) -> MinIosCheckRe
             reason="unknown_version",
         )
 
-    meets = _version_tuple(current_version) >= _version_tuple(required_version)
+    meets = version_tuple(current_version) >= version_tuple(required_version)
     return MinIosCheckResult(
         model=model,
         current_version=current_version,
@@ -134,7 +177,17 @@ def check_host_minimum_ios(
         if support_probe.reason in {"unsupported_model", "unknown_model"}:
             return support_probe
         show_version_output = str(net_connect.send_command("show version"))
-        current_ios_version = parse_ios_version(show_version_output)
-        return check_minimum_ios_version(switch_model, current_ios_version)
+        current_ios_versions = parse_ios_version(show_version_output)
+        if not current_ios_versions:
+            return check_minimum_ios_version(switch_model, "")
+        lowest_version = min(current_ios_versions, key=version_tuple)
+        result = check_minimum_ios_version(switch_model, lowest_version)
+        return MinIosCheckResult(
+            model=result.model,
+            current_version=", ".join(current_ios_versions),
+            required_version=result.required_version,
+            meets_minimum=result.meets_minimum,
+            reason=result.reason,
+        )
     finally:
         net_connect.disconnect()

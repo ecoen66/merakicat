@@ -106,7 +106,7 @@ def Evaluate(config_file, nm_list, unified_os):
 
             # Only interface name will be used to catogrize different types of
             # interfaces (downlink and uplink)
-            only_intf_name = re.sub("\d+|\\/", "", intf_name)  # DON'T EDIT!
+            only_intf_name = re.sub(r"\d+|/", "", intf_name)
             if not only_intf_name == "Vlan":
                 if only_intf_name == "Port-channel":
                     Switch_module = "0"
@@ -271,7 +271,7 @@ def Evaluate(config_file, nm_list, unified_os):
         :return: A string containing the translate MAC address
         """
         port_sec = re.findall(re.compile(r"[a-fA-F0-9.]{14}"), my_str)[0]
-        new_p = re.sub("\.", "", port_sec)  # DO NOT EDIT THIS FOR FLAKE8!
+        new_p = re.sub(r"\.", "", port_sec)
         my_str = str(new_p)
 
         last = char.join(my_str[i : i + group] for i in range(0, len(my_str), group))

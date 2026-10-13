@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+
 """
 Generate a model-to-cloud-config compatibility dictionary.
 
 This script fetches the Meraki documentation page on Cloud Management with IOS-XE,
 extracts the supported models table, and builds a dictionary mapping each model to
-the minimum required Cloud Config version. The output is formatted as a Python
-dictionary for easy inclusion in the Merakicat codebase.
+the minimum required Cloud Config version and IOS software name prefix. The output
+is formatted as a Python dictionary for easy inclusion in the Merakicat codebase.
 
 Usage: python gen_ios_compat_dict.py > mc_min_ios_version.py
 """
@@ -13,24 +14,42 @@ Usage: python gen_ios_compat_dict.py > mc_min_ios_version.py
 from __future__ import annotations
 
 import re
-from typing import Dict, List
 
 import requests
 from lxml import html
 
 SOURCE_URL = "https://documentation.meraki.com/Switching/Cloud_Management_with_IOS_XE"
 VERSION_PATTERN = re.compile(r"\(([\d.]+)\+?\)")
+REQUESTS_TIMEOUT = 30
+
+IOS_SW_NAME_PREFIX_CAT9K_LITE = "cat9k_lite"
+IOS_SW_NAME_PREFIX_CAT9K = "cat9k"
+IOS_SW_NAME_PREFIX_IE35XX = "ie35xx"
 
 
 def fetch_page_html(url: str) -> str:
-    """Fetch the target page HTML."""
-    response = requests.get(url, timeout=30)
+    """Fetch the target page HTML.
+
+    Parameters:
+        url (str): Absolute URL of the Meraki documentation page.
+
+    Returns:
+        str: Raw HTML content of the page.
+    """
+    response = requests.get(url, timeout=REQUESTS_TIMEOUT)
     response.raise_for_status()
     return response.text
 
 
-def extract_table_rows(page_html: str) -> List[List[str]]:
-    """Extract rows from the supported models table."""
+def extract_table_rows(page_html: str) -> list[list[str]]:
+    """Extract rows from the supported models table.
+
+    Parameters:
+        page_html (str): Raw HTML content containing the models table.
+
+    Returns:
+        list[list[str]]: Table body rows as lists of cell text values.
+    """
     document = html.fromstring(page_html)
     table_candidates = document.xpath("//table")
     for table in table_candidates:
@@ -45,7 +64,7 @@ def extract_table_rows(page_html: str) -> List[List[str]]:
             "Cloud Config",
             "Device Config",
         ]:
-            rows: List[List[str]] = []
+            rows: list[list[str]] = []
             for row in table.xpath(".//tr[position()>1]"):
                 cells = row.xpath("./td")
                 if not cells:
@@ -61,15 +80,29 @@ def extract_table_rows(page_html: str) -> List[List[str]]:
 
 
 def normalize_cloud_config_value(raw_value: str) -> str | None:
-    """Extract only the numeric cloud config version from a table cell."""
+    """Extract only the numeric cloud config version from a table cell.
+
+    Parameters:
+        raw_value (str): Raw Cloud Config cell text from the docs table.
+
+    Returns:
+        str | None: Numeric version string when present, otherwise None.
+    """
     match = VERSION_PATTERN.search(raw_value)
     if not match:
         return None
     return match.group(1)
 
 
-def parse_models_cell(models_cell: str) -> List[str]:
-    """Split model cell content into individual model names."""
+def parse_models_cell(models_cell: str) -> list[str]:
+    """Split model cell content into individual model names.
+
+    Parameters:
+        models_cell (str): Raw Models cell text from the docs table.
+
+    Returns:
+        list[str]: Parsed switch model identifiers.
+    """
     cleaned = " ".join(models_cell.replace("**", "").split())
     cleaned = re.sub(r"(?<=\d)\s+(?=[A-Z]{1,3}-)", "", cleaned)
     if not cleaned:
@@ -77,10 +110,39 @@ def parse_models_cell(models_cell: str) -> List[str]:
     return re.findall(r"[A-Z0-9]+(?:-[A-Z0-9]+)+", cleaned)
 
 
-def build_model_compat_dict(page_html: str) -> Dict[str, str]:
-    """Build a dictionary keyed by model with cloud config version values."""
+def resolve_ios_sw_name_prefix(model: str) -> str:
+    """Return the IOS software image name prefix for a switch model.
+
+    Parameters:
+        model (str): Switch model identifier (for example, C9200-24P).
+
+    Returns:
+        str: IOS software name prefix used by image filenames.
+
+    Raises:
+        ValueError: If the model does not match a known prefix family.
+    """
+    if model.startswith("C9200"):
+        return IOS_SW_NAME_PREFIX_CAT9K_LITE
+    # C9300/C9350 and C9500/C9550 families share the cat9k image prefix.
+    if model.startswith(("C9300", "C9350", "C9500", "C9550")):
+        return IOS_SW_NAME_PREFIX_CAT9K
+    if model.startswith("IE-35") or model.startswith("IE35"):
+        return IOS_SW_NAME_PREFIX_IE35XX
+    raise ValueError(f"No IOS software name prefix mapping for model: {model}")
+
+
+def build_model_compat_dict(page_html: str) -> dict[str, dict[str, str]]:
+    """Build a dictionary keyed by model with version and software prefix.
+
+    Parameters:
+        page_html (str): Raw HTML content containing the models table.
+
+    Returns:
+        dict[str, dict[str, str]]: Mapping of model to version and sw_name_prefix.
+    """
     table_rows = extract_table_rows(page_html)
-    compat_dict: Dict[str, str] = {}
+    compat_dict: dict[str, dict[str, str]] = {}
 
     for columns in table_rows:
         if len(columns) < 3:
@@ -97,7 +159,12 @@ def build_model_compat_dict(page_html: str) -> Dict[str, str]:
             continue
 
         for model in models:
-            compat_dict[model] = cloud_config_version
+            if model.startswith("MS390"):
+                continue
+            compat_dict[model] = {
+                "version": cloud_config_version,
+                "sw_name_prefix": resolve_ios_sw_name_prefix(model),
+            }
 
     return compat_dict
 
@@ -109,8 +176,13 @@ def main() -> None:
     print("# This dictionary contains the minimum required software version for each model")
     print("# Generated by gen_ios_compat_dict.py\n")
     print("mc_min_ios_version = {")
-    for model, version in compat_dict.items():
-        print(f"    {model!r}: {version!r},")
+    for model, entry in compat_dict.items():
+        print(
+            f"    {model!r}: {{"
+            f"'version': {entry['version']!r}, "
+            f"'sw_name_prefix': {entry['sw_name_prefix']!r}"
+            f"}},"
+        )
     print("}")
 
 

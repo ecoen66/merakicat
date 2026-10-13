@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 
 # This is a simple multi-threaded HTTP server that can be used to serve files
-# such as IOS firmware  
+# such as IOS firmware.
+import sys
+
+# Don't litter the directory with __pycache__ files
+sys.dont_write_bytecode = True
+
 
 import argparse
 import os
@@ -9,20 +14,110 @@ import socket
 import subprocess
 import sys
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from typing import BinaryIO
+
+TRANSFER_CHUNK_SIZE = 64 * 1024
+PROGRESS_PERCENT_STEP = 1
+MAX_CONCURRENT_CONNECTIONS = 20
 
 
 class Handler(SimpleHTTPRequestHandler):
-    def setup(self):
+    def setup(self) -> None:
         super().setup()
-        print(f"CONNECT {self.client_address}")
+        print(f"CONNECT {self.client_address[0]}:{self.client_address[1]}")
 
-    def finish(self):
-        print(f"DISCONNECT {self.client_address}")
+    def finish(self) -> None:
+        print(f"DISCONNECT {self.client_address[0]}:{self.client_address[1]}")
         super().finish()
+
+    def log_message(self, format: str, *args) -> None:  
+        """Suppress the default BaseHTTPRequestHandler request log line."""
+        return
+
+    def do_GET(self) -> None:
+        client = f"{self.client_address[0]}:{self.client_address[1]}"
+        print(f"GET {self.path} from {client}")
+        try:
+            super().do_GET()
+        except (BrokenPipeError, ConnectionResetError, TimeoutError) as exc:
+            print(f"  TRANSFER ABORTED {self.path} to {client}: {exc}")
+
+    def copyfile(self, source: BinaryIO, outputfile: BinaryIO) -> None:
+        """Copy a file to the client while reporting transfer progress."""
+        client = f"{self.client_address[0]}:{self.client_address[1]}"
+        path = self.path
+        size: int | None
+        try:
+            size = os.fstat(source.fileno()).st_size
+        except (AttributeError, OSError, ValueError):
+            size = None
+
+        if size is not None:
+            print(f"  TRANSFER START {path} to {client}: {size} bytes")
+        else:
+            print(f"  TRANSFER START {path} to {client}: size unknown")
+
+        bytes_sent = 0
+        last_reported_pct = -PROGRESS_PERCENT_STEP
+        try:
+            while True:
+                buffer = source.read(TRANSFER_CHUNK_SIZE)
+                if not buffer:
+                    break
+                outputfile.write(buffer)
+                bytes_sent += len(buffer)
+                if size and size > 0:
+                    percent = int((100 * bytes_sent) / size)
+                    if (
+                        percent >= last_reported_pct + PROGRESS_PERCENT_STEP
+                        or bytes_sent >= size
+                    ):
+                        print(
+                            f"  TRANSFER {path} to {client}: "
+                            f"{bytes_sent}/{size} bytes ({percent}%)"
+                        )
+                        last_reported_pct = percent
+            print(
+                f"  TRANSFER COMPLETE {path} to {client}: {bytes_sent} bytes"
+            )
+        except (BrokenPipeError, ConnectionResetError, TimeoutError) as exc:
+            detail = f"{bytes_sent}"
+            if size is not None:
+                detail = f"{bytes_sent}/{size}"
+            print(
+                f"  TRANSFER FAILED {path} to {client}: "
+                f"{detail} bytes sent ({exc})"
+            )
+            raise
 
 
 class QuietThreadingHTTPServer(ThreadingHTTPServer):
+    """Threading HTTP server capped at MAX_CONCURRENT_CONNECTIONS workers."""
+
+    def __init__(
+        self,
+        server_address: tuple[str, int],
+        RequestHandlerClass: type[SimpleHTTPRequestHandler],
+    ) -> None:
+        self.executor = ThreadPoolExecutor(
+            max_workers=MAX_CONCURRENT_CONNECTIONS
+        )
+        super().__init__(server_address, RequestHandlerClass)
+
+    def process_request(
+        self,
+        request: socket.socket,
+        client_address: tuple[str, int],
+    ) -> None:
+        """Handle each request in a pooled worker thread."""
+        self.executor.submit(self.process_request_thread, request, client_address)
+
+    def server_close(self) -> None:
+        super().server_close()
+        self.executor.shutdown(wait=False)
+
     def handle_error(self, request, client_address):  # noqa: ARG002
         """Ignore noisy disconnect errors; keep other tracebacks."""
         _, exc_value, _ = sys.exc_info()
@@ -100,7 +195,7 @@ def get_bound_ipv4_addresses(bind_host: str) -> list[str]:
     return resolved or [bind_host]
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Multi-threaded HTTP server with optional working directory",
         add_help=False,
@@ -153,6 +248,7 @@ def main():
     )
 
     print(f"Serving directory: {directory}")
+    print(f"Max concurrent connections: {MAX_CONCURRENT_CONNECTIONS}")
     bound_ips = get_bound_ipv4_addresses(args.host)
     print("Listening on:")
     for ip_address in bound_ips:
