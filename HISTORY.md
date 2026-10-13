@@ -3,6 +3,12 @@
 ## 1.3.0 (10-13-2026)
 - Added `upgrade host` and `upgrade hosts` commands to perform automated IOS software upgrades
 
+## 1.2.3 (8-2-2026)
+
+- Fix syntax error in mc_prechecks.py
+- Fix for Meraki python library module name change
+- Fix regex warnings when using Python 3.12+
+
 ## 1.2.2 (6-26-2026)
 
 - Removed duplicate `mc_pedia2.py` file from repo root
@@ -174,4 +180,3 @@
   - Not yet released on PyPI.
 
 ## 0.0.1 (02-26-2024)
-
