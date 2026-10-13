@@ -34,7 +34,7 @@ def SplitCheckSerials(user_text,search_type):
     if len(maybe_serials)==0:
         return([],"I'm sorry, but {} is not a list of Meraki serial numbers delimited by commas, spaces or semicolons.".format(the_rest))
         
-    serials = re.split(';|,|\s',maybe_serials)
+    serials = re.split(r';|,|\s', maybe_serials)
     
     if debug:
         print(f"serials = {serials}")
