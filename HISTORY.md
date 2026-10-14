@@ -1,4 +1,6 @@
 # History
+## 1.3.1 (10-14-2026)
+- Add .env.example
 
 ## 1.3.0 (10-13-2026)
 - Added `upgrade host` and `upgrade hosts` commands to perform automated IOS software upgrades
